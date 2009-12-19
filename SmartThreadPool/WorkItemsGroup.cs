@@ -325,7 +325,7 @@ namespace Amib.Threading.Internal
 						_stp.UnregisterWorkItemsGroup(this);
                         IsIdle = true;
                         _isIdleWaitHandle.Set();
-                        if (decrementWorkItemsInStpQueue && _onIdle.GetInvocationList().Length > 0)
+                        if (decrementWorkItemsInStpQueue && _onIdle != null && _onIdle.GetInvocationList().Length > 0)
                         {
                             _stp.QueueWorkItem(new WorkItemCallback(FireOnIdle));
                         }
