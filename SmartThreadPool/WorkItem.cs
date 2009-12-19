@@ -61,11 +61,11 @@ namespace Amib.Threading.Internal
 		/// </summary>
 		private object _state;
 
-		/// <summary>
-		/// Stores the caller's context
-		/// </summary>
 #if !(WindowsCE) && !(SILVERLIGHT)
-		private readonly CallerThreadContext _callerContext;
+        /// <summary>
+        /// Stores the caller's context
+        /// </summary>
+        private readonly CallerThreadContext _callerContext;
 #endif
 		/// <summary>
 		/// Holds the result of the mehtod
@@ -135,6 +135,11 @@ namespace Amib.Threading.Internal
         /// This field is available for the period when the work item is executed, before and after it is null.
         /// </summary>
         private Thread _executingThread;
+
+        /// <summary>
+        /// The absulote time when the work item will be timeout
+        /// </summary>
+        private long _expirationTime;
 
 		#region Performance Counter fields
 
@@ -227,6 +232,10 @@ namespace Amib.Threading.Internal
 			_workItemCompletedRefCount = 0;
             _waitingOnQueueStopwatch = new Stopwatch();
             _processingStopwatch = new Stopwatch();
+            _expirationTime =
+                _workItemInfo.Timeout > 0 ?
+                DateTime.UtcNow.Ticks + _workItemInfo.Timeout * TimeSpan.TicksPerMillisecond :
+                long.MaxValue;
 		}
 
 		internal bool WasQueuedBy(IWorkItemsGroup workItemsGroup)
@@ -625,7 +634,19 @@ namespace Amib.Threading.Internal
 		{
             lock (this)
             {
-                if (WorkItemState.Completed == _workItemState || WorkItemState.InProgress == _workItemState)
+                if (WorkItemState.Completed == _workItemState)
+                {
+                    return _workItemState;
+                }
+
+                long nowTicks = DateTime.UtcNow.Ticks;
+
+                if (WorkItemState.Canceled != _workItemState && nowTicks > _expirationTime)
+                {
+                    _workItemState = WorkItemState.Canceled;
+                }
+
+                if (WorkItemState.InProgress == _workItemState)
                 {
                     return _workItemState;
                 }

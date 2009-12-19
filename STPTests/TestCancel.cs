@@ -155,6 +155,7 @@ namespace SmartThreadPoolTests
 
             stp.Shutdown();
         }
+
         /// <summary>
         /// 1. Create STP in suspended mode
         /// 2. Queue work item into the STP
@@ -173,7 +174,7 @@ namespace SmartThreadPoolTests
             stpStartInfo.StartSuspended = true;
 
             SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
-            IWorkItemResult wir = stp.QueueWorkItem(state =>  { return null; });
+            IWorkItemResult wir = stp.QueueWorkItem(state => null);
 
             int counter = 0;
 

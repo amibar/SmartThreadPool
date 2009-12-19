@@ -332,7 +332,7 @@ namespace Amib.Threading.Internal
 
 		private static void ValidateCallback(Delegate callback)
 		{
-			if(callback.GetInvocationList().Length > 1)
+            if (callback != null && callback.GetInvocationList().Length > 1)
 			{
 				throw new NotSupportedException("SmartThreadPool doesn't support delegates chains");
 			}
