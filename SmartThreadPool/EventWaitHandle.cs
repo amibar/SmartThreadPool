@@ -13,7 +13,7 @@ namespace Amib.Threading.Internal
     /// It uses the WaitForMultipleObjects API to do the WaitAll and WaitAny.
     /// Note that this class doesn't even inherit from WaitHandle!
     /// </summary>
-	public class EventWaitHandle
+    public class STPEventWaitHandle
     {
         #region Public Constants
 
@@ -30,6 +30,11 @@ namespace Amib.Threading.Internal
         #endregion
 
         #region WaitAll and WaitAny
+
+        internal static bool WaitOne(WaitHandle waitHandle, int millisecondsTimeout, bool exitContext)
+        {
+            return waitHandle.WaitOne(millisecondsTimeout, exitContext);
+        }
 
 	    private static IntPtr[] PrepareNativeHandles(WaitHandle[] waitHandles)
 	    {

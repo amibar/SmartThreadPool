@@ -64,7 +64,7 @@ namespace Amib.Threading.Internal
 		/// <summary>
 		/// Stores the caller's context
 		/// </summary>
-#if !(WindowsCE)
+#if !(WindowsCE) && !(SILVERLIGHT)
 		private readonly CallerThreadContext _callerContext;
 #endif
 		/// <summary>
@@ -138,23 +138,18 @@ namespace Amib.Threading.Internal
 
 		#region Performance Counter fields
 
-		/// <summary>
-		/// The time when the work items is queued.
-		/// Used with the performance counter.
-		/// </summary>
-		private DateTime _queuedTime;
+		
 
-		/// <summary>
-		/// The time when the work items starts its execution.
-		/// Used with the performance counter.
-		/// </summary>
-		private DateTime _beginProcessTime;
 
-		/// <summary>
-		/// The time when the work items ends its execution.
-		/// Used with the performance counter.
-		/// </summary>
-		private DateTime _endProcessTime;
+        /// <summary>
+        /// Stores how long the work item waited on the stp queue
+        /// </summary>
+        private Stopwatch _waitingOnQueueStopwatch;
+
+        /// <summary>
+        /// Stores how much time it took the work item to execute after it went out of the queue
+        /// </summary>
+        private Stopwatch _processingStopwatch;
 
 		#endregion
 
@@ -166,7 +161,7 @@ namespace Amib.Threading.Internal
 		{
 			get 
 			{
-				return (_beginProcessTime - _queuedTime);
+                return _waitingOnQueueStopwatch.Elapsed;
 			}
 		}
 
@@ -174,7 +169,7 @@ namespace Amib.Threading.Internal
 		{
 			get 
 			{
-				return (_endProcessTime - _beginProcessTime);
+                return _processingStopwatch.Elapsed;
 			}
 		}
 
@@ -209,7 +204,7 @@ namespace Amib.Threading.Internal
 			_workItemsGroup = workItemsGroup;
 			_workItemInfo = workItemInfo;
 
-#if !(WindowsCE)
+#if !(WindowsCE) && !(SILVERLIGHT)
 			if (_workItemInfo.UseCallerCallContext || _workItemInfo.UseCallerHttpContext)
 			{
 				_callerContext = CallerThreadContext.Capture(_workItemInfo.UseCallerCallContext, _workItemInfo.UseCallerHttpContext);
@@ -230,6 +225,8 @@ namespace Amib.Threading.Internal
 
             _workItemCompleted = null;
 			_workItemCompletedRefCount = 0;
+            _waitingOnQueueStopwatch = new Stopwatch();
+            _processingStopwatch = new Stopwatch();
 		}
 
 		internal bool WasQueuedBy(IWorkItemsGroup workItemsGroup)
@@ -263,7 +260,8 @@ namespace Amib.Threading.Internal
 		/// </returns>
 		public bool StartingWorkItem()
 		{
-			_beginProcessTime = DateTime.Now;
+            _waitingOnQueueStopwatch.Stop();
+            _processingStopwatch.Start();
 
 			lock(this)
 			{
@@ -318,7 +316,7 @@ namespace Amib.Threading.Internal
 				PostExecute();
 			}
 
-			_endProcessTime = DateTime.Now;
+            _processingStopwatch.Stop();
 		}
 
 		internal void FireWorkItemCompleted()
@@ -353,7 +351,7 @@ namespace Amib.Threading.Internal
         private void ExecuteWorkItem()
         {
 
-#if !(WindowsCE)
+#if !(WindowsCE) && !(SILVERLIGHT)
             CallerThreadContext ctc = null;
             if (null != _callerContext)
             {
@@ -377,7 +375,7 @@ namespace Amib.Threading.Internal
                     exception = e;
                 }
 
-                // Remove the value of the execution thread, so it will not be possible to cancel the work item
+                // Remove the value of the execution thread, so it will be impossible to cancel the work item,
                 // since it is already completed.
                 // Cancelling a work item that already completed may cause the abortion of the next work item!!!
                 Thread executionThread = Interlocked.CompareExchange(ref _executingThread, null, _executingThread);
@@ -394,15 +392,17 @@ namespace Amib.Threading.Internal
             catch (ThreadAbortException tae)
             {
                 // Check if the work item was cancelled
-                if ((string)tae.ExceptionState == "Cancel")
+                // If we got a ThreadAbortException and the STP is not shutting down, it means the 
+                // work items was cancelled.
+                if (!SmartThreadPool.CurrentThreadEntry.AssociatedSmartThreadPool.IsShuttingdown)
                 {
-#if !(WindowsCE)
+#if !(WindowsCE) && !(SILVERLIGHT)
                     Thread.ResetAbort();
 #endif
                 }
             }
 
-#if !(WindowsCE)
+#if !(WindowsCE) && !(SILVERLIGHT)
             if (null != _callerContext)
             {
                 CallerThreadContext.Apply(ctc);
@@ -484,13 +484,13 @@ namespace Amib.Threading.Internal
 
 			if ((null == cancelWaitHandle) && (waitHandles.Length <= 64))
 			{
-				success = EventWaitHandle.WaitAll(waitHandles, millisecondsTimeout, exitContext);
+                success = STPEventWaitHandle.WaitAll(waitHandles, millisecondsTimeout, exitContext);
 			}
 			else
 			{
 				success = true;
 				int millisecondsLeft = millisecondsTimeout;
-				DateTime start = DateTime.Now;
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
 				WaitHandle [] whs;
 				if (null != cancelWaitHandle)
@@ -517,8 +517,8 @@ namespace Amib.Threading.Internal
                     }
 
 					whs[0] = waitHandles[i];
-					int result = EventWaitHandle.WaitAny(whs, millisecondsLeft, exitContext);
-                    if ((result > 0) || (EventWaitHandle.WaitTimeout == result))
+                    int result = STPEventWaitHandle.WaitAny(whs, millisecondsLeft, exitContext);
+                    if ((result > 0) || (STPEventWaitHandle.WaitTimeout == result))
 					{
 						success = false;
 						break;
@@ -527,8 +527,7 @@ namespace Amib.Threading.Internal
 					if(!waitInfinitely)
 					{
                         // Update the time left to wait
-						TimeSpan ts = DateTime.Now - start;
-						millisecondsLeft = millisecondsTimeout - (int)ts.TotalMilliseconds;
+                        millisecondsLeft = millisecondsTimeout - (int)stopwatch.ElapsedMilliseconds;
 					}
 				}
 			}
@@ -570,14 +569,14 @@ namespace Amib.Threading.Internal
                 GetWaitHandles(waitableResults, waitHandles);
 			}
 
-            int result = EventWaitHandle.WaitAny(waitHandles, millisecondsTimeout, exitContext);
+            int result = STPEventWaitHandle.WaitAny(waitHandles, millisecondsTimeout, exitContext);
 
 			// Treat cancel as timeout
 			if (null != cancelWaitHandle)
 			{
                 if (result == waitableResults.Length)
 				{
-                    result = EventWaitHandle.WaitTimeout;
+                    result = STPEventWaitHandle.WaitTimeout;
 				}
 			}
 
@@ -675,7 +674,7 @@ namespace Amib.Threading.Internal
 
 		internal void WorkItemIsQueued()
 		{
-			_queuedTime = DateTime.Now;
+            _waitingOnQueueStopwatch.Start();
 		}
 
 		#endregion
@@ -714,7 +713,7 @@ namespace Amib.Threading.Internal
                             Thread executionThread = Interlocked.CompareExchange(ref _executingThread, null, _executingThread);
                             if (null != executionThread)
                             {
-                                executionThread.Abort("Cancel");
+                                executionThread.Abort(); // "Cancel"
                                 success = true;
                                 signalComplete = true;
                             }
@@ -795,7 +794,7 @@ namespace Amib.Threading.Internal
 			{
 				WaitHandle wh = GetWaitHandle();
 
-				bool timeout = !wh.WaitOne(millisecondsTimeout, exitContext);
+                bool timeout = !STPEventWaitHandle.WaitOne(wh, millisecondsTimeout, exitContext);
 
 				ReleaseWaitHandle();
 
@@ -807,7 +806,7 @@ namespace Amib.Threading.Internal
 			else
 			{
 				WaitHandle wh = GetWaitHandle();
-                int result = EventWaitHandle.WaitAny(new WaitHandle[] { wh, cancelWaitHandle });
+                int result = STPEventWaitHandle.WaitAny(new WaitHandle[] { wh, cancelWaitHandle });
 				ReleaseWaitHandle();
 
 				switch(result)
@@ -818,7 +817,7 @@ namespace Amib.Threading.Internal
 						// work item (not the get result)
 						break;
 					case 1:
-                    case EventWaitHandle.WaitTimeout:
+                    case STPEventWaitHandle.WaitTimeout:
 						throw new WorkItemTimeoutException("Work item timeout");
 					default:
 						Debug.Assert(false);

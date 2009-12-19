@@ -88,7 +88,7 @@ namespace Amib.Threading.Internal
 			{
 				throw new ArgumentOutOfRangeException(
                     "concurrency", 
-#if !(WindowsCE)
+#if !(WindowsCE) && !(SILVERLIGHT)
                     concurrency,
 #endif
                     "concurrency must be greater than zero");
@@ -165,8 +165,8 @@ namespace Amib.Threading.Internal
 	            return;
 	        }
 	        _isSuspended = false;
-			
-	        EnqueueToSTPNextNWorkItem(_concurrency);
+            
+	        EnqueueToSTPNextNWorkItem(Math.Min(_workItemsQueue.Count, _concurrency));
 	    }
 
 	    public override void Cancel(bool abortExecution)
@@ -191,7 +191,7 @@ namespace Amib.Threading.Internal
         public override bool WaitForIdle(int millisecondsTimeout)
         {
             SmartThreadPool.ValidateWorkItemsGroupWaitForIdle(this);
-            return _isIdleWaitHandle.WaitOne(millisecondsTimeout, false);
+            return STPEventWaitHandle.WaitOne(_isIdleWaitHandle, millisecondsTimeout, false);
         }
 
 	    public override event WorkItemsGroupIdleHandler OnIdle
@@ -325,7 +325,7 @@ namespace Amib.Threading.Internal
 						_stp.UnregisterWorkItemsGroup(this);
                         IsIdle = true;
                         _isIdleWaitHandle.Set();
-                        if (decrementWorkItemsInStpQueue)
+                        if (decrementWorkItemsInStpQueue && _onIdle.GetInvocationList().Length > 0)
                         {
                             _stp.QueueWorkItem(new WorkItemCallback(FireOnIdle));
                         }

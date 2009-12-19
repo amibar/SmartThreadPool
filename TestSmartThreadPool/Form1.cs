@@ -47,11 +47,21 @@ namespace TestSmartThreadPool
 		private System.Windows.Forms.GroupBox groupBox1;
 		private System.Windows.Forms.GroupBox groupBox4;
 		private UsageControl.UsageHistoryControl usageHistorySTP;
-		private System.Diagnostics.PerformanceCounter pcActiveThreads;
-		private System.Diagnostics.PerformanceCounter pcInUseThreads;
-		private System.Diagnostics.PerformanceCounter pcQueuedWorkItems;
-		private System.Diagnostics.PerformanceCounter pcCompletedWorkItems;
 		private long workItemsCompleted;
+
+#if _WINDOWS
+
+        private System.Diagnostics.PerformanceCounter _pcActiveThreads;
+        private System.Diagnostics.PerformanceCounter _pcInUseThreads;
+        private System.Diagnostics.PerformanceCounter _pcQueuedWorkItems;
+        private System.Diagnostics.PerformanceCounter _pcCompletedWorkItems;
+#endif
+
+
+        private Func<long> _getActiveThreads;
+        private Func<long> _getInUseThreads;
+        private Func<long> _getQueuedWorkItems;
+        private Func<long> _getCompletedWorkItems;
 
 		public Form1()
 		{
@@ -59,9 +69,56 @@ namespace TestSmartThreadPool
 			// Required for Windows Form Designer support
 			//
 			InitializeComponent();
+
+            InitializeGUIPerformanceCounters();
 		}
 
-		/// <summary>
+        private void InitializeGUIPerformanceCounters()
+        {
+#if _WINDOWS
+            this._pcActiveThreads = new System.Diagnostics.PerformanceCounter();
+            this._pcInUseThreads = new System.Diagnostics.PerformanceCounter();
+            this._pcQueuedWorkItems = new System.Diagnostics.PerformanceCounter();
+            this._pcCompletedWorkItems = new System.Diagnostics.PerformanceCounter();
+
+            // 
+            // pcActiveThreads
+            // 
+            this._pcActiveThreads.CategoryName = "SmartThreadPool";
+            this._pcActiveThreads.CounterName = "Active threads";
+            this._pcActiveThreads.InstanceName = "Test SmartThreadPool";
+            // 
+            // pcInUseThreads
+            // 
+            this._pcInUseThreads.CategoryName = "SmartThreadPool";
+            this._pcInUseThreads.CounterName = "In use threads";
+            this._pcInUseThreads.InstanceName = "Test SmartThreadPool";
+            // 
+            // pcQueuedWorkItems
+            // 
+            this._pcQueuedWorkItems.CategoryName = "SmartThreadPool";
+            this._pcQueuedWorkItems.CounterName = "Work Items in queue";
+            this._pcQueuedWorkItems.InstanceName = "Test SmartThreadPool";
+            // 
+            // pcCompletedWorkItems
+            // 
+            this._pcCompletedWorkItems.CategoryName = "SmartThreadPool";
+            this._pcCompletedWorkItems.CounterName = "Work Items processed";
+            this._pcCompletedWorkItems.InstanceName = "Test SmartThreadPool";
+
+            _getActiveThreads = () => (long)_pcActiveThreads.NextValue();
+            _getInUseThreads = () => (long)_pcInUseThreads.NextValue();
+            _getQueuedWorkItems = () => (long)_pcQueuedWorkItems.NextValue();
+            _getCompletedWorkItems = () => (long)_pcCompletedWorkItems.NextValue();
+#else
+            _getActiveThreads = delegate () { return _smartThreadPool.PerformanceCountersReader.ActiveThreads; };
+            _getInUseThreads = delegate () { return _smartThreadPool.PerformanceCountersReader.InUseThreads; };
+            _getQueuedWorkItems = delegate () { return _smartThreadPool.PerformanceCountersReader.WorkItemsQueued; };
+            _getCompletedWorkItems = delegate () { return _smartThreadPool.PerformanceCountersReader.WorkItemsProcessed; };
+#endif
+        }
+
+	    /// <summary>
 		/// Clean up any resources being used.
 		/// </summary>
 		protected override void Dispose( bool disposing )
@@ -114,10 +171,6 @@ namespace TestSmartThreadPool
             this.usageThreadsInPool = new UsageControl.UsageControl();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.usageHistorySTP = new UsageControl.UsageHistoryControl();
-            this.pcActiveThreads = new System.Diagnostics.PerformanceCounter();
-            this.pcInUseThreads = new System.Diagnostics.PerformanceCounter();
-            this.pcQueuedWorkItems = new System.Diagnostics.PerformanceCounter();
-            this.pcCompletedWorkItems = new System.Diagnostics.PerformanceCounter();
             ((System.ComponentModel.ISupportInitialize)(this.spinIdleTimeout)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.spinMaxThreads)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.spinMinThreads)).BeginInit();
@@ -127,10 +180,6 @@ namespace TestSmartThreadPool
             this.groupBox3.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox4.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pcActiveThreads)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcInUseThreads)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcQueuedWorkItems)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcCompletedWorkItems)).BeginInit();
             this.SuspendLayout();
             // 
             // btnStart
@@ -187,7 +236,6 @@ namespace TestSmartThreadPool
             this.label4.TabIndex = 5;
             this.label4.Text = "Idle timeout (Seconds)";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.label4.Click += new System.EventHandler(this.label4_Click);
             // 
             // label2
             // 
@@ -245,6 +293,11 @@ namespace TestSmartThreadPool
             this.spinMaxThreads.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.spinMaxThreads.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.spinMaxThreads.Location = new System.Drawing.Point(8, 288);
+            this.spinMaxThreads.Maximum = new decimal(new int[] {
+            25,
+            0,
+            0,
+            0});
             this.spinMaxThreads.Minimum = new decimal(new int[] {
             1,
             0,
@@ -266,6 +319,11 @@ namespace TestSmartThreadPool
             this.spinMinThreads.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.spinMinThreads.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.spinMinThreads.Location = new System.Drawing.Point(8, 256);
+            this.spinMinThreads.Maximum = new decimal(new int[] {
+            25,
+            0,
+            0,
+            0});
             this.spinMinThreads.Name = "spinMinThreads";
             this.spinMinThreads.Size = new System.Drawing.Size(88, 29);
             this.spinMinThreads.TabIndex = 13;
@@ -494,34 +552,10 @@ namespace TestSmartThreadPool
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.usageHistorySTP.BackColor = System.Drawing.Color.Black;
             this.usageHistorySTP.Location = new System.Drawing.Point(8, 16);
-            this.usageHistorySTP.Maximum = 100;
+            this.usageHistorySTP.Maximum = 25;
             this.usageHistorySTP.Name = "usageHistorySTP";
             this.usageHistorySTP.Size = new System.Drawing.Size(480, 104);
             this.usageHistorySTP.TabIndex = 0;
-            // 
-            // pcActiveThreads
-            // 
-            this.pcActiveThreads.CategoryName = "SmartThreadPool";
-            this.pcActiveThreads.CounterName = "Active threads";
-            this.pcActiveThreads.InstanceName = "Test SmartThreadPool";
-            // 
-            // pcInUseThreads
-            // 
-            this.pcInUseThreads.CategoryName = "SmartThreadPool";
-            this.pcInUseThreads.CounterName = "In use threads";
-            this.pcInUseThreads.InstanceName = "Test SmartThreadPool";
-            // 
-            // pcQueuedWorkItems
-            // 
-            this.pcQueuedWorkItems.CategoryName = "SmartThreadPool";
-            this.pcQueuedWorkItems.CounterName = "Work Items in queue";
-            this.pcQueuedWorkItems.InstanceName = "Test SmartThreadPool";
-            // 
-            // pcCompletedWorkItems
-            // 
-            this.pcCompletedWorkItems.CategoryName = "SmartThreadPool";
-            this.pcCompletedWorkItems.CounterName = "Work Items processed";
-            this.pcCompletedWorkItems.InstanceName = "Test SmartThreadPool";
             // 
             // Form1
             // 
@@ -549,8 +583,8 @@ namespace TestSmartThreadPool
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Test Smart Thread Pool";
-            this.Closing += new System.ComponentModel.CancelEventHandler(this.Form1_Closing);
             this.Load += new System.EventHandler(this.Form1_Load);
+            this.Closing += new System.ComponentModel.CancelEventHandler(this.Form1_Closing);
             ((System.ComponentModel.ISupportInitialize)(this.spinIdleTimeout)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.spinMaxThreads)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.spinMinThreads)).EndInit();
@@ -560,10 +594,6 @@ namespace TestSmartThreadPool
             this.groupBox3.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pcActiveThreads)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcInUseThreads)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcQueuedWorkItems)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcCompletedWorkItems)).EndInit();
             this.ResumeLayout(false);
 
 		}
@@ -575,11 +605,13 @@ namespace TestSmartThreadPool
 		[STAThread]
 		static void Main() 
 		{
+#if _WINDOWS			
 			bool runApplication = InitializePerformanceCounters();
 			if (!runApplication)
 			{
 				return;
 			}
+#endif			
             Application.EnableVisualStyles();
 
 			Application.Run(new Form1());
@@ -652,6 +684,7 @@ namespace TestSmartThreadPool
 			stpStartInfo.MaxWorkerThreads = Convert.ToInt32(spinMaxThreads.Value);
 			stpStartInfo.MinWorkerThreads = Convert.ToInt32(spinMinThreads.Value);
 			stpStartInfo.PerformanceCounterInstanceName = "Test SmartThreadPool";
+			stpStartInfo.EnableLocalPerformanceCounters = true;
 
 			_smartThreadPool = new SmartThreadPool(stpStartInfo);
 
@@ -695,13 +728,13 @@ namespace TestSmartThreadPool
 			lblThreadInUse.Text = "0";
 			lblThreadsInPool.Text = "0";
 			lblWaitingCallbacks.Text = "0";
-			usageThreadsInPool.Maximum = Convert.ToInt32(spinMaxThreads.Value);
+			//usageThreadsInPool.Maximum = Convert.ToInt32(spinMaxThreads.Value);
 			usageThreadsInPool.Value1 = 0;
 			usageThreadsInPool.Value2 = 0;
 			lblWorkItemsCompleted.Text = "0";
 			lblWorkItemsGenerated.Text = "0";
 			usageHistorySTP.Reset();
-			usageHistorySTP.Maximum = usageThreadsInPool.Maximum;
+			//usageHistorySTP.Maximum = usageThreadsInPool.Maximum;
 		}
 
 		private void spinMinThreads_ValueChanged(object sender, System.EventArgs e)
@@ -723,7 +756,7 @@ namespace TestSmartThreadPool
 			{
 				spinMinThreads.Value = spinMaxThreads.Value;
 			}
-			usageThreadsInPool.Maximum = Convert.ToInt32(spinMaxThreads.Value);
+			//usageThreadsInPool.Maximum = Convert.ToInt32(spinMaxThreads.Value);
             if (null != _smartThreadPool)
             {
                 _smartThreadPool.MaxThreads = (int)spinMaxThreads.Value;
@@ -738,15 +771,17 @@ namespace TestSmartThreadPool
 				return;
 			}
 
-			int threadsInUse = (int)pcInUseThreads.NextValue();
-			int threadsInPool = (int)pcActiveThreads.NextValue();
+            //int threadsInUse = (int)_pcInUseThreads.NextValue();
+            //int threadsInPool = (int)_pcActiveThreads.NextValue();
+            int threadsInUse = (int)_getInUseThreads();
+            int threadsInPool = (int)_getActiveThreads();
 
 			lblThreadInUse.Text = threadsInUse.ToString();
 			lblThreadsInPool.Text = threadsInPool.ToString();
-			lblWaitingCallbacks.Text = pcQueuedWorkItems.NextValue().ToString();  //stp.WaitingCallbacks.ToString();
+			lblWaitingCallbacks.Text = _getQueuedWorkItems().ToString();  //stp.WaitingCallbacks.ToString();
 			usageThreadsInPool.Value1 = threadsInUse;
 			usageThreadsInPool.Value2 = threadsInPool;
-			lblWorkItemsCompleted.Text = pcCompletedWorkItems.NextValue().ToString();
+			lblWorkItemsCompleted.Text = _getCompletedWorkItems().ToString();
 			lblWorkItemsGenerated.Text = workItemsGenerated.ToString();
 			usageHistorySTP.AddValues(threadsInUse, threadsInPool);
 		}
@@ -793,10 +828,5 @@ namespace TestSmartThreadPool
 				_workItemsGroup = null;
 			}
 		}
-
-        private void label4_Click(object sender, EventArgs e)
-        {
-
-        }
 	}
 }

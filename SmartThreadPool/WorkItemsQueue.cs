@@ -165,40 +165,49 @@ namespace Amib.Threading.Internal
 		{
 			// This method cause the caller to wait for a work item.
 			// If there is at least one waiting work item then the 
-			// method returns immidiately with true.
+			// method returns immidiately with it.
 			// 
 			// If there are no waiting work items then the caller 
 			// is queued between other waiters for a work item to arrive.
 			// 
 			// If a work item didn't come within millisecondsTimeout or 
 			// the user canceled the wait by signaling the cancelEvent 
-			// then the method returns false to indicate that the caller 
+			// then the method returns null to indicate that the caller 
 			// didn't get a work item.
 
 			WaiterEntry waiterEntry;
 			WorkItem workItem = null;
 
-			lock(this)
-			{
+            try
+            {
+                while (!Monitor.TryEnter(this)) { }
+                //Stopwatch stopwatch = Stopwatch.StartNew();
+                //Monitor.Enter(this);
+                //stopwatch.Stop();
+
                 ValidateNotDisposed();
 
-				// If there are waiting work items then take one and return.
-				if (_workItems.Count > 0)
-				{
-					workItem = _workItems.Dequeue() as WorkItem;
-					return workItem;
-				}
+                // If there are waiting work items then take one and return.
+                if (_workItems.Count > 0)
+                {
+                    workItem = _workItems.Dequeue() as WorkItem;
+                    return workItem;
+                }
 
-			    // No waiting work items ...
+                // No waiting work items ...
 
-				// Get the wait entry for the waiters queue
-				waiterEntry = GetThreadWaiterEntry();
+                // Get the waiter entry for the waiters queue
+                waiterEntry = GetThreadWaiterEntry();
 
-				// Put the waiter with the other waiters
-				PushWaiter(waiterEntry);
-			}
+                // Put the waiter with the other waiters
+                PushWaiter(waiterEntry);
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
 
-			// Prepare array of wait handle for the WaitHandle.WaitAny()
+		    // Prepare array of wait handle for the WaitHandle.WaitAny()
             WaitHandle [] waitHandles = new WaitHandle[] { 
 																waiterEntry.WaitHandle, 
 																cancelEvent };
@@ -208,9 +217,9 @@ namespace Amib.Threading.Internal
 			// During the wait we are supposes to exit the synchronization 
 			// domain. (Placing true as the third argument of the WaitAny())
 			// It just doesn't work, I don't know why, so I have two lock(this) 
-			// statments insted of one.
+			// statments instead of one.
 
-            int index = EventWaitHandle.WaitAny(
+            int index = STPEventWaitHandle.WaitAny(
 				waitHandles,
 				millisecondsTimeout, 
 				true);
@@ -506,10 +515,7 @@ namespace Amib.Threading.Internal
 			{
 				get
 				{
-					lock(this)
-					{
-						return _workItem;
-					}
+					return _workItem;
 				}
 			}
 

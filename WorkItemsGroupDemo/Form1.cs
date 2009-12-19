@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using UsageControl;
@@ -28,6 +29,19 @@ namespace WorkItemsGroupDemo
         private static readonly Color _wig2Color = Color.Green;
         private static readonly Color _wig3Color = Color.Blue;
 
+#if _WINDOWS
+
+        private System.Diagnostics.PerformanceCounter _pcActiveThreads;
+        private System.Diagnostics.PerformanceCounter _pcInUseThreads;
+        private System.Diagnostics.PerformanceCounter _pcQueuedWorkItems;
+        private System.Diagnostics.PerformanceCounter _pcCompletedWorkItems;
+#endif
+
+
+        private Func<long> _getActiveThreads;
+        private Func<long> _getInUseThreads;
+        private Func<long> _getQueuedWorkItems;
+        private Func<long> _getCompletedWorkItems;
 
         private class WigEntry
         {
@@ -53,6 +67,7 @@ namespace WorkItemsGroupDemo
             InitializeComponent();
 
             InitSTP();
+            InitializeGUIPerformanceCounters();
 
             UpdateControls(false);
             UpdateModeControls();
@@ -60,11 +75,15 @@ namespace WorkItemsGroupDemo
 
         private void InitSTP()
         {
-            STPStartInfo stpStartInfo = new STPStartInfo();
-            stpStartInfo.StartSuspended = true;
-            stpStartInfo.MaxWorkerThreads = (int)spinCon6.Value;
-            stpStartInfo.IdleTimeout = 5000;
-            stpStartInfo.PerformanceCounterInstanceName = "SmartThreadPoolDemo";
+            STPStartInfo stpStartInfo =
+                new STPStartInfo
+                {
+                    StartSuspended = true,
+                    MaxWorkerThreads = ((int)spinCon6.Value),
+                    IdleTimeout = int.Parse(spinIdleTimeout.Text)*1000,
+                    PerformanceCounterInstanceName = "SmartThreadPoolDemo",
+                    EnableLocalPerformanceCounters = true,
+                };
 
             _stp = new SmartThreadPool(stpStartInfo);
             _wig1 = _stp.CreateWorkItemsGroup((int)spinCon1.Value);
@@ -92,6 +111,54 @@ namespace WorkItemsGroupDemo
                 _lastIndex[i] = 1;
             }
         }
+
+        private void InitializeGUIPerformanceCounters()
+        {
+#if _WINDOWS
+            this._pcActiveThreads = new System.Diagnostics.PerformanceCounter();
+            this._pcInUseThreads = new System.Diagnostics.PerformanceCounter();
+            this._pcQueuedWorkItems = new System.Diagnostics.PerformanceCounter();
+            this._pcCompletedWorkItems = new System.Diagnostics.PerformanceCounter();
+
+            // 
+            // pcActiveThreads
+            // 
+            this._pcActiveThreads.CategoryName = "SmartThreadPool";
+            this._pcActiveThreads.CounterName = "Active threads";
+            this._pcActiveThreads.InstanceName = "SmartThreadPoolDemo";
+            // 
+            // pcInUseThreads
+            // 
+            this._pcInUseThreads.CategoryName = "SmartThreadPool";
+            this._pcInUseThreads.CounterName = "In use threads";
+            this._pcInUseThreads.InstanceName = "SmartThreadPoolDemo";
+            // 
+            // pcQueuedWorkItems
+            // 
+            this._pcQueuedWorkItems.CategoryName = "SmartThreadPool";
+            this._pcQueuedWorkItems.CounterName = "Work Items in queue";
+            this._pcQueuedWorkItems.InstanceName = "SmartThreadPoolDemo";
+            // 
+            // pcCompletedWorkItems
+            // 
+            this._pcCompletedWorkItems.CategoryName = "SmartThreadPool";
+            this._pcCompletedWorkItems.CounterName = "Work Items processed";
+            this._pcCompletedWorkItems.InstanceName = "SmartThreadPoolDemo";
+
+            _getActiveThreads = () => (long)_pcActiveThreads.NextValue();
+            _getInUseThreads = () => (long)_pcInUseThreads.NextValue();
+            _getQueuedWorkItems = () => (long)_pcQueuedWorkItems.NextValue();
+            _getCompletedWorkItems = () => (long)_pcCompletedWorkItems.NextValue();
+#else
+            _getActiveThreads = delegate () { return _stp.PerformanceCountersReader.ActiveThreads; };
+            _getInUseThreads = delegate () { return _stp.PerformanceCountersReader.InUseThreads; };
+            _getQueuedWorkItems = delegate () { return _stp.PerformanceCountersReader.WorkItemsQueued; };
+            _getCompletedWorkItems = delegate () { return _stp.PerformanceCountersReader.WorkItemsProcessed; };
+
+#endif
+        }
+
+      
 
         private void btnStart_Click(object sender, EventArgs e)
         {
@@ -152,6 +219,8 @@ namespace WorkItemsGroupDemo
                 {
                     break;
                 }
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                //while (stopwatch.ElapsedMilliseconds < workItemState.SleepDuration);
                 Thread.Sleep(workItemState.SleepDuration);
             } while (_paused);
             _workingStates.Remove(workItemState.QueueUsageEntry);
@@ -177,7 +246,7 @@ namespace WorkItemsGroupDemo
         {
             lblStatus6.Text = _stp.IsIdle ? "Idle" : "Working";
 
-            object[] statesWorking;
+            object [] statesWorking = null;
             lock (_workingStates.SyncRoot)
             {
                 statesWorking = new object[_workingStates.Count];
@@ -343,15 +412,15 @@ namespace WorkItemsGroupDemo
                 return;
             }
 
-            int threadsInUse = (int)pcInUseThreads.NextValue();
-            int threadsInPool = (int)pcActiveThreads.NextValue();
+            int threadsInUse = (int)_getInUseThreads();
+            int threadsInPool = (int)_getActiveThreads();
 
             lblThreadInUse.Text = threadsInUse.ToString();
             lblThreadsInPool.Text = threadsInPool.ToString();
-            lblWaitingCallbacks.Text = pcQueuedWorkItems.NextValue().ToString();  //stp.WaitingCallbacks.ToString();
+            lblWaitingCallbacks.Text = _getQueuedWorkItems().ToString();  //stp.WaitingCallbacks.ToString();
             usageThreadsInPool.Value1 = threadsInUse;
             usageThreadsInPool.Value2 = threadsInPool;
-            lblWorkItemsCompleted.Text = pcCompletedWorkItems.NextValue().ToString();
+            lblWorkItemsCompleted.Text = _getCompletedWorkItems().ToString();
             lblWorkItemsGenerated.Text = _workItemsGenerated.ToString();
             usageHistorySTP.AddValues(threadsInUse, threadsInPool);
         }

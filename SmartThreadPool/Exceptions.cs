@@ -68,7 +68,7 @@ namespace Amib.Threading
     }
 
 
-#if !(WindowsCE)
+#if !(WindowsCE) && !(SILVERLIGHT)
     /// <summary>
     /// Represents an exception in case IWorkItemResult.GetResult has been canceled
     /// </summary>

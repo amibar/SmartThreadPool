@@ -64,6 +64,13 @@
 //      - Added IsIdle flag to the SmartThreadPool and IWorkItemsGroup
 //      - Added support for WinCE
 //      - Added support for Action<T> and Func<T>
+//
+// 07 April 2009 - Changes:
+//      - Added support for Silverlight and Mono
+//      - Added Join, Choice, and Pipe to SmartThreadPool.
+//      - Added local performance counters (for Mono, Silverlight, and WindowsCE)
+//      - Changed duration measures from DateTime.Now to Stopwatch.
+//      - Queues changed from System.Collections.Queue to System.Collections.Generic.LinkedList<T>.
 
 #endregion
 
@@ -71,6 +78,7 @@ using System;
 using System.Security;
 using System.Threading;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -172,7 +180,7 @@ namespace Amib.Threading
 		/// Count the work items handled.
 		/// Used by the performance counter.
 		/// </summary>
-		private long _workItemsProcessed;
+		private int _workItemsProcessed;
 
 		/// <summary>
 		/// Number of threads that currently work (not idle).
@@ -244,9 +252,14 @@ namespace Amib.Threading
         private CanceledWorkItemsGroup _canceledSmartThreadPool = new CanceledWorkItemsGroup();
 
         /// <summary>
-        /// STP performance counters
+        /// Windows STP performance counters
         /// </summary>
-        private ISTPInstancePerformanceCounters _pcs = NullSTPInstancePerformanceCounters.Instance;
+        private ISTPInstancePerformanceCounters _windowsPCs = NullSTPInstancePerformanceCounters.Instance;
+
+        /// <summary>
+        /// Local STP performance counters
+        /// </summary>
+        private ISTPInstancePerformanceCounters _localPCs = NullSTPInstancePerformanceCounters.Instance;
 
 
 #if (WindowsCE)
@@ -382,28 +395,32 @@ namespace Amib.Threading
 
             _isSuspended = _stpStartInfo.StartSuspended;
 
-#if (WindowsCE)
+#if (WindowsCE) || (SILVERLIGHT)
 			if (null != _stpStartInfo.PerformanceCounterInstanceName)
 			{
-                throw new NotSupportedException("Performance counters are not implemented for Compact Framework");
+                throw new NotSupportedException("Performance counters are not implemented for Compact Framework/Silverlight");
             }
-
 #else
             if (null != _stpStartInfo.PerformanceCounterInstanceName)
             {
                 try
                 {
-                    _pcs = new STPInstancePerformanceCounters(_stpStartInfo.PerformanceCounterInstanceName);
+                    _windowsPCs = new STPInstancePerformanceCounters(_stpStartInfo.PerformanceCounterInstanceName);
                 }
                 catch (Exception e)
                 {
                     Debug.WriteLine("Unable to create Performance Counters: " + e);
-                    _pcs = NullSTPInstancePerformanceCounters.Instance;
+                    _windowsPCs = NullSTPInstancePerformanceCounters.Instance;
                 }
             }
 #endif
 
-            // If the STP is not started suspended then start the threads.
+            if (_stpStartInfo.EnableLocalPerformanceCounters)
+            {
+                _localPCs = new LocalSTPInstancePerformanceCounters();
+            }
+
+		    // If the STP is not started suspended then start the threads.
             if (!_isSuspended)
             {
                 StartOptimalNumberOfThreads();
@@ -493,7 +510,8 @@ namespace Amib.Threading
 
 		private void IncrementWorkItemsCount()
 		{
-			_pcs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
+			_windowsPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
+            _localPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
 
 			int count = Interlocked.Increment(ref _currentWorkItemsCount);
 			//Trace.WriteLine("WorkItemsCount = " + _currentWorkItemsCount.ToString());
@@ -506,21 +524,23 @@ namespace Amib.Threading
 
 		private void DecrementWorkItemsCount()
 		{
-			++_workItemsProcessed;
+            int count = Interlocked.Decrement(ref _currentWorkItemsCount);
+            //Trace.WriteLine("WorkItemsCount = " + _currentWorkItemsCount.ToString());
+            if (count == 0)
+            {
+                IsIdle = true;
+                _isIdleWaitHandle.Set();
+            }
+
+            Interlocked.Increment(ref _workItemsProcessed);
 
             if (!_shutdown)
             {
 			    // The counter counts even if the work item was cancelled
-			    _pcs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
+			    _windowsPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
+                _localPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
             }
 
-			int count = Interlocked.Decrement(ref _currentWorkItemsCount);
-			//Trace.WriteLine("WorkItemsCount = " + _currentWorkItemsCount.ToString());
-			if (count == 0) 
-			{
-                IsIdle = true;
-                _isIdleWaitHandle.Set();
-            }
 		}
 
 		internal void RegisterWorkItemsGroup(IWorkItemsGroup workItemsGroup)
@@ -548,7 +568,8 @@ namespace Amib.Threading
 			if (_workerThreads.Contains(Thread.CurrentThread))
 			{
 				_workerThreads.Remove(Thread.CurrentThread);
-				_pcs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
+				_windowsPCs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
+                _localPCs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
 			}
 		}
 
@@ -585,14 +606,17 @@ namespace Amib.Threading
 					// Configure the new thread and start it
 					workerThread.Name = "STP " + Name + " Thread #" + _threadCounter;
 					workerThread.IsBackground = true;
-                    workerThread.Priority = _stpStartInfo.ThreadPriority;
+#if !(SILVERLIGHT)
+					workerThread.Priority = _stpStartInfo.ThreadPriority;
+#endif
 					workerThread.Start();
 					++_threadCounter;
 
                     // Add it to the dictionary and update its creation time.
                     _workerThreads[workerThread] = new ThreadEntry(this);
 
-					_pcs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
+					_windowsPCs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
+                    _localPCs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
 				}
 			}
 		}
@@ -704,7 +728,8 @@ namespace Amib.Threading
 						// Execute the callback.  Make sure to accurately
 						// record how many callbacks are currently executing.
 						int inUseWorkerThreads = Interlocked.Increment(ref _inUseWorkerThreads);
-						_pcs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
+						_windowsPCs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
+                        _localPCs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
 
 						// Mark that the _inUseWorkerThreads incremented, so in the finally{}
 						// statement we will decrement it correctly.
@@ -733,7 +758,8 @@ namespace Amib.Threading
 						if (bInUseWorkerThreadsWasIncremented)
 						{
 							int inUseWorkerThreads = Interlocked.Decrement(ref _inUseWorkerThreads);
-							_pcs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
+							_windowsPCs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
+                            _localPCs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
 						}
 
 						// Notify that the work item has been completed.
@@ -749,8 +775,8 @@ namespace Amib.Threading
 			catch(ThreadAbortException tae)
 			{
                 tae.GetHashCode();
-				// Handle the abort exception gracfully.
-#if !(WindowsCE)
+                // Handle the abort exception gracfully.
+#if !(WindowsCE) && !(SILVERLIGHT)
 				Thread.ResetAbort();
 #endif
 			}
@@ -767,14 +793,16 @@ namespace Amib.Threading
 
 		private void ExecuteWorkItem(WorkItem workItem)
 		{
-			_pcs.SampleWorkItemsWaitTime(workItem.WaitingTime);
+			_windowsPCs.SampleWorkItemsWaitTime(workItem.WaitingTime);
+            _localPCs.SampleWorkItemsWaitTime(workItem.WaitingTime);
 			try
 			{
 				workItem.Execute();
 			}
 			finally
 			{
-				_pcs.SampleWorkItemsProcessTime(workItem.ProcessTime);
+				_windowsPCs.SampleWorkItemsProcessTime(workItem.ProcessTime);
+                _localPCs.SampleWorkItemsProcessTime(workItem.ProcessTime);
 			}
 		}
 
@@ -782,7 +810,6 @@ namespace Amib.Threading
 		#endregion
 
 		#region Public Methods
-
 
 		private void ValidateWaitForIdle()
 		{
@@ -844,13 +871,13 @@ namespace Amib.Threading
 		{
 			ValidateNotDisposed();
 
-			ISTPInstancePerformanceCounters pcs = _pcs;
+			ISTPInstancePerformanceCounters pcs = _windowsPCs;
 
-			if (NullSTPInstancePerformanceCounters.Instance != _pcs)
+			if (NullSTPInstancePerformanceCounters.Instance != _windowsPCs)
 			{
 				// Set the _pcs to "null" to stop updating the performance
 				// counters
-				_pcs = NullSTPInstancePerformanceCounters.Instance;
+				_windowsPCs = NullSTPInstancePerformanceCounters.Instance;
 
                 pcs.Dispose();
 			}
@@ -871,7 +898,8 @@ namespace Amib.Threading
 			}
 
 			int millisecondsLeft = millisecondsTimeout;
-			DateTime start = DateTime.Now;
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            //DateTime start = DateTime.UtcNow;
 			bool waitInfinitely = (Timeout.Infinite == millisecondsTimeout);
 			bool timeout = false;
 
@@ -896,8 +924,8 @@ namespace Amib.Threading
 				if(!waitInfinitely)
 				{
 					// Update the time left to wait
-					TimeSpan ts = DateTime.Now - start;
-					millisecondsLeft = millisecondsTimeout - (int)ts.TotalMilliseconds;
+                    //TimeSpan ts = DateTime.UtcNow - start;
+                    millisecondsLeft = millisecondsTimeout - (int)stopwatch.ElapsedMilliseconds;
 				}
 			}
 
@@ -915,7 +943,7 @@ namespace Amib.Threading
 					{
 						try 
 						{
-							thread.Abort("Shutdown");
+                            thread.Abort(); // Shutdown
 						}
 						catch(SecurityException e)
 						{
@@ -1323,6 +1351,20 @@ namespace Amib.Threading
             }
         }
 
+	    public bool IsShuttingdown
+	    {
+            get { return _shutdown;  }
+	    }
+
+        /// <summary>
+        /// Return the local calculated performance counters
+        /// Available only if STPStartInfo.EnableLocalPerformanceCounters is true.
+        /// </summary>
+        public ISTPPerformanceCountersReader PerformanceCountersReader
+        {
+            get { return (ISTPPerformanceCountersReader)_localPCs; }
+        }
+
         #endregion
 
         #region IDisposable Members
@@ -1460,7 +1502,7 @@ namespace Amib.Threading
         public override bool WaitForIdle(int millisecondsTimeout)
         {
             ValidateWaitForIdle();
-            return _isIdleWaitHandle.WaitOne(millisecondsTimeout, false);
+            return STPEventWaitHandle.WaitOne(_isIdleWaitHandle, millisecondsTimeout, false);
         }
 
         /// <summary>
@@ -1489,6 +1531,109 @@ namespace Amib.Threading
         }
 
         #endregion
-    }
+
+        #region Join, Choice, Pipe, etc.
+
+        /// <summary>
+        /// Executes all actions in parallel.
+        /// Returns when they all finish.
+        /// </summary>
+        /// <param name="actions">Actions to execute</param>
+        public void Join(IEnumerable<Action> actions)
+        {
+            WIGStartInfo wigStartInfo = new WIGStartInfo { StartSuspended = true };
+            IWorkItemsGroup workItemsGroup = CreateWorkItemsGroup(int.MaxValue, wigStartInfo);
+            foreach (Action action in actions)
+            {
+                workItemsGroup.QueueWorkItem(action);
+            }
+            workItemsGroup.Start();
+            workItemsGroup.WaitForIdle();
+        }
+
+        /// <summary>
+        /// Executes all actions in parallel.
+        /// Returns when they all finish.
+        /// </summary>
+        /// <param name="actions">Actions to execute</param>
+        public void Join(params Action[] actions)
+        {
+            Join((IEnumerable<Action>)actions);
+        }
+
+        private class ChoiceIndex
+        {
+            public int _index = -1;
+        }
+
+        /// <summary>
+        /// Executes all actions in parallel
+        /// Returns when the first one completes
+        /// </summary>
+        /// <param name="actions">Actions to execute</param>
+        public int Choice(IEnumerable<Action> actions)
+        {
+            WIGStartInfo wigStartInfo = new WIGStartInfo { StartSuspended = true };
+            IWorkItemsGroup workItemsGroup = CreateWorkItemsGroup(int.MaxValue, wigStartInfo);
+
+            ManualResetEvent anActionCompleted = new ManualResetEvent(false);
+
+            ChoiceIndex choiceIndex = new ChoiceIndex();
+            
+            int i = 0;
+            foreach (Action action in actions)
+            {
+                Action act = action;
+                int value = i;
+                workItemsGroup.QueueWorkItem(() => { act(); Interlocked.CompareExchange(ref choiceIndex._index, value, -1); anActionCompleted.Set(); });
+                ++i;
+            }
+	        workItemsGroup.Start();
+            anActionCompleted.WaitOne();
+
+            return choiceIndex._index;
+        }
+
+        /// <summary>
+        /// Executes all actions in parallel
+        /// Returns when the first one completes
+        /// </summary>
+        /// <param name="actions">Actions to execute</param>
+        public int Choice(params Action[] actions)
+	    {
+            return Choice((IEnumerable<Action>)actions);
+        }
+
+        /// <summary>
+        /// Executes actions in sequence asynchronously.
+        /// Returns immediately.
+        /// </summary>
+        /// <param name="pipeState">A state context that passes </param>
+        /// <param name="actions">Actions to execute in the order they should run</param>
+        public void Pipe<T>(T pipeState, IEnumerable<Action<T>> actions)
+        {
+            WIGStartInfo wigStartInfo = new WIGStartInfo { StartSuspended = true };
+            IWorkItemsGroup workItemsGroup = CreateWorkItemsGroup(int.MaxValue, wigStartInfo);
+            foreach (Action<T> action in actions)
+            {
+                Action<T> act = action;
+                workItemsGroup.QueueWorkItem(() => act(pipeState));
+            }
+            workItemsGroup.Start();
+            workItemsGroup.WaitForIdle();
+        }
+
+        /// <summary>
+        /// Executes actions in sequence asynchronously.
+        /// Returns immediately.
+        /// </summary>
+        /// <param name="pipeState"></param>
+        /// <param name="actions">Actions to execute in the order they should run</param>
+        public void Pipe<T>(T pipeState, params Action<T>[] actions)
+        {
+            Pipe(pipeState, (IEnumerable<Action<T>>)actions);
+        }
+        #endregion
+	}
 	#endregion
 }

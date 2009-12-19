@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 
 using NUnit.Framework;
@@ -73,10 +72,9 @@ namespace SmartThreadPoolTests
 
 			stp.Start();
 
-			Assert.IsTrue(wig.WaitForIdle(200));
-			Assert.IsTrue(stp.WaitForIdle(0));
+			Assert.IsTrue(wig.WaitForIdle(5000), "WIG is not idle");
+            Assert.IsTrue(stp.WaitForIdle(5000), "STP is not idle");
 		}
-
 
 		[Test]
 		public void TwoWIGsStartSuspended()

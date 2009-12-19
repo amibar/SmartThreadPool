@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Amib.Threading.Internal
@@ -22,7 +23,7 @@ namespace Amib.Threading.Internal
 		/// <summary>
 		/// Work items queues. There is one for each type of priority
 		/// </summary>
-		private readonly Queue [] _queues = new Queue[_queuesCount];
+        private readonly LinkedList<IHasWorkItemPriority>[] _queues = new LinkedList<IHasWorkItemPriority>[_queuesCount];
 
 		/// <summary>
 		/// The total number of work items within the queues 
@@ -42,7 +43,7 @@ namespace Amib.Threading.Internal
 		{
 			for(int i = 0; i < _queues.Length; ++i)
 			{
-				_queues[i] = new Queue();
+                _queues[i] = new LinkedList<IHasWorkItemPriority>();
 			}
 		}
 
@@ -62,7 +63,7 @@ namespace Amib.Threading.Internal
 			Debug.Assert(queueIndex >= 0);
 			Debug.Assert(queueIndex < _queuesCount);
 
-			_queues[queueIndex].Enqueue(workItem);
+			_queues[queueIndex].AddLast(workItem);
 			++_workItemsCount;
 			++_version;
 		}
@@ -79,7 +80,8 @@ namespace Amib.Threading.Internal
 			{
 				int queueIndex = GetNextNonEmptyQueue(-1);
 				Debug.Assert(queueIndex >= 0);
-				workItem = _queues[queueIndex].Dequeue() as IHasWorkItemPriority;
+                workItem = _queues[queueIndex].First.Value;
+				_queues[queueIndex].RemoveFirst();
 				Debug.Assert(null != workItem);
 				--_workItemsCount;
 				++_version;
@@ -125,7 +127,7 @@ namespace Amib.Threading.Internal
 		{
 			if (_workItemsCount > 0)
 			{
-				foreach(Queue queue in _queues)
+				foreach(LinkedList<IHasWorkItemPriority> queue in _queues)
 				{
 					queue.Clear();
 				}

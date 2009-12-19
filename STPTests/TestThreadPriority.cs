@@ -18,30 +18,37 @@ namespace SmartThreadPoolTests
 		[Test]
 		public void TestDefaultPriority()
 		{
-			SmartThreadPool stp = new SmartThreadPool();
-
-			IWorkItemResult wir = stp.QueueWorkItem(new WorkItemCallback(DoSomeWork));
-			ThreadPriority currentThreadPriority = (ThreadPriority)wir.GetResult();
-
-			Assert.AreEqual(currentThreadPriority, SmartThreadPool.DefaultThreadPriority);
+            CheckSinglePriority(SmartThreadPool.DefaultThreadPriority);
 		}
 
 		[Test]
-		public void TestPriorities()
+		public void TestLowestPriority()
 		{
-			ThreadPriority [] priorities = 
-				{ 
-					ThreadPriority.Lowest, 
-					ThreadPriority.BelowNormal, 
-					ThreadPriority.Normal, 
-					ThreadPriority.AboveNormal, 
-					ThreadPriority.Highest, 
-				};
+            CheckSinglePriority(ThreadPriority.Lowest);
+		}
 
-			foreach(ThreadPriority priority in priorities)
-			{
-				CheckSinglePriority(priority);
-			}
+        [Test]
+        public void TestBelowNormalPriority()
+		{
+            CheckSinglePriority(ThreadPriority.BelowNormal);
+		}
+
+        [Test]
+        public void TestNormalPriority()
+		{
+            CheckSinglePriority(ThreadPriority.BelowNormal);
+		}
+
+        [Test]
+        public void TestAboveNormalPriority()
+		{
+            CheckSinglePriority(ThreadPriority.AboveNormal);
+		} 
+        
+        [Test]
+        public void TestHighestPriority()
+		{
+            CheckSinglePriority(ThreadPriority.Highest);
 		}
 
 		private void CheckSinglePriority(ThreadPriority threadPriority)
@@ -51,13 +58,13 @@ namespace SmartThreadPoolTests
 
 			SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
 
-			IWorkItemResult wir = stp.QueueWorkItem(new WorkItemCallback(DoSomeWork));
+			IWorkItemResult wir = stp.QueueWorkItem(new WorkItemCallback(GetThreadPriority));
 			ThreadPriority currentThreadPriority = (ThreadPriority)wir.GetResult();
 
-			Assert.AreEqual(currentThreadPriority, threadPriority);
+            Assert.AreEqual(threadPriority, currentThreadPriority);
 		}
 
-		private object DoSomeWork(object state)
+		private object GetThreadPriority(object state)
 		{ 
 			return Thread.CurrentThread.Priority;
 		}

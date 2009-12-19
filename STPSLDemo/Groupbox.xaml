@@ -1,0 +1,32 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:STPSLDemo="clr-namespace:STPSLDemo"
+    >
+    <Style TargetType="STPSLDemo:Groupbox" >
+        <Setter Property="BorderBrush" Value="DarkGray"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Padding" Value="6"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="STPSLDemo:Groupbox">
+                    <Grid Background="{TemplateBinding Background}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border BorderThickness="{TemplateBinding BorderThickness}" Grid.Row="1" Grid.RowSpan="2" BorderBrush="{TemplateBinding BorderBrush}" CornerRadius="3" />
+                        <ContentPresenter Grid.Row="2" ContentTemplate="{TemplateBinding ContentTemplate}" Content="{TemplateBinding Content}" Margin="{TemplateBinding Padding}"/>
+                        <ContentControl Margin="6,0,0,0" Grid.Row="0" Grid.RowSpan="2">
+                            <Border Background="{TemplateBinding Background}">
+                                <ContentPresenter Margin="2,0,2,0" ContentTemplate="{TemplateBinding HeaderTemplate}" Content="{TemplateBinding Header}"/>
+                            </Border>
+                        </ContentControl>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

@@ -1,0 +1,24 @@
+﻿<UserControl x:Class="STPSLDemo.SpinButton"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
+    Width="Auto" Height="Auto" Loaded="UserControl_Loaded">
+    
+    <StackPanel Orientation="Horizontal" Width="Auto" Grid.ColumnSpan="4">
+        <!-- Displays the current value. -->
+        <TextBox Name="lblCurrentValue" Background="White"
+                Height="30" Width = "50" VerticalContentAlignment="Center"
+                HorizontalContentAlignment="Center" FontSize="14" />
+        
+        <StackPanel Orientation="Vertical">
+
+            <!-- The ‘Up’ button. -->
+            <RepeatButton Height = "15" Width = "15" Name = "repeatAddValueButton" Delay = "200" Interval = "1" 
+                Content = "+" FontSize="6" Click="Increment_Click" />
+
+            <!-- The ‘Down’ button. -->
+            <RepeatButton Height = "15" Width = "15"
+                Name = "repeatRemoveValueButton" Delay = "200" Interval = "1"
+                Content = "-" FontSize="6" Click="Decrement_Click" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

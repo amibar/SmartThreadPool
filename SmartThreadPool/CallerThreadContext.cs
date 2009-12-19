@@ -1,5 +1,5 @@
 
-#if !(WindowsCE)
+#if !(WindowsCE) && !(SILVERLIGHT)
 
 using System;
 using System.Diagnostics;

@@ -91,10 +91,6 @@ namespace WorkItemsGroupDemo
             this.label19 = new System.Windows.Forms.Label();
             this.timer2 = new System.Windows.Forms.Timer(this.components);
             this.panelWIGsCtrls = new System.Windows.Forms.Panel();
-            this.pcActiveThreads = new System.Diagnostics.PerformanceCounter();
-            this.pcInUseThreads = new System.Diagnostics.PerformanceCounter();
-            this.pcQueuedWorkItems = new System.Diagnostics.PerformanceCounter();
-            this.pcCompletedWorkItems = new System.Diagnostics.PerformanceCounter();
             this.timerPoll = new System.Windows.Forms.Timer(this.components);
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
@@ -125,10 +121,6 @@ namespace WorkItemsGroupDemo
             this.groupWIGQueues.SuspendLayout();
             this.groupBox7.SuspendLayout();
             this.panelWIGsCtrls.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pcActiveThreads)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcInUseThreads)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcQueuedWorkItems)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcCompletedWorkItems)).BeginInit();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
@@ -962,30 +954,6 @@ namespace WorkItemsGroupDemo
             this.panelWIGsCtrls.Size = new System.Drawing.Size(612, 105);
             this.panelWIGsCtrls.TabIndex = 1;
             // 
-            // pcActiveThreads
-            // 
-            this.pcActiveThreads.CategoryName = "SmartThreadPool";
-            this.pcActiveThreads.CounterName = "Active threads";
-            this.pcActiveThreads.InstanceName = "SmartThreadPoolDemo";
-            // 
-            // pcInUseThreads
-            // 
-            this.pcInUseThreads.CategoryName = "SmartThreadPool";
-            this.pcInUseThreads.CounterName = "In use threads";
-            this.pcInUseThreads.InstanceName = "SmartThreadPoolDemo";
-            // 
-            // pcQueuedWorkItems
-            // 
-            this.pcQueuedWorkItems.CategoryName = "SmartThreadPool";
-            this.pcQueuedWorkItems.CounterName = "Work Items in queue";
-            this.pcQueuedWorkItems.InstanceName = "SmartThreadPoolDemo";
-            // 
-            // pcCompletedWorkItems
-            // 
-            this.pcCompletedWorkItems.CategoryName = "SmartThreadPool";
-            this.pcCompletedWorkItems.CounterName = "Work Items processed";
-            this.pcCompletedWorkItems.InstanceName = "SmartThreadPoolDemo";
-            // 
             // timerPoll
             // 
             this.timerPoll.Interval = 500;
@@ -1172,10 +1140,6 @@ namespace WorkItemsGroupDemo
             this.groupWIGQueues.ResumeLayout(false);
             this.groupBox7.ResumeLayout(false);
             this.panelWIGsCtrls.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pcActiveThreads)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcInUseThreads)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcQueuedWorkItems)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pcCompletedWorkItems)).EndInit();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);
@@ -1256,10 +1220,6 @@ namespace WorkItemsGroupDemo
         private System.Windows.Forms.Timer timer2;
         private System.Windows.Forms.Panel panelWIGsCtrls;
         private System.Windows.Forms.Button btnMode;
-        private System.Diagnostics.PerformanceCounter pcActiveThreads;
-        private System.Diagnostics.PerformanceCounter pcInUseThreads;
-        private System.Diagnostics.PerformanceCounter pcQueuedWorkItems;
-        private System.Diagnostics.PerformanceCounter pcCompletedWorkItems;
         private System.Windows.Forms.Timer timerPoll;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Panel panel2;

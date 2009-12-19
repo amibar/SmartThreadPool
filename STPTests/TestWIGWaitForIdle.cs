@@ -152,5 +152,23 @@ namespace WorkItemsGroupTests
 
             smartThreadPool.Shutdown();
         }
+
+        [Test]
+        public void WaitForIdleEvent()
+        {
+            SmartThreadPool smartThreadPool = new SmartThreadPool();
+            IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(1);
+            ManualResetEvent wigIsIdle = new ManualResetEvent(false);
+
+            workItemsGroup.OnIdle += wig => wigIsIdle.Set();
+
+            workItemsGroup.QueueWorkItem(() => { });
+
+            bool eventFired = wigIsIdle.WaitOne(100, true);
+
+            smartThreadPool.Shutdown();
+
+            Assert.IsTrue(eventFired);
+        }
 	}
 }

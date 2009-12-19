@@ -42,8 +42,8 @@ namespace STPCEDemo
             }
             try
             {
-                int inUse = _stp.InUseThreads;
-                int inPool = _stp.ActiveThreads;
+                int inUse = (int)_stp.PerformanceCountersReader.InUseThreads;
+                int inPool = (int)_stp.PerformanceCountersReader.ActiveThreads;
 
                 usageHistoryControl1.AddValues(inUse, inPool);
                 usageControl1.Value1 = inUse;
@@ -62,7 +62,7 @@ namespace STPCEDemo
         {
             int count = Convert.ToInt32(spnWorkItemsPerSecond.Value);
             int sleepDuration = Convert.ToInt32(spnWorkItemDuration.Value);
-            Debug.WriteLine(string.Format("{0}: C = {1}, S = {2}", DateTime.Now.ToString("HH:mm:ss"), count, sleepDuration));
+            //Debug.WriteLine(string.Format("{0}: C = {1}, S = {2}", DateTime.Now.ToString("HH:mm:ss"), count, sleepDuration));
             for (int i = 0; i < count; i++)
             {
                 _stp.QueueWorkItem(DoWork, sleepDuration);
@@ -78,7 +78,7 @@ namespace STPCEDemo
             Thread.Sleep(sleepDuration);
             TimeSpan duration = DateTime.Now - start;
 
-            Debug.WriteLine(string.Format("{0}: Duration = {1}", DateTime.Now.ToString("HH:mm:ss"), duration.TotalMilliseconds));
+            //Debug.WriteLine(string.Format("{0}: Duration = {1}", DateTime.Now.ToString("HH:mm:ss"), duration.TotalMilliseconds));
 
             //return null;
         }
@@ -93,10 +93,14 @@ namespace STPCEDemo
             btnStartStop.Text = newRunningState ? "Stop" : "Start";
             if (newRunningState)
             {
-                _stp = new SmartThreadPool(
-                    Convert.ToInt32(spnIdleTimeout.Value) * 1000,
-                    Convert.ToInt32(spnMaxThreads.Value),
-                    Convert.ToInt32(spnMinThreads.Value));
+                STPStartInfo stpStartInfo = new STPStartInfo()
+                {
+                    IdleTimeout = Convert.ToInt32(spnIdleTimeout.Value) * 1000,
+                    MaxWorkerThreads = Convert.ToInt32(spnMaxThreads.Value),
+                    MinWorkerThreads = Convert.ToInt32(spnMinThreads.Value),
+                    EnableLocalPerformanceCounters = true,
+                };
+                _stp = new SmartThreadPool(stpStartInfo);
             }
             else
             {
@@ -105,6 +109,9 @@ namespace STPCEDemo
                     _stp.Shutdown();
                 }
                 _stp = null;
+                usageHistoryControl1.Reset();
+                usageControl1.Value1 = 0;
+                usageControl1.Value2 = 0;
             }
             spnIdleTimeout.Enabled = !newRunningState;
             uiTimer.Enabled = newRunningState;
