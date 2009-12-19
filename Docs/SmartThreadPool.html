@@ -1,0 +1,1201 @@
+<P><IMG height=416 src="SmartThreadPool.jpg" width=616></P>
+<P>See the <A href="#History">history</A> section at the bottom for changes.</P>
+<H2>Basic usage</H2>
+<p>This is a Thread Pool, if you got here you probably you know what you 
+    need. If you want to understand the features and know how it works keep reading 
+    the sections below. If you just want to use it, here is a quick usage snippet. 
+    See <A href="#SimpleExample">examples</A> for advanced usage.</p>
+<PRE lang=cs >    
+   // Create an instance of the Smart Thread Pool
+   SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+   // Queue an action (Fire and forget)
+   smartThreadPool.QueueWorkItem(System.IO.File.Copy, @&quot;C:\Temp\myfile.bin&quot;, @&quot;C:\Temp\myfile.bak&quot;);
+   
+   // The action (file copy) will be done in the background by the Thread Pool</PRE>
+<H2><A name=Introduction>Introduction</A></H2>
+<P>Smart Thread Pool is a thread pool written in C#. The implementation was first based on Stephan Toub's thread pool with some extra features, but now it is far beyond the original. Here is a list of the thread pool features:</P>
+<UL>
+<LI>The number of threads dynamically changes according to the workload on the threads in the pool. 
+<LI>Work items can return a value. 
+<LI>A work item can be cancelled if it hasn't been executed yet. 
+<LI>The caller thread's context is used when the work item is executed (limited). 
+<LI>Usage of minimum number of Win32 event handles, so the handle count of the application won't explode. 
+<LI>The caller can wait for multiple or all the work items to complete. 
+<LI>Work item can have a <CODE>PostExecute</CODE> callback, which is called as soon the work item is completed. 
+<LI>The state object, that accompanies the work item, can be disposed automatically. 
+<LI>Work item exceptions are sent back to the caller. 
+<LI>Work items have priority. 
+<LI>Work items group. 
+<LI>The caller can suspend the start of a thread pool and work items group. 
+<LI>Threads have priority. </LI>
+    <li>Threads initialization and termination events.</li>
+    <li>WinCE platform is supported (limited)</li>
+    <li>Action&lt;T&gt;<t></t>
+        and Func&lt;T&gt; generic methods are supported.<t></t></li>
+</UL>
+<H2>Why do you need a thread pool?</H2>
+<BLOCKQUOTE>
+<P>"Many applications create threads that spend a great deal of time in the sleeping state, waiting for an event to occur. Other threads might enter a sleeping state only to be awakened periodically to poll for a change or update status information. Thread pooling enables you to use threads more efficiently by providing your application with a pool of worker threads that are managed by the system. One thread monitors the status of several wait operations queued to the thread pool. When a wait operation completes, a worker thread from the thread pool executes the corresponding callback function".</P>
+<P>MSDN, April 2004, ThreadPool Class [C#].</P></BLOCKQUOTE>
+<H2>Smart Thread Pool Features</H2>
+<P>When I wrote my application, I discovered that I needed a thread pool with the following features:</P>
+<UL>
+<LI>The thread pool should implement the <CODE>QueueUserWorkItem()</CODE> method to comply with the .NET ThreadPool. 
+<LI>The thread pool should be instantiated. (No <CODE lang=cs>static</CODE> methods.) So, the threads in the pool are used only for one purpose. 
+<LI>The number of threads in the pool should be dynamic with lower and upper limits. </LI></UL>
+<P>After I published the smart thread pool here, I found out that more features were required and some features had to change. So, the following is an updated list of the implemented features:</P>
+<OL>
+<LI><A href="#Feature1">The thread pool is instantiable</A>. 
+<LI><A href="#Feature2">The number of threads dynamically changes</A>. 
+<LI><A href="#Feature3">Work items return a value</A>. 
+<LI><A href="#Feature4">The caller can wait for multiple work items to complete</A>. 
+<LI><A href="#Feature5">A work item can be cancelled</A>. 
+<LI><A href="#Feature6">The caller thread's context is used when the work item is executed (limited)</A>. 
+<LI><A href="#Feature7">Usage of minimum number of Win32 event handles, so the handle count of the application won't explode</A>. </LI></OL>
+<P>Because of features 3 and 5, the thread pool no longer complies to the .NET ThreadPool, and so I could add more features.</P>
+<P>See the additional features section below for the new features added in this version.</P>
+<H2>Additional features added in December 2004</H2>
+<OL>
+<LI value=8><A href="#Feature8">Every work item can have a PostExecute callback. This is a method that will be called right after the work item execution has been completed</A>. 
+<LI><A href="#Feature9">The user can choose to automatically dispose off the state object that accompanies the work item</A>. 
+<LI><A href="#Feature10">The user can wait for the Smart Thread Pool to become idle.</A> 
+<LI><A href="#Feature11">The exception handling is changed, so if a work item throws an exception, it is re-thrown at GetResult(), rather than firing an UnhandledException event. Note that PostExecute exceptions are always ignored</A>. </LI></OL>
+<H2>New features added in January 2006</H2>
+<OL>
+<LI value=12><A href="#Feature12">Work items have priority</A>. 
+<LI><A href="#Feature13">The caller thread's HTTP context can be used when the work item is executed (improves 6.)</A>. 
+<LI><A href="#Feature14">Work items group</A>. 
+<LI><A href="#Feature15">The caller can create thread pools and work item groups in suspended state</A>. 
+<LI><A href="#Feature16">Threads have priority</A>. </LI></OL>
+<h2>
+    New features added in May 2008</h2>
+<OL>    
+<LI value=17><A href="#Feature17">Enabled the change of the MaxThreads/MinThreads/Concurrency at run time</A>.</LI>
+<LI><A href="#Feature5">Improved the Cancel behavior. (See section 5)</A></LI>
+<LI><A href="#Feature19">Added callbacks for initialization and termination of threads</A>.</LI>
+    <li><A href="#Feature20">Added support for WinCE (limited)</A></li>
+    <li><A href="#Feature21">Added IsIdle flag to the SmartThreadPool and to the IWorkItemsGroup</A></li>
+    <li><A href="#Feature3">Added support for Action&lt;T&gt;
+        and Func&lt;T&gt; (strong typed work items)</A></li>
+</OL>
+    
+<p>
+</p>
+<H2>What about the .NET ThreadPool?</H2>
+<P>The Windows system provides one .NET ThreadPool for each process. The .NET ThreadPool can contain up to 25 (by default) threads per processor. It is also stated that the operations in .NET ThreadPool should be quick to avoid suspension of the work of others who use the .NET ThreadPool. Note that several AppDomains in the same process share the same .NET ThreadPool. If you want a thread to work for a long period of time, then the .NET ThreadPool is not a good choice for you (unless you know what you are doing). Note that each asynchronous method call from the .NET Framework that begins with "Begin…" (e.g., <CODE>BeginInvoke</CODE>, <CODE>BeginSend</CODE>, <CODE>BeginReceive</CODE>, etc.) uses the .NET ThreadPool to run its callback. Also note that the .NET ThreadPool
+    doesn't support calls to COM with single threaded apartment (STA), since the ThreadPool
+    threads are MTA by design.</P>
+<P>This thread pool doesn't comply with the requirements 1, 5, 6, 8, 9, 10, 12-22.</P>
+<P>Note that the requirements 3 and 4 are implemented in .NET ThreadPool with delegates.</P>
+<H2>What about Stephen Toub's thread pool?</H2>
+<P>Toub's thread pool is a better choice than the .NET ThreadPool, since a thread from his pool can be used for a longer period of time, without affecting the asynchronous method calls. Toub's thread pool uses <CODE lang=cs>static</CODE> methods; hence you cannot instantiate more than one thread pool. However, this limitation applies per AppDomain rather than the whole process. The main disadvantage of Toub's thread pool over the .NET TheradPool is that Toub creates all the threads in the pool at the initialization point, while the .NET ThreadPool creates threads on the fly.</P>
+<P>This thread pool doesn't comply with the requirements 1, 2, 3, 4, 5, 6, 8-22.</P>
+<H2>The Smart Thread Pool design and features</H2>
+<P>As I mentioned before, the Smart Thread Pool is based on Toub's thread pool implementation. However, since I have expanded its features, the code is no longer similar to the original one.</P>
+<P>Features implementation:</P>
+<OL>
+<LI><A name=Feature1><B>The thread pool is instantiated</B></A>. 
+<P>The reason I need an instantiable thread pool is because I have different needs. I have work items that take a long time to execute and I have work items that take very short time to execute. Executing the same type of work items on the same thread pool may cause some serious performance or response problems.</P>
+<P>To implement this feature, I just copied Toub's implementation and removed the <CODE lang=cs>static</CODE> keyword from the methods. That's the easy part of it.</P>
+<LI><A name=Feature2><B>The number of threads dynamically changes</B></A>. 
+<P>The number of threads dynamically changes according to the workload on the threads in the pool, with lower and upper constraints for the number of threads in the pool. This feature is needed so we won't have redundant threads in the application.</P>
+<P>This feature is a real issue and is the core of the Smart Thread Pool. How do you know when to add a new thread and when to remove it?</P>
+<P>I decided to add a new thread every time a new work item is queued and all the threads in the pool are busy. The formula for adding a new thread can be summarized to:</P><PRE lang=text>(InUseThreads + WaitingCallbacks) &gt; WorkerThreads</PRE>
+<P>where <CODE>WorkerThreads</CODE> is the current number of threads in the pool, <CODE>InUseThreads</CODE> is the number of threads in the pool that are currently working on a work item, and <CODE>WaitingCallbacks</CODE> is the number of waiting work items. (Thanks to <B>jrshute</B> for the comment.)</P>
+<P>The <CODE>SmartThreadPool.Enqueue()</CODE> method looks like this:</P><PRE lang=cs>private void Enqueue(WorkItem workItem) 
+{ 
+    // Make sure the workItem is not null 
+    Debug.Assert(null != workItem); 
+
+    // Enqueue the work item
+    _workItemsQueue.EnqueueWorkItem(workItem); 
+
+    // If all the threads are busy then try 
+    // to create a new one 
+    if ((InUseThreads + WaitingCallbacks) &gt; _workerThreads.Count) 
+    { 
+        StartThreads(1); 
+    } 
+}</PRE>
+<P>When the number of threads reaches the upper limit, no more threads are created.</P>
+<P>I decided to remove a thread from the pool when it is idle (i.e. the thread doesn't work on any work item) for a specific period of time. Each time a thread waits for a work item on the work item's queue, it also waits for a timeout. If the waiting exceeds the timeout, the thread should leave the pool, meaning the thread should quit if it is idle. It sounds like a simple solution, but what about the following scenario: assume that the lower limit of threads is 0 and the upper limit is 100. The idle timeout is 60 seconds. Currently, the thread pool contains 60 threads, and each second a new work item arrives, and it takes a thread one second to handle a work item. This means that, each minute, 60 work items arrive and are handled by 60 threads in the pool. As a result, no thread exits, since no thread is idle for a full 60 seconds, although 1 or 2 threads are enough to do all the work.</P>
+<P>In order to solve the problem of this scenario, you have to calculate how much time each thread worked, and once in a while exit the threads that don't work for enough time in the timeout interval. This means, the thread pool has to use a timer (uses the .NET ThreadPool) or a manager thread to handle the thread pool. To me, it seems an overhead to use a special thread to handle a thread pool.</P>
+<P>This led me to the idea that the thread pool mechanism should starve the threads in order to let them quit. So, how do you starve the threads?</P>
+<P>All the threads in the pool are waiting on the same work items queue. The work items queue manages two queues, one for the work items and one for the waiters (the threads in the pool). Since the trivial work items queue works, the first arrived waiter for a work item gets it first (queue), and so you cannot starve the threads.</P>
+<P>Have a look at the following scenario:</P>
+<P>The thread pool contains four threads. Let's name them A, B, C, and D. Every second a new work item arrives, and it takes less than one second and a half to handle each work item:</P>
+<TABLE id=Table3 height=172 cellSpacing=1 cellPadding=1 width=500 border=1>
+<TBODY>
+<TR>
+<TD align=middle>
+<P align=center><B>Work item arrival time (sec)</B></P></TD>
+<TD align=middle>
+<P align=center><B>Work item work duration (sec)</B></P></TD>
+<TD align=middle>
+<P align=center><B>Threads queue state</B></P></TD>
+<TD align=middle>
+<P align=center><B>The thread that will execute the arrived work item</B></P></TD></TR>
+<TR>
+<TD align=middle>
+<P align=center>00:00:00</P></TD>
+<TD align=middle>
+<P align=center>1.5</P></TD>
+<TD align=middle width=113>
+<P align=center>A, B, C, D</P></TD>
+<TD align=middle>
+<P align=center>A</P></TD></TR>
+<TR>
+<TD align=middle>
+<P align=center>00:00:01</P></TD>
+<TD align=middle>
+<P align=center>1.5</P></TD>
+<TD align=middle width=113>
+<P align=center>B, C, D</P></TD>
+<TD align=middle>
+<P align=center>B</P></TD></TR>
+<TR>
+<TD align=middle>
+<P align=center>00:00:02</P></TD>
+<TD align=middle>
+<P align=center>1.5</P></TD>
+<TD align=middle width=113>
+<P align=center>C, D, A</P></TD>
+<TD align=middle>
+<P align=center>C</P></TD></TR>
+<TR>
+<TD align=middle>
+<P align=center>00:00:03</P></TD>
+<TD align=middle>
+<P align=center>1.5</P></TD>
+<TD align=middle width=113>
+<P align=center>D, A, B</P></TD>
+<TD align=middle>
+<P align=center>D</P></TD></TR></TBODY></TABLE>
+<P>In this scenario, all the four threads are used, although two threads could handle all the work items.</P>
+<P>The solution is to implement the waiters queue as a stack. In this implementation, the last arrived waiter for a work item gets it first (stack). This way, a thread that just finished its work on a work item waits as the first waiter in the queue of waiters.</P>
+<P>The previous scenario will look like this with the new implementation:</P>
+<TABLE id=Table1 height=172 cellSpacing=1 cellPadding=1 width=500 border=1>
+<TBODY>
+<TR>
+<TD align=middle>
+<P align=center><B>Work item arrival time (sec)</B></P></TD>
+<TD align=middle>
+<P align=center><B>Work item work duration (sec)</B></P></TD>
+<TD align=middle>
+<P align=center><B>Threads queue state</B></P></TD>
+<TD align=middle>
+<P align=center><B>The thread that will execute the arrived work item</B></P></TD></TR>
+<TR>
+<TD align=middle>
+<P align=center>00:00:00</P></TD>
+<TD align=middle>
+<P align=center>1.5</P></TD>
+<TD align=middle>
+<P align=center>A, B, C, D</P></TD>
+<TD align=middle>
+<P align=center>A</P></TD></TR>
+<TR>
+<TD align=middle>
+<P align=center>00:00:01</P></TD>
+<TD align=middle>
+<P align=center>1.5</P></TD>
+<TD align=middle>
+<P align=center>B, C, D</P></TD>
+<TD align=middle>
+<P align=center>B</P></TD></TR>
+<TR>
+<TD align=middle>
+<P align=center>00:00:02</P></TD>
+<TD align=middle>
+<P align=center>1.5</P></TD>
+<TD align=middle>
+<P align=center>A, C, D</P></TD>
+<TD align=middle>
+<P align=center>A</P></TD></TR>
+<TR>
+<TD align=middle>
+<P align=center>00:00:03</P></TD>
+<TD align=middle>
+<P align=center>1.5</P></TD>
+<TD align=middle>
+<P align=center>B, C, D</P></TD>
+<TD align=middle>
+<P align=center>B</P></TD></TR></TBODY></TABLE>
+<P>Threads A and B handle all the work items, since they get back to the front of the waiters queue after they have finished. Threads C and D are starved, and if the same work items are going to arrive for a long time, then the threads C and D will have to quit.</P>
+<P>The thread pool doesn't implement a load balancing mechanism, since all the threads run on the same machine and take the same CPUs. Note that if you have many threads in the pool, then you will prefer minimum number of threads to do the job, since each context switch of the threads may result in paging of the threads' stacks. Less working threads means less paging of the threads' stacks.</P>
+<P>The work items queue implementation causes threads to starve, and the starved threads quit. This solves the scenario I mentioned earlier without using any extra thread.</P>
+<P>The second feature also states that there should be a lower limit to the number of threads in the pool. To implement this feature, every thread that gets a timeout, because it doesn't get any work items, checks whatever it can to quit. The Smart Thread Pool allows the thread to quit only if the current number of threads is above the lower limit. If the number of threads in the pool is below or equal to the lower limit, then the thread stays alive.</P>
+<LI lang="cs"><A name=Feature3><B>Work items return a value</B></A>. (This feature is enhanced)<P>This feature is very useful in cases you want to know the result of a work item.</P>
+<P>The .NET ThreadPool supports this feature via delegates. Each time you create a delegate you get for free <CODE>BeginInvoke()</CODE> and <CODE>EndInvoke()</CODE> methods. The <CODE>BeginInvoke()</CODE> queues the method and its parameters on the .NET ThreadPool and the <CODE>EndInvoke()</CODE> returns the result of the method. The delegate class is sealed so I couldn't override the <CODE>BeginInvoke()</CODE> and <CODE>EndInvoke()</CODE> methods. I took a different approach to implement this.</P>
+<P>First, the work item callback delegate can return a value:</P>
+<PRE lang=cs>public delegate object WorkItemCallback(object state);</PRE>
+
+Or in its enhanced form the callback can be any of the following forms:
+
+<PRE lang=cs>public delegate void Action(); 
+public delegate void Action&lt;T&gt;(T arg); 
+public delegate void Action&lt;T1, T2&gt;(T1 arg1, T2 arg2); 
+public delegate void Action&lt;T1, T2, T3&gt;(T1 arg1, T2 arg2, T3 arg3); 
+public delegate void Action&lt;T1, T2, T3, T4&gt;(T1 arg1, T2 arg2, T3 arg3, T4 arg4); 
+
+public delegate TResult Func(); 
+public delegate TResult Func&lt;T&gt;(T arg1); 
+public delegate TResult Func&lt;T1, T2&gt;(T1 arg1, T2 arg2); 
+public delegate TResult Func&lt;T1, T2, T3&gt;(T1 arg1, T2 arg2, T3 arg3); 
+public delegate TResult Func&lt;T1, T2, T3, T4&gt;(T1 arg1, T2 arg2, T3 arg3, T4 arg4); 
+
+(Note that the above delegates are defined in .NET 3.5. In .NET 2.0 &amp; 3.0 only <CODE>public delegate void Action&lt;T&gt;(T arg)</CODE> is defined)</PRE>
+Second, the <CODE>SmartThreadPool.QueueWorkItem()</CODE> method returns a reference to an object that implements the <CODE>
+    IWorkItemResult&lt;TResult&gt;</CODE> interface. The caller can use this object to get the result of the work item. The interface is similar to the <CODE>IAsyncResult</CODE> interface:
+<PRE lang=cs>public interface IWorkItemResult&lt;TResult&gt;
+{ 
+    /// Get the result of the work item. 
+    /// If the work item didn't run yet then the caller waits
+    /// until timeout or until the cancelWaitHandle is signaled. 
+    /// If the work item threw then GetResult() will rethrow it. 
+    /// Returns the result of the work item. 
+    /// On timeout throws WorkItemTimeoutException. 
+    /// On cancel throws WorkItemCancelException.
+    TResult GetResult(
+        int millisecondsTimeout,
+        bool exitContext,
+        WaitHandle cancelWaitHandle); 
+    
+    /// Some of the GetResult() overloads
+    /// get Exception as an output parameter. 
+    /// In case the work item threw
+    /// an exception this parameter is filled with 
+    /// it and the GetResult() returns null. 
+    /// These overloads are provided
+    /// for performance reasons. It is faster to 
+    /// return the exceptions as an output
+    /// parameter than rethrowing it.
+    TResult GetResult(..., out Exception e);
+        
+    /// Other GetResult() overloads.
+    ...
+    
+    /// Gets an indication whether the asynchronous operation has completed.
+    bool IsCompleted { get; }
+    
+    /// Returns the user-defined object that was provided in the QueueWorkItem.
+    /// If the work item callback is Action&lt;...&gt; or Func&lt;...&gt; the State value
+    /// depends on the WIGStartInfo.FillStateWithArgs.
+    object State { get; }
+    
+    /// Cancel the work item execution.
+    /// If the work item is in the queue, it won't execute
+    /// If the work item is completed, it will remain completed
+    /// If the work item is already cancelled it will remain cancelled
+    /// If the work item is in progress, the result of the work item is cancelled.
+    ///    (See the work item canceling section for more information)
+    /// Param: abortExecution - When true send an AbortException to the executing thread.&lt;/param&gt;
+    /// Returns true if the work item was not completed, otherwise false.
+    bool Cancel(bool abortExecution);
+    
+    /// Get the work item's priority
+    WorkItemPriority WorkItemPriority { get; }
+
+    /// Returns the result, same as GetResult(). 
+    /// Note that this property blocks the caller like GetResult(). 
+    TResult Result { get; }
+
+    /// Returns the exception, if occured, otherwise returns null.
+    /// This function is not blocking like the Result property.
+    object Exception { get; }
+}
+</PRE>
+
+<p>
+    If the work item callback is&nbsp; <CODE>object WorkItemCallback(object state)</CODE>
+    then <CODE>IWorkItemResult</CODE> is returned and <CODE>GetResult()</CODE> returns <CODE>object</CODE>. Same as in previous versions</p>
+    <p>
+        If the work item callback is one of the <CODE>Func&lt;...&gt;</CODE> methods I mentioned above, the result of the <CODE>QueueWorkItem</CODE> is <CODE>IWorkItemResult&lt;TResult&gt;</CODE>. So the result of the work item is strongly typed.
+    </p>
+
+    <p>
+        If the work item callback is one of the <CODE>Action&lt;...&gt;</CODE> methods I mentioned above, the result of the <CODE>QueueWorkItem</CODE> is <CODE>IWorkItemResult</CODE> and <CODE>GetResult()</CODE> always returns null.
+    </p>
+            <p>
+                If the work item callback is <CODE>Action&lt;...&gt;</CODE> or <CODE>Func&lt;...&gt;</CODE> and 
+                <CODE>WIGStartInfo.FillStateWithArgs</CODE> is set to true then the <CODE>State</CODE> of the 
+                <CODE>IWorkItemResult</CODE> is initialized with <CODE>object []</CODE> that contains the work item 
+                arguments. Otherwise the <CODE>State</CODE> is null.</p>
+
+<P>The <A href="#SimpleExample">code examples</A> in the section below shows some snippets of how to use it.</P>
+<P>To get the result of the work item, use the <CODE>Result</CODE> property or the <CODE>GetResult()</CODE> method. This method has several overloads. In the interface above, I have written only some of them. The other overloads use less parameters by giving default values. The <CODE>GetResult()</CODE> returns the result of the work item callback. If the work item hasn't completed then the caller waits until one of the following occurs:</P>
+<TABLE id=Table2 style="WIDTH: 663px" border="1" cellpadding="1" cellspacing="1">
+<TBODY>
+<TR>
+<TD style="height: 43px; width: 266px;"><B>GetResult() return reason</B></TD>
+<TD style="height: 43px; width: 344px;"><B>GetResult() return value</B></TD></TR>
+<TR>
+<TD style="width: 266px">The work item has been executed and completed.</TD>
+<TD style="width: 344px">The result of the work item.</TD></TR>
+<TR>
+<TD height=39 style="width: 266px">The work item has been canceled.</TD>
+<TD height=39 style="width: 344px">Throws <CODE>WorkItemCancelException</CODE>.</TD></TR>
+<TR>
+<TD height=39 style="width: 266px">The timeout expired.</TD>
+<TD height=39 style="width: 344px">Throws <CODE>WorkItemTimeoutException</CODE>.</TD></TR>
+<TR>
+<TD style="width: 266px">The <CODE>cancelWaitHandle</CODE> is signaled.</TD>
+<TD style="width: 344px">Throws <CODE>WorkItemTimeoutException</CODE>.</TD></TR>
+<TR>
+<TD style="width: 266px">The work item threw an exception.</TD>
+<TD style="width: 344px">Throws <CODE>WorkItemResultException</CODE> with the work item's exception as the inner exception.</TD></TR></TBODY></TABLE>
+<P>There are two ways to wait for a single work item to complete:</P>
+<OL>
+<LI>The following function uses the <CODE>GetResult()</CODE> method which blocks the caller until the result is available: <PRE lang=cs>private void WaitForResult1(IWorkItemResult wir)
+{
+    wir.GetResult();
+}</PRE>
+<LI>The following function is not recommended, because it uses a busy wait loop. You can use it if you know what you are doing: <PRE lang=cs>private void WaitForResult2(IWorkItemResult wir)
+{
+    while(!wir.IsCompleted)
+    {
+        Thread.Sleep(100);
+    }
+}</PRE></LI></OL>
+<LI><A name=Feature4><B>The caller can wait for multiple work items to complete</B></A>. 
+<P>This feature is very useful if you want to run several work items at once and then wait for all of them to complete. The <CODE>SmartThreadPool</CODE> class has two <CODE lang=cs>static</CODE> methods for this: <CODE>WaitAny()</CODE> and <CODE>WaitAll()</CODE> (they have several overloads). Their signature is similar to the <CODE>WaitHandle</CODE> equivalent methods except that in the <CODE>SmartThreadPool</CODE> case, it gets an array of&nbsp; 
+<CODE>IWaitableResult</CODE> (the <CODE>IWorkItemResult</CODE> interface inherits from <CODE>IWaitableResult</CODE>) objects instead of <CODE>WaitHandle</CODE> objects.</P>
+<P>The following snippets show how to wait for several work item results at once. Assume <CODE>wir1</CODE> and <CODE>wir2</CODE> are of type <CODE>IWorkItemResult</CODE>. You can wait for both work items to complete:</P><PRE lang=cs>// Wait for both work items complete 
+SmartThreadPool.WaitAll(new IWaitableResult[] { wir1, wir2});</PRE>
+<P>Or, for any of the work items to complete:</P><PRE lang=cs>// Wait for at least one of the work items complete 
+SmartThreadPool.WaitAny(new IWaitableResult[] { wir1, wir2});</PRE>
+<P>The <CODE>WaitAll()</CODE> and <CODE>WaitAny()</CODE> methods are overloaded, so you can specify timeout, exit context, and <CODE>cancelWaitHandle</CODE> (just like in the <CODE>GetResult()</CODE> method mentioned earlier).</P>
+<P><B>Note</B> that in order to use <CODE>WaitAny()</CODE> and <CODE>WaitAll()</CODE>, you need to work in MTA, because internally I use <CODE>WaitHandle.WaitAny()</CODE> and <CODE>WaitHandle.WaitAll()</CODE> which requires it. If you don't do that, the methods will throw an exception to remind you.</P>
+<P><B>Also note</B> that Windows supports <CODE>WaitAny()</CODE> of up to 64 handles. The <CODE>WaitAll()</CODE> is more flexible and I re-implemented it so it is not limited to 64 handles.</P>
+<P>See in the examples section below the code snippets for <A href="#WaitForAllExample">WaitAll</A> and <A href="#WaitForAnyExample">WaitAny</A>.</P>
+<LI><A name=#Feature5><B>A work item can be cancelled.</B></A> (This feature is enhanced)
+    <P>
+    &nbsp;This feature enables to cancel work items.
+</P>
+    <p>
+        There are several options to cancel work items. To cancel a single work item call
+        to <CODE>IWorkItemResult.Cancel()</CODE>. To cancel more than one call to <CODE>IWorkItemsGroup.Cancel()</CODE>
+        or <CODE>SmartThreadPool.Cancel()</CODE>. All cancels works in O(1).
+    </p>
+    <p>
+        There is no guarantee that a work item will be cancelled, it depends on the state
+        of the work item when the cancel is called and the cooperation of the work item.
+        (Note the work item's state I mention here has nothing to do with the state object
+        argument provided in the <CODE>QueueWorkItem</CODE>).</p>
+    <p>
+        These are the possible states of a work item: (defined in the <CODE>WorkItemState</CODE> enum)<br/>
+        <UL>
+        <LI>Queued – The work item is waiting in a queue to be executed.</LI>
+        <LI>In Progress – A thread from the pool is executing the work item.</LI>
+        <LI>Completed – The work item execution has been completed.</LI>
+        <LI>Cancelled – The work item has been cancelled.</LI>
+        </UL>
+        <p>
+            The cancel behavior depends on the state of the work item.</p>
+        <div style="text-align: left">
+            <table id="TABLE4" border="1" cellpadding="1" cellspacing="1" >
+                <tr>
+                    <td style="width: 140px; height: 23px; text-align: center">
+                        <strong>Initial State</strong></td>
+                    <td style="width: 99px; height: 23px; text-align: center">
+                        <strong>
+                        Next State</strong></td>
+                    <td style="width: 332px; height: 23px; text-align: center">
+                        <strong>
+                        Notes</strong></td>
+                </tr>
+                <tr>
+                    <td style="width: 140px">
+                        Queued</td>
+                    <td style="width: 99px">
+                        Cancelled</td>
+                    <td style="width: 332px">
+                        A queued work item becomes cancelled and is not executed at all.</td>
+                </tr>
+                <tr>
+                    <td style="width: 140px">
+                        In Progress</td>
+                    <td style="width: 99px">
+                        Cancelled</td>
+                    <td style="width: 332px">
+                        An executing work item becomes cancelled even if it completed its execution!</td>
+                </tr>
+                <tr>
+                    <td style="width: 140px">
+                        Completed</td>
+                    <td style="width: 99px">
+                        Completed</td>
+                    <td style="width: 332px">
+                        A completed work item stays completed</td>
+                </tr>
+                <tr>
+                    <td style="width: 140px">
+                        Cancelled</td>
+                    <td style="width: 99px">
+                        Cancelled</td>
+                    <td style="width: 332px">
+                        A cancelled work item stays cancelled</td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            Cancelled work item throws <CODE>WorkItemCancelException</CODE> when their <CODE>GetResult()</CODE> methods
+            is called.
+        </p>
+        <p>
+            The behavior of the <CODE>Cancel()</CODE> when the work item is in Completed or Cancelled states
+            is straight forward so I won't get into details. A queued work item is marked as
+            cancelled and is discarded once a thread from the pool dequeues it.
+        </p>
+        <p>
+            If the work item is in the In Progress state then the behavior depends on the value
+            of <CODE>abortExecution</CODE> in the <CODE>Cancel</CODE> call. When the <CODE>abortExecution</CODE> is true, a <CODE>Thread.Abort()</CODE>
+            will be called upon the executing thread. When the <CODE>abortExecution</CODE> is false, the
+            work item method is responsible to sample the <CODE>SmartThreadPool.IsWorkItemCanceled</CODE>
+            static method and quit. Note that in both cases the work item is cancelled and throws
+            the <CODE>WorkItemCancelException</CODE> on <CODE>GetResult()</CODE>.</p>
+        <p>
+Here is an example of a cooperative work item:
+        </p>
+<PRE>private void DoWork()
+{
+    // Do something here.
+
+    // Sample SmartThreadPool.IsWorkItemCanceled
+    if (SmartThreadPool.IsWorkItemCanceled)
+    {
+        return;
+    }
+
+    // Sample the SmartThreadPool.IsWorkItemCanceled in a loop
+    while (!SmartThreadPool.IsWorkItemCanceled)
+    {
+        // Do some work here
+    }
+}</PRE>
+
+<LI><A name=#Feature6><B>The caller thread's context is used when the work item is executed (limited)</B></A>. 
+<P>This feature should be elementary, but it is not so simple to implement. In order to pass the thread's context, the caller thread's <CODE>CompressedStack</CODE> should be passed. This is impossible since Microsoft blocks this option with security. Other parts of the thread's context can be passed. These include:</P>
+<UL>
+<LI><CODE>CurrentCulture</CODE> - The culture of the thread. 
+<LI><CODE>CurrentUICulture</CODE> - The culture used by the resource manager to look up culture-specific resources at run time. 
+<LI><CODE>CurrentPrincipal</CODE> - The current principal (for role-based security). 
+<LI><CODE>CurrentContext</CODE> - The current context in which the thread is executing. (Used in remoting.) </LI></UL>
+<P>The first three belong to the <CODE>System.Threading.Thread</CODE> class (static or instance) and are get/set properties. However, the last one is a read only property. In order to set it, I used reflection, which slows down the application. If you need this context, just remove the comments from the code.</P>
+<P>To simplify the operation of capturing the context and then applying it later, I wrote a special class that is used internally and does all that stuff. The class is called <CODE>CallerThreadContext</CODE> and it is used internally. When Microsoft unblocks the protection on the <CODE>CompressedStack</CODE>, I will add it there.</P>
+<P>The caller thread's context is stored when the work item is created, within the <CODE>EnqueueWorkItem()</CODE> method. Each time a thread from the pool executes a work item, the thread's context changes in the following order:</P>
+<OL>
+<LI>The current thread context is captured. 
+<LI>The caller thread context is applied. 
+<LI>The work item is executed. 
+<LI>The current old thread context is restored. </LI></OL>
+<p></p>
+<LI><B>Usage of <A name=#Feature7>minimum number of Win32 event handles, so the handle count of the application won't explode</A></B>. 
+<P>The seventh feature is a result of Kevin's comment on the earlier version of Smart Thread Pool. It seemed that the test application consumed a lot of handles (Handle Count in the Task Manager) without freeing them. After a few tests, I got to the conclusion that the <CODE>Close()</CODE> method of <CODE>ManualResetEvent</CODE> class doesn't always release the Win32 event handle immediately, and waits for the garbage collector to do that. Hence, running the GC explicitly releases the handles.</P>
+<P>To make this problem less acute, I used a new approach. First, I wanted to create less number of handles, second, I wanted to reuse the handles I had already created. Therefore, I need not expose any <CODE>WaitHandle</CODE> but use them internally and then close them.</P>
+<P>In order to create fewer handles, I created the <CODE>ManualResetEvent</CODE> objects only when the user asks for them (lazy creation). For example, if you don't use the <CODE>GetResult()</CODE> of the <CODE>IWorkItemResult</CODE> interface then a handle is not created. Using <CODE>SmartThreadPool.WaitAll()</CODE> and <CODE>SmartThreadPool.WaitAny()</CODE> creates a handle.</P>
+<P>The work item queue created a lot of handles since each new wait for a work item created a new <CODE>ManualResetEvent</CODE>. Hence, a handle for each work item. The waiters of the queue are always the same threads and a thread cannot wait more than once. So now, every thread in the thread pool has its own <CODE>ManualResetEvent</CODE> and reuses it. To avoid coupling of the work items queue and the thread pool implementation, the work items queue stores a context inside the TLS (Thread Local Storage) of the thread.</P>
+<LI><A name=#Feature8><B>Work item can have a PostExecute callback. This is a method that will be called right after the work item execution has been completed</B></A>. 
+<P>A <CODE>PostExecute</CODE> is a callback method that is called right after the work item execution has been completed. It runs in the same context of the thread that executed the work item. The user can choose the cases in which the <CODE>PostExecute</CODE> is called. The options are represented in the <CODE>CallToPostExecute</CODE> flagged enumerator:</P><PRE lang=cs>[Flags]
+public enum CallToPostExecute
+{
+    Never                    = 0x00,
+    WhenWorkItemCanceled     = 0x01,
+    WhenWorkItemNotCanceled  = 0x02,
+    Always = WhenWorkItemCanceled | WhenWorkItemNotCanceled,
+}</PRE>
+<P>Explanation:</P>
+<UL>
+<LI><CODE>Never</CODE> – Don't run the <CODE>PostExecute</CODE>. 
+<LI><CODE>WhenWorkItemCanceled</CODE> - Run the <CODE>PostExecute</CODE> only when the work item has been canceled. 
+<LI><CODE>WhenWorkItemNotCanceled</CODE> - Run the <CODE>PostExecute</CODE> only when the work item has not been canceled. 
+<LI><CODE>Always</CODE> – Always run the <CODE>PostExecute</CODE>. </LI></UL>
+<P>The <CODE>SmartThreadPool</CODE> has a default <CODE>CallToPostExecute</CODE> value of <CODE>CallToPostExecute.Always</CODE>. This can be changed during the construction of the <CODE>SmartThreadPool</CODE> in the <CODE>STPStartInfo</CODE> class argument. Another way to give the <CODE>CallToPostExecute</CODE> value is in one of the <CODE>SmartThreadPool.QueueWorkItem</CODE> overloads. Note that as opposed to the <CODE>WorkItem</CODE> execution, if an exception has been thrown during the <CODE>PostExecute</CODE>, then it is ignored. The <CODE>PostExecute</CODE> is a delegate with the following signature:</P><PRE lang=cs>public delegate void PostExecuteWorkItemCallback(IWorkItemResult wir);</PRE>
+<P>As you can see, the <CODE>PostExecute</CODE> receives as an argument of type <CODE>IWorkItemResult</CODE>. It can be used to get the result of the work item, or any other information made available by the <CODE>IWorkItemResult</CODE> interface.</P>
+<LI><A name=#Feature9><B>The user can choose to automatically dispose off the state object that accompanies the work item</B></A>. 
+<P>When the user calls the <CODE>QueueWorkItem</CODE>, he/she can provide a state object. The state object usually stores specific information, such as arguments, that should be used within the <CODE>WorkItemCallback</CODE> delegate.</P>
+<P>The state object life time depends on its contents and the user's application. Sometimes, it is useful to dispose off the state object just after the work item has been completed. Especially if it contains unmanaged resources.</P>
+<P>For this reason, I added a boolean to the <CODE>SmartThreadPool</CODE> that indicates to call <CODE>Dispose</CODE> on the state object when the work item has been completed. The boolean is initialized when the thread pool is constructed with the <CODE>STPStartInfo</CODE>. The <CODE>Dispose</CODE> is called only if the state object implements the <CODE>IDisposable</CODE> interface. The <CODE>Dispose</CODE> is called after the <CODE>WorkItem</CODE> has been completed and its <CODE>PostExecute</CODE> has run (if a <CODE>PostExecute</CODE> exists). The state object is disposed even if the work item has been canceled or the thread pool has been shutdown.</P>
+    <p>
+        <b>Note that this feature only applies to the <CODE>state</CODE> argument that 
+        comes with WorkItemCallback, it doesn't apply to the
+        arguments supplied in <CODE>Action&lt;...&gt;</CODE> and <CODE>Func&lt;...&gt;</CODE> arguments!!!</b></p>
+<LI><A name=#Feature10><B>The user can wait for the Smart Thread Pool / Work Items Group
+    to become idle. </B></A> 
+<P>This feature enables the user to wait for a Smart Thread Pool or a Work Items Group
+    to become idle. They become idle when the work items queue is empty and all the
+    threads have completed executing all their work items.</P>
+<P>This is useful in case you want to run a batch of work items and then wait for all of them to complete. It saves you from handling the <CODE>IWorkItemResult</CODE> objects in case you just want to wait for all of the work items to complete.</P>
+<P>
+    The SmartThreadPool and WorkItemsGroup classes both implement the IWorkItemsGroup
+    interface which define the WaitForIdle methods.</P>
+    <p>
+        To take advantage of this feature, use the <CODE>IWorkItemsGroup.WaitForIdle()</CODE> method (Both SmartThreadPool and WorkItemsGroup implement the IWorkItemsGroup interface
+        which define the WaitForIdle methods). It has several overloads which provide a timeout argument. The <CODE>WaitForIdle()</CODE> method is not <CODE lang=cs>static</CODE> and should be used on a <CODE>SmartThreadPool</CODE> instance.</p>
+<P>The <CODE>SmartThreadPool</CODE> always keeps track of how many work items it has. When a new work item is queued, the number is incremented. When a thread completes a work item, the number is decremented. The total number of work items includes the work items in the queue and the work items that the threads are currently working on.</P>
+<P>The <CODE>WaitForIdle()</CODE> mechanism works with a private <CODE>ManualResetEvent</CODE>. When a work item is queued, the <CODE>ManualResetEvent</CODE> is reset (changed to non signaled state). When the work items count becomes zero (initial state of the Smart Thread Pool), the <CODE>ManualResetEvent</CODE> is set (changed to signaled state). The <CODE>WaitForIdle()</CODE> method just waits for the <CODE>ManualResetEvent</CODE> to implement its functionality.</P>
+<P>See the <A href="#WaitForIdleExample">example</A> below.</P>
+<LI><A name=#Feature11><B>The exception handling is changed, so if a work item throws an exception, it is rethrown at GetResult(), rather than firing an UnhandledException event. Note that PostExecute exceptions are always ignored</B></A>. 
+<P>After I did some reading about delegates and their implementation, I decided to change the way the <CODE>SmartThreadPool</CODE> treats exceptions. In the previous versions, I used an event driven mechanism. Entities were registered to the <CODE>SmartThreadPool.UnhandledException</CODE> event, and when a work item threw an exception, this event was fired. This is the behavior of Toub’s thread pool.</P>
+<P>.NET delegates behave differently. Instead of using an event driven mechanism, it re-throws the exception of the delegated method at the <CODE>EndInvoke()</CODE>. Similarly, the <CODE>SmartThreadPool</CODE> exception mechanism is changed so that exceptions are no longer fired by the <CODE>UnhandledException</CODE> event, but rather re-thrown again when <CODE>IWorkItemResult.GetResult()</CODE> is called.</P>
+<P>Note that exceptions slow down .NET and degrade the performance. .NET works faster when no exceptions are thrown at all. For this reason, I added an output parameter to some of the <CODE>GetResult()</CODE> overloads, so the exception can be retrieved rather than re-thrown. The work item throws the exception anyway, so re-throwing it will be a waste of time. As a rule of thumb, it is better to use the output parameter than catch the re-thrown exception.</P>
+<P>The <CODE>GetResult()</CODE> can be called unlimited number of times and it re-throws the same exception each time.</P>
+<P>Note that <CODE>PostExecute</CODE> is called, as and when needed, even if the work item has thrown an exception. Of course, <CODE>PostExecute</CODE> implementation should handle exceptions if it calls <CODE>GetResult()</CODE>.</P>
+<P>Also note that if the <CODE>PostExecute</CODE> throws an exception then its exception is ignored.</P>
+<P>See the <A href="#CatchExceptionExample">example</A> below.</P>
+<LI><A name=#Feature12><B>Work items have priority</B></A>. 
+<P>Work items priority enables the user to order work items at run time. Work items are ordered by their priority. High priority is treated first. There are five priorities:</P><PRE lang=cs>public enum WorkItemPriority 
+{ 
+    Lowest, 
+    BelowNormal, 
+    Normal, 
+    AboveNormal, 
+    Highest,
+}</PRE>
+<P>The default priority is <CODE>Normal</CODE>.</P>
+<P>The implementation of priorities is quite simple. Instead of using one queue that keeps the work items sorted inside, I used one queue for each priority. Each queue is a FIFO. When the user enqueues a work item, the work item is added to the queue with a matching priority. When a thread dequeues a work item, it looks for the highest priority queue that is not empty.</P>
+<P>This is the easiest solution to sort the work items.</P>
+<LI><A name=#Feature13><B>The caller thread's HTTP context can be used when the work item is executed</B></A>. 
+<P>This feature improves 6, and was implemented by Steven T. I just replaced my code with that implementation.</P>
+<P>With this feature the Smart Thread Pool can be used with ASP.NET to pass the context of HTTP between the caller thread and the thread in the pool that will execute the work item.</P>
+<LI><A name=#Feature14><B>Work items group</B></A>. 
+<P>This feature enables the user to execute a group of work items specifying the maximum level of concurrency.</P>
+<P>For example, assume that your application uses several resources, the resources
+    are not thread safe so only one thread can use a resource at a time. There are a
+    few solutions to this, from creating one thread that uses all resources to creating
+    a thread per resource. The first solution doesn’t harness the power of parallelism,
+    the later solution is too expensive (many threads) if the resources are idle most
+    of the time.</P>
+    <p>
+        The Smart Thread Pool solution is to create a WorkItemsGroup per resource, with
+        concurrency of one. Each time a resource needs to do some work a work item is queued
+        into its WorkItemsGroup. The concurrency of the WorkItemsGroup is one so only one
+        work item can run at a time per resource. The number of threads dynamically changes
+        according to the load of work items.</p>
+    <p>
+        Here is a code snippet to show how it works:</p>
+<PRE lang=cs>...
+
+// Create a SmartThreadPool
+SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+// Create a work items group that processes 
+// one work item at a time for resource 1
+IWorkItemsGroup wigPrinter1 = smartThreadPool.CreateWorkItemsGroup(1);
+
+// Create a work items group that processes 
+// one work item at a time for resource 2
+IWorkItemsGroup wigPrinter2 = smartThreadPool.CreateWorkItemsGroup(1);
+
+// Queue work items to resources
+wigPrinter1.QueueWorkItem(Print, printer1, lessons);
+wigPrinter1.QueueWorkItem(Print, printer1, homework);
+wigPrinter2.QueueWorkItem(Print, printer2, blueprints);
+
+...
+
+// Print prototype
+void Print(Printer printer, Document document) {...}
+
+...</PRE>
+<P>As you can see from the snippet a Work Items Group is attached to an instance of a Smart Thread Pool. The Work Items Group doesn't have threads of its own, but rather uses the threads of the Smart Thread Pool. It also has an interface similar to the Smart Thread Pool, so it can be used in the same way and replaced when needed.</P>
+<P>The <CODE>WorkItemsGroup</CODE> has a priority queue (the same as the <CODE>SmartThreadPool</CODE>). The queue stores the work items of the <CODE>WorkItemsGroup</CODE>. The <CODE>WorkItemsGroup</CODE> dequeues the work item with the highest priority at the head of the queue and queues it into the <CODE>SmartThreadPool</CODE> with the same priority.</P>
+<P>The <CODE>WorkItemsGroup</CODE> is responsible for managing the maximum level of concurrency of its work items. Once a work item is queued into the <CODE>WorkItemsGroup</CODE>, it checks how many work items it has in the <CODE>SmartThreadPool</CODE>. If this number is less than the maximum level of concurrency, it queues the work item into the <CODE>SmartThreadPool</CODE>. If this number is equal (it cannot be greater) then the <CODE>WorkItemsGroup</CODE> stores the work item in its own priority queue.</P>
+<P>In case the <CODE>WorkItemsGroup</CODE> is created in suspend mode, it will store the work items in its queue until it is started. When it is started it will queue the work items into the <CODE>SmartThreadPool</CODE> up to the maximum level of concurrency.</P>
+<P>Note that the <CODE>WorkItemsGroup</CODE> only has a maximum level of concurrency and not a minimum or exact value. It is possible to have a concurrency level of 3, and have non work items executing, since they are waiting in the <CODE>SmartThreadPool</CODE> queue.</P>
+<P>To accomplish the concurrency level, the <CODE>WorkItemsGroup</CODE> registers to the completion event of its work items. The event is used internally and is not exposed to the user. Once registered, the <CODE>WorkItemsGroup</CODE> will get an event when its work item is completed. The event will trigger the <CODE>WorkItemsGroup</CODE> to queue more work items into the <CODE>SmartThreadPool</CODE>. The event is the only way to accomplish the concurrency level. When I tried to do it with <CODE>PostExecute</CODE> I got fluctuating <CODE>WaitForIdle</CODE>.</P>
+<P>Another advantage of the <CODE>WorkItemsGroup</CODE> is that it can cancel all its work items that haven't been executed yet in one method with a complexity of O(1). The <CODE>WorkItemsGroup</CODE> does so by attaching an object to each one of its work items that indicates if the <CODE>WorkItemsGroup</CODE> has been cancelled. When a work item is about to be executed, it is asked for its current state (<CODE>InQueue</CODE>, <CODE>InProgress</CODE>, <CODE>Completed</CODE>, or <CODE>Canceled</CODE>). The final state considers this object's value to know if the work item was cancelled.</P>
+    <p>
+        The Work Items Group can also be use as a conjuction point. Say you want to accoplish
+        a task by splitting to a subtasks. Once the subtasks are completed a new task is
+        issued and splitted to subtasks too. This can be achieved by using the OnIdle event
+        of WorkItemsGroup. See <A href="#ConjuctionPointExample">conjuction point example</A>.</p>
+    <p>
+        See the <A href="#WorkItemsGroupExample">examples</A> below.</p>
+            <p>
+                See WorkItemsGroupDemo demo in the source code solution.</p>
+                <p><IMG height="695" src="WorkItemsGroup.jpg" width="636" /></p>
+<LI><A name=#Feature15><B>The caller can create thread pools and work items groups in suspended state</B></A>. 
+<P>When a Smart Thread Pool is created, by default, it starts its threads immediately. However, sometimes you need to queue a few work items and only then start executing them.</P>
+<P>In these cases, you can create the Smart Thread Pool and the Work Items Group in a suspended state. When you need to execute the work items, just call the <CODE>Start()</CODE> method. The same method exists in the Work Items Group for the same purpose.</P>
+<P>Note that if you create a suspended Work Items Group in a suspended Smart Thread Pool, starting the Work Items Group won't execute the work items until the Smart Thread Pool is started.</P>
+<LI><A name=#Feature16><B>Threads have priority</B></A>. 
+<P>The <CODE>STPStartInfo</CODE> contains a property that defines the priority in which the threads are started in the <CODE>SmartThreadPool</CODE>. Use it if you know what you are doing. Playing with threads priority may end up with dead locks, live lock, and days locked :-(.</P>
+
+    <LI><A name=#Feature17><b>The <CODE>MaxThreads</CODE>/<CODE>MinThreads</CODE>/<CODE>Concurrency</CODE> can
+        be changed at run time</b></A>.
+    <p>
+        This addition allows the user to control the concurrency of work items execution. 
+        It is useful to make the STP adaptable. </p>
+        <p>
+            To execute more work items in parallel, increment 
+        the concurrency. To limit the number if executed work items and/or lower the CPU usage, 
+        decrement the concurrency.</p>
+
+<p>
+	    This option is available in the <CODE>SmartThreadPool</CODE> and in the <CODE>WorkItemsGroup</CODE> with the <CODE>IWokItemsGroup</CODE> interface:
+	    </p>
+<PRE lang=cs>public interface IWorkItemsGroup
+{
+    ...
+    int Concurrency { get; set; }
+    ...
+}</PRE>
+
+<p>The value of <CODE>Concurrency</CODE> must be positive.</p>
+
+<p>Although the <CODE>Concurrency</CODE> has the same meaning and the same behavior in the <CODE>SmartThreadPool</CODE> and in the <CODE>WorkItemsGroup</CODE> it’s implemented differently.</p>
+
+<p>The <CODE>SmartThreadPool</CODE>’s <CODE>Concurrency</CODE> is equivalent to the <CODE>MaxThreads</CODE> property. When the <CODE>Concurrency</CODE> is incremented, the <CODE>SmartThreadPool</CODE> can create more threads to handle its work items up to the <CODE>Concurrency</CODE> limit. The creation of thread, in this case, is immediate. The threads are still created as explained in <A href="#Feature2">section 2</A>.</p>
+
+<p>When the <CODE>Concurrency</CODE> is decrement, the <CODE>SmartThreadPool</CODE> doesn’t create new threads and let existing threads to be terminated in order decrement the number of threads in the thread pool. Note that the lowering the <CODE>Concurrency</CODE> may take a while effect, since we need to wait for work items to complete. The <CODE>SmartThreadPool</CODE> doesn’t abort a thread actively, but wait passively until it quits.</p>
+
+<p>The <CODE>WorkItemsGroup</CODE>’s <CODE>Concurrency</CODE> is responsible to how many work items may be handled in parallel in the <CODE>SmartThreadPool</CODE> as explained in <A href="#Feature14">section 14</A>. When the <CODE>Concurrency</CODE> is incremented more work items are queued to the <CODE>SmartThreadPool</CODE>. When the <CODE>Concurrency</CODE> is decremented, the <CODE>WorkItemsGroup</CODE> stops to queue work items until the number of work items in the <CODE>SmartThreadPool</CODE> of this <CODE>WorkItemsGroup</CODE> is lower than the <CODE>WorkItemsGroup</CODE>’s <CODE>Concurrency</CODE>.</p>
+
+<p>In addition the <CODE>SmartThreadPool</CODE> also let the <CODE>MinThreads</CODE> property to be changed after its creation. When the <CODE>MinThreads</CODE> is created the number of threads in the pool is raised so it will be at least <CODE>MinThreads</CODE>.</p>
+
+<p>The number of <CODE>MaxThreads</CODE> must be greater or equal to <CODE>MinThreads</CODE>. If <CODE>MaxThreads</CODE> is set to a number lower than <CODE>MinThreads</CODE> than <CODE>MinThreads</CODE> is also set to the new value of <CODE>MaxThreads</CODE>. And vice versa for <CODE>MinThreads</CODE>.</p>
+
+    <LI><A name=#Feature18><B>Improved the Cancel behavior</b></a>.
+    <p>
+        <A href="#Feature5">(See section 5)</A></p>
+    <LI><A name=#Feature19><B>Added events for initialization and termination of threads</B></A>.<p>
+This functionality enables the user to execute code when a thread is created or 
+terminated in the thread pool. The code is executed within the thread’s context.
+
+This feature is exposed as new events in the SmartThreadPool class:
+</p>
+<PRE>// A delegate to call after a thread is created, but before it's first use.
+public delegate void ThreadInitializationHandler();
+
+// A delegate to call when a thread is about to exit, after it is no longer 
+// belong to the pool.
+public delegate void ThreadTerminationHandler();
+
+public event ThreadInitializationHandler OnThreadInitialization
+{...}
+
+public event ThreadTerminationHandler OnThreadTermination;
+{...}
+</PRE>
+<p>
+The OnThreadInitialization event is fired when a thread is created and 
+added to the threads pool. The event is called from the created thread.
+ In this event the user should add a code to initialize resources that 
+ are used by the thread, and should be initialized once per thread instead 
+ of once per work item.
+</p>
+        <p>
+
+The OnThreadTermination event is fired when a thread leaves the threads 
+pool. The event is called from the terminated thread. In this event the 
+user has the opportunity to clean up the resources that were initialized 
+earlier in the OnThreadInitialization event.
+        </p></LI>
+<li><a name=#Feature20><b>Added support for Windows CE (limited)</b></a></li>
+
+<p>The SmartThreadPool project has a similar project named SmartThreadPoolCE. This 
+    version of the SmartThreadPool can be run on Windows CE.</p>
+            <p>It has the same features as the PC version, but it doesn&#39;t fully work yet. I 
+                still have an issue with the threads scheduling, since the thread idle stuff 
+                explained in section 2 doesn&#39;t work on Windows CE.</p>
+<li><a name=#Feature21><b>Added IsIdle flag to the SmartThreadPool and to the IWorkItemsGroup</b></a></li>
+<p>This flag enables the user to poll the Smart Thread Pool / Work Items Group for 
+    idle.</p>
+<li><a name=#Feature21><b>Added support for Action&lt;T&gt;<t></t>
+    and Func&lt;T&gt; (strongly typed work items)</b></a></li></li>
+    <p>
+        <a href="#Feature3">(See section 3)</a></p>
+<p></p>
+
+</OL>
+<H2>When to use?</H2>
+<P>The Smart Thread Pool is good when your work items don't do too much, but wait for events, IOs, sockets, etc. This means that the work items don't use CPU, but run for a long time. It is also good when you don't need to keep alive too many threads in the air all the time. If your work items do a short time work, then use the .NET ThreadPool. If you have a constant heavy load of work, then use Toub's thread pool and define the maximum number of threads accordingly.</P>
+<When the Smart Thread Pool or Work Items Group is created, it requires a few parameters; when a value is not provided, a default value is used.</P>
+<TABLE>
+<TBODY>
+<TR>
+<TD><B>Description</B></TD>
+<TD><B>Value name</B></TD>
+<TD><B>Default value</B></TD>
+<TD><B>Smart Thread Pool</B></TD>
+<TD><B>Work Items Group</B></TD></TR>
+<TR>
+<TD>Idle timeout</TD>
+<TD><CODE>IdleTimeout</CODE></TD>
+<TD>60 seconds</TD>
+<TD>Used</TD>
+<TD>Not used</TD></TR>
+<TR>
+<TD>Maximum number of threads</TD>
+<TD><CODE>MaxWorkerThreads</CODE></TD>
+<TD>25</TD>
+<TD>Used</TD>
+<TD>Not used</TD></TR>
+<TR>
+<TD>Minimum number of threads</TD>
+<TD><CODE>MinWorkerThreads</CODE></TD>
+<TD>0</TD>
+<TD>Used</TD>
+<TD>Not used</TD></TR>
+<TR>
+<TD>Use caller thread call context</TD>
+<TD><CODE>UseCallerCallContext</CODE></TD>
+<TD><CODE lang=cs>false</CODE></TD>
+<TD>Used</TD>
+<TD>Used</TD></TR>
+<TR>
+<TD>Use caller thread HTTP context</TD>
+<TD><CODE>UseCallerHttpContext</CODE></TD>
+<TD><CODE lang=cs>false</CODE></TD>
+<TD>Used</TD>
+<TD>Used</TD></TR>
+<TR>
+<TD>Dispose of the state objects</TD>
+<TD><CODE>DisposeOfStateObjects</CODE></TD>
+<TD><CODE lang=cs>false</CODE></TD>
+<TD>Used</TD>
+<TD>Used</TD></TR>
+<TR>
+<TD>Call to <CODE>PostExecute</CODE></TD>
+<TD><CODE>CallToPostExecute</CODE></TD>
+<TD><CODE>CallToPostExecute.Always</CODE></TD>
+<TD>Used</TD>
+<TD>Used</TD></TR>
+<TR>
+<TD><CODE>PostExecute</CODE> method</TD>
+<TD><CODE>PostExecuteWorkItemCallback</CODE></TD>
+<TD><CODE lang=cs>null</CODE> (Do nothing)</TD>
+<TD>Used</TD>
+<TD>Used</TD></TR>
+<TR>
+<TD>Start suspended</TD>
+<TD><CODE>StartSuspended</CODE></TD>
+<TD><CODE lang=cs>false</CODE></TD>
+<TD>Used</TD>
+<TD>Used</TD></TR>
+<TR>
+<TD>Fill state with args
+    <br />
+    (Action&lt;T&gt; &amp; Func&lt;T&gt;)</TD>
+<TD>FillStateWithArgs</TD>
+<TD>false</TD>
+<TD>Used</TD>
+<TD>Used</TD></TR>
+<TR>
+<TD>Thread priority in thread pool</TD>
+<TD>ThreadPriority</TD>
+<TD>ThreadPriority.Normal</TD>
+<TD>Used</TD>
+<TD>Not used</TD></TR>
+<TR>
+<TD>Work item default priority</TD>
+<TD>WorkItemPriority</TD>
+<TD>.Normal</TD>
+<TD>Used</TD>
+<TD>Used</TD></TR></TBODY></TABLE>
+<P>Once defined in the construction, they cannot be changed. So, choose their values according to your needs. The minimum number of threads should be proportional to the number of work items that you want to handle at normal times. The maximum number of threads should be proportional to the number of work items that you want to handle at peak times. The idle timeout should be proportional to the peak length time.</P>
+<H2>Code examples</H2>
+<P>Creating a Smart Thread Pool instance:</P><PRE lang=cs>SmartThreadPool smartThreadPool = 
+ new SmartThreadPool(
+    10*1000,    // Idle timeout in milliseconds
+    25,         // Threads upper limit
+    5,          // Threads lower limit
+    true);      // Use caller thread context</PRE>
+<P>Another way to create an instance:</P><PRE lang=cs>// Create a STPStartInfo object
+STPStartInfo stpStartInfo = new STPStartInfo();
+
+// Change the defaults of the STPStartInfo object
+stpStartInfo.DisposeOfStateObjects = true;
+
+// Create the SmartThreadPool instance
+SmartThreadPool smartThreadPool = 
+        new SmartThreadPool(stpStartInfo);</PRE>
+<P>Using the Smart Thread Pool:</P>
+<P>The following snippet is a simple example. The user queues a work item and then gets the result. Note that the <CODE>Result</CODE> property blocks until a result is available or the work item is cancelled:</P><PRE lang=cs>public class <A name=SimpleExample>SimpleExample</A>
+{
+    public void DoWork(int [] numbers) 
+    { 
+        SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+        // Queue the work item
+        IWorkItemResult&lt;double&gt; wir = smartThreadPool.QueueWorkItem(new Func&lt;int[], double&gt;(CalcAverage), numbers); 
+
+        // Do some other work here
+
+        // Get the result of the operation
+        double average = wir.Result;
+
+        smartThreadPool.Shutdown();
+    } 
+
+    // Do the real work 
+    private double CalcAverage(int [] numbers)
+    { 
+        double average = 0.0;
+        
+        // Do the real work here and put 
+        // the result in 'result'
+
+        return average;
+    }
+}</PRE>
+<P>This example shows how you can wait for specific work items to complete. The user queues two work items, waits for both of them to complete, and then gets the results:</P><PRE lang=cs>public class <A name=WaitForAllExample>WaitForAllExample</A>
+{
+    public void DoWork() 
+    { 
+        SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+        IWorkItemResult wir1 = 
+            smartThreadPool.QueueWorkItem(new 
+            WorkItemCallback(this.DoSomeWork1), null);
+
+        IWorkItemResult wir2 = 
+            smartThreadPool.QueueWorkItem(new 
+            WorkItemCallback(this.DoSomeWork2), null);
+
+        bool success = SmartThreadPool.WaitAll(
+               new IWorkItemResult [] { wir1, wir2 });
+
+        if (success)
+        {
+            int result1 = (int)wir1.Result;
+            int result2 = (int)wir2.Result;
+        }
+
+        smartThreadPool.Shutdown();
+    } 
+
+    private object DoSomeWork1(object state)
+    { 
+        return 1;
+    }
+
+    private object DoSomeWork2(object state)
+    { 
+        return 2;
+    }
+}</PRE>
+<P>This example shows how you can wait for one of the specific work items to complete. The user queues two work items, waits for one of them to complete, and then gets its result:</P><PRE lang=cs>public class <A name=WaitForAnyExample>WaitForAnyExample</A>
+{
+    public void DoWork() 
+    { 
+        SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+        IWorkItemResult wir1 = 
+            smartThreadPool.QueueWorkItem(new 
+            WorkItemCallback(this.DoSomeWork1), null);
+
+        IWorkItemResult wir2 = 
+            smartThreadPool.QueueWorkItem(new 
+            WorkItemCallback(this.DoSomeWork2), null);
+
+        IWorkItemResult [] wirs = 
+                new IWorkItemResult [] { wir1, wir2 };
+
+        int index = SmartThreadPool.WaitAny(wirs);
+
+        if (index != WaitHandle.WaitTimeout)
+        {
+            int result = (int)wirs[index].Result;
+        }
+
+        smartThreadPool.Shutdown();
+    } 
+
+    private object DoSomeWork1(object state)
+    {
+        return 1;
+    }
+
+    private object DoSomeWork2(object state)
+    { 
+        return 1;
+    }
+}</PRE>
+<P>The following example shows the use of <CODE>WaitForIdle()</CODE>. We just queue all the work items and then wait for all of them to complete. Note that we ignore the results of the work items:</P><PRE lang=cs>public class <A name=WaitForIdleExample>WaitForIdleExample</A>
+{
+    public void DoWork(object [] states) 
+    { 
+        SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+        foreach(object state in states)
+        {
+            smartThreadPool.QueueWorkItem(new 
+                WorkItemCallback(this.DoSomeWork), state);
+        }
+
+        // Wait for the completion of all work items
+        smartThreadPool.WaitForIdle();
+
+        smartThreadPool.Shutdown();
+    } 
+
+    private object DoSomeWork(object state)
+    { 
+        // Do the work
+        return null;
+    }
+}</PRE>
+<P>The following example shows how to handle exceptions. Pay attention to the <CODE>Result</CODE> property that throws <CODE>WorkItemResultException</CODE> and not the real exception:</P><PRE lang=cs>public class <A name=CatchExceptionExample>CatchExceptionExample</A>
+{
+    public void DoWork() 
+    { 
+        SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+        IWorkItemResult&lt;double&gt; wir = smartThreadPool.QueueWorkItem(new Func&lt;double, double, double&gt;(DoDiv), 10.0, 0.0);
+
+        try
+        {
+            double result = wir.Result;
+        }
+        // Catch the exception that Result threw
+        catch (WorkItemResultException e)
+        {
+            // Dump the inner exception which DoDiv threw
+            Debug.WriteLine(e.InnerException);
+        }
+
+        smartThreadPool.Shutdown();
+    } 
+
+    private double DoDiv(double x, double y)
+    { 
+        return x / y;
+    }
+}</PRE>
+<P>This is another example that shows how to handle exceptions. It is better than the previous one because it is faster. .NET works fast when everything is OK. When .NET needs to deal with exceptions, it becomes slower:</P><PRE lang=cs>public class <A name=GetExceptionExample>GetExceptionExample</A>
+{
+    public void DoWork() 
+    { 
+        SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+        IWorkItemResult&lt;double&gt; wir = smartThreadPool.QueueWorkItem(new Func&lt;double, double, double&gt;(DoDiv), 10.0, 0.0);
+
+        Exception e = null;
+	double result = wir.GetResult(out e);
+        // e contains the expetion that DoDiv threw
+        if(null != e)
+        {
+            // Do something with the exception
+        }
+
+        smartThreadPool.Shutdown();
+    } 
+
+    private double DoDiv(double x, double y)
+    { 
+        return x / y;
+    }
+}</PRE>
+<P>The next example shows how to create a Work Items Group and use it:</P><PRE lang=cs>public class <A name=WorkItemsGroupExample>WorkItemsGroupExample</A>
+{
+    public void DoWork(object [] states)
+    { 
+        SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+        // Create a work items group that processes 
+        // one work item at a time
+        IWorkItemsGroup wig = 
+                smartThreadPool.CreateWorkItemsGroup(1);
+
+        // Queue some work items 
+        foreach(object state in states)
+        {
+            wig.QueueWorkItem(
+                new WorkItemCallback(this.DoSomeWork), state);
+        }
+
+        // Wait for the completion of all work 
+        // items in the work items group
+        wig.WaitForIdle();
+
+        smartThreadPool.Shutdown();
+    } 
+
+    private object DoSomeWork(object state)
+    { 
+        // Do the work
+        return null;
+    }
+}</PRE>
+<P>The next example shows how to create a suspended Smart Thread Pool:</P><PRE lang=cs>public class <A name=SuspendedSTPStartExample>SuspendedSTPStartExample</A>
+{
+    public void DoWork(object [] states) 
+    { 
+        STPStartInfo stpStartInfo = new STPStartInfo();
+        stpStartInfo.StartSuspended = true;
+
+        SmartThreadPool smartThreadPool = 
+             new SmartThreadPool(stpStartInfo);
+
+        foreach(object state in states)
+        {
+            smartThreadPool.QueueWorkItem(new 
+                WorkItemCallback(this.DoSomeWork), state);
+        }
+
+        // Start working on the work items in the queue
+        smartThreadPool.Start();
+
+        // Wait for the completion of all work items
+        smartThreadPool.WaitForIdle();
+
+        smartThreadPool.Shutdown();
+    } 
+
+    private object DoSomeWork(object state)
+    { 
+        // Do the work
+        return null;
+    }
+}</PRE>
+<P>The next example shows how to create a suspended Work Items Group:</P><PRE lang=cs>public class <A name=SuspendedWIGStartExample>SuspendedWIGStartExample</A>
+{
+    public void DoWork(object [] states) 
+    { 
+        SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+        WIGStartInfo wigStartInfo = new WIGStartInfo();
+        wigStartInfo.StartSuspended = true;
+
+        IWorkItemsGroup wig = 
+           smartThreadPool.CreateWorkItemsGroup(1, wigStartInfo);
+
+        foreach(object state in states)
+        {
+            wig.QueueWorkItem(new 
+                WorkItemCallback(this.DoSomeWork), state);
+        }
+
+        // Start working on the work items 
+        // in the work items group queue
+        wig.Start();
+
+        // Wait for the completion of all work items
+        wig.WaitForIdle();
+
+        smartThreadPool.Shutdown();
+    } 
+
+    private object DoSomeWork(object state)
+    { 
+        // Do the work
+        return null;
+    }
+}</PRE>
+<P>
+    This example shows how to get the Work Items Group's <CODE>OnIdle</CODE> event:</P><PRE lang=cs>
+public class <A name=OnWIGIdleEventExample>OnWIGIdleEventExample</A>
+{
+    public void DoWork(object [] states) 
+    { 
+        SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+        IWorkItemsGroup wig = 
+            smartThreadPool.CreateWorkItemsGroup(1);
+
+        wig.OnIdle += new WorkItemsGroupIdleHandler(wig_OnIdle);
+
+        foreach(object state in states)
+        {
+            wig.QueueWorkItem(new 
+                WorkItemCallback(this.DoSomeWork), state);
+        }
+
+        smartThreadPool.WaitForIdle();
+        smartThreadPool.Shutdown();
+    } 
+
+    private object DoSomeWork(object state)
+    { 
+        // Do the work
+        return null;
+    }
+
+    private void wig_OnIdle(IWorkItemsGroup workItemsGroup)
+    {
+        Debug.WriteLine("WIG is idle");
+    }
+}</PRE>
+
+<H2>Disclaimer</H2>
+<P>THIS CODE AND INFORMATION IS PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.</P>
+<H2><A name=History>History</A></H2>
+<UL>
+<LI>7<SUP>th</SUP> Aug, 2004: Initial version. 
+<LI>14<SUP>th</SUP> Sep, 2004: Bug fixes: 
+<OL>
+<LI>Changed the start thread formula to '<CODE lang=cs>if ((InUseThreads + WaitingCallbacks) &gt; _workerThreads.Count)</CODE>'. 
+<LI>Fixed handle leaks. </LI></OL>
+<LI>16<SUP>th</SUP> Oct, 2004: Added a few features: 
+<UL>
+<LI>Work items return result. 
+<LI>Supports waiting synchronization for multiple work items. 
+<LI>Work items can be cancelled. 
+<LI>Passage of the caller thread's context to the thread in the pool. 
+<LI>Minimal usage of Win32 handles. 
+<LI>Minor bug fixes. </LI></UL>
+<LI>26<SUP>th</SUP> Dec, 2004: Changes: 
+<UL>
+<LI>Added <CODE>PostExecute</CODE> with options on which cases to call it. 
+<LI>Added a <CODE>WaitForIdle()</CODE> method that waits until the work items queue is empty. 
+<LI>Added option to dispose off the state objects. 
+<LI>Updated the <CODE>FireUnhandledException</CODE> so it will be more robust. 
+<LI>Removed <CODE lang=cs>static</CODE> constructors. 
+<LI>Added finalizers. 
+<LI>Changed exceptions so that they are serializable. 
+<LI>Fixed the bug in one of the <CODE>SmartThreadPool</CODE> constructors. 
+<LI>Changed <CODE>SmartThreadPool.WaitAll()</CODE> so that it will support any number of waiters. The <CODE>SmartThreadPool.WaitAny()</CODE> is still limited by the .NET Framework. 
+<LI>Changed exception handling so if a work item throws an exception, it is re-thrown at <CODE>GetResult()</CODE>, rather than firing an <CODE>UnhandledException</CODE> event. Note that <CODE>PostExecute</CODE> exceptions are always ignored. </LI></UL>
+<LI>25<SUP>th</SUP> Mar, 2005: Changes: 
+<UL>
+<LI>Fixed bug where the work items got lost. It happens especially when the idle timeout is small. </LI></UL>
+<LI>3<SUP>rd</SUP> Jul, 2005: Changes: 
+<UL>
+<LI>Fixed bug where <CODE>Enqueue()</CODE> throws an exception when <CODE>PopWaiter()</CODE> returns <CODE lang=cs>null</CODE>, hardly reconstructed. </LI></UL>
+<LI>16<SUP>th</SUP> Aug 2005: Changes: 
+<UL>
+<LI>Fixed bug where the <CODE>InUseThreads</CODE> becomes negative while canceling work items. </LI></UL>
+<LI>31<SUP>st</SUP> Jan, 2006: Changes: 
+<UL>
+<LI>Added work items priority. 
+<LI>Removed support of chained delegates in callbacks and post executes (nobody really uses this). 
+<LI>Added work items groups. 
+<LI>Added work items group's idle event. 
+<LI>Changed <CODE>SmartThreadPool.WaitAll()</CODE> behavior so that when it gets an empty array it returns <CODE lang=cs>true</CODE> rather than throwing an exception. 
+<LI>Added option to start the Smart Thread Pool and the Work Items Groups as suspended. 
+<LI>Exception behavior changed (again). The real exception is returned by an inner exception. 
+<LI>Added option to keep the HTTP context of the caller thread. (Thanks to Steven T.). 
+<LI>Added performance counters. 
+<LI>Added priority to the threads in the pool. </LI></UL>
+<LI>13<SUP>th</SUP> Feb, 2006: Changes: 
+<UL>
+<LI>Fixed the demo, so that it won't crash with exception on start. 
+<LI>Added a call to dispose off the performance counters so that there is no performance counter leak. 
+<LI>Added exception catch in case the performance counters cannot be created. </LI>
+</UL>
+
+</LI>
+    <li><strong>16th May 2008: Changes </strong>
+    <ul>
+<li><strong>Changed the dispose behavior and removed the Finalizers.</strong></li>
+<li><strong>Enabled the change of the MaxThreads and MinThreads at run time.</strong></li>
+<li><strong>Enabled the change of the Concurrency of a IWorkItemsGroup at run time If the IWorkItemsGroup is a SmartThreadPool then the Concurrency refers to the MaxThreads.</strong></li>
+<li><strong>Improved the cancel behavior.</strong></li>
+<li><strong>Added events for thread creation and termination.</strong></li>
+<li><strong>Fixed the HttpContext context capture.</strong></li>
+<li><strong>Changed internal collections so they use generic collections</strong></li>
+<li><strong>Added IsIdle flag to the SmartThreadPool and IWorkItemsGroup</strong></li>
+<li><strong>Added support for WinCE</strong></li>
+<li><strong>Added support for Action&lt;T&gt; and Func&lt;T&gt;</strong></li>
+    </ul>
+</li>
+</UL>
+
+
+
+<!----------------------------- Article Ends ----------------------------->
+
+

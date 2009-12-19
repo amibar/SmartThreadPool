@@ -228,5 +228,73 @@ namespace SmartThreadPoolTests
 			Thread.Sleep(1000);
 			return 1;
 		}
+
+        [Test]
+        public void WaitAllT()
+        {
+            SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+            bool success = true;
+
+            IWorkItemResult<int>[] wirs = new IWorkItemResult<int>[5];
+
+            for (int i = 0; i < wirs.Length; ++i)
+            {
+                wirs[i] = smartThreadPool.QueueWorkItem(new Func<int, int, int>(Math.Min), i, i + 1);
+            }
+
+            SmartThreadPool.WaitAll(wirs);
+
+            for (int i = 0; i < wirs.Length; ++i)
+            {
+                if (!wirs[i].IsCompleted)
+                {
+                    success = false;
+                    break;
+                }
+
+                int result = wirs[i].GetResult();
+                if (i != result)
+                {
+                    success = false;
+                    break;
+                }
+            }
+
+            smartThreadPool.Shutdown();
+
+            Assert.IsTrue(success);
+        }
+
+        [Test]
+        public void WaitAnyT()
+        {
+            SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+            bool success = false;
+
+            IWorkItemResult<int>[] wirs = new IWorkItemResult<int>[5];
+
+            for (int i = 0; i < wirs.Length; ++i)
+            {
+                wirs[i] = smartThreadPool.QueueWorkItem(new Func<int, int, int>(Math.Max), i, i - 1);
+            }
+
+            int index = SmartThreadPool.WaitAny(wirs);
+
+            if (wirs[index].IsCompleted)
+            {
+                int result = wirs[index].GetResult();
+                if (index == result)    
+                {
+                    success = true;
+                }
+            }
+
+            smartThreadPool.Shutdown();
+
+            Assert.IsTrue(success);
+        } 
+
 	}
 }

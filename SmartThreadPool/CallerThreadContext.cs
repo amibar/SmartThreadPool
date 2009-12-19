@@ -1,3 +1,6 @@
+
+#if !(WindowsCE)
+
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -6,7 +9,7 @@ using System.Web;
 using System.Runtime.Remoting.Messaging;
 
 
-namespace Amib.Threading
+namespace Amib.Threading.Internal
 {
 	#region CallerThreadContext class
 
@@ -19,10 +22,10 @@ namespace Amib.Threading
 		#region Prepare reflection information
 
 		// Cached type information.
-		private static MethodInfo getLogicalCallContextMethodInfo =
+		private static readonly MethodInfo getLogicalCallContextMethodInfo =
 			typeof(Thread).GetMethod("GetLogicalCallContext", BindingFlags.Instance | BindingFlags.NonPublic);
 
-		private static MethodInfo setLogicalCallContextMethodInfo =
+		private static readonly MethodInfo setLogicalCallContextMethodInfo =
 			typeof(Thread).GetMethod("SetLogicalCallContext", BindingFlags.Instance | BindingFlags.NonPublic);
 
 		private static string HttpContextSlotName = GetHttpContextSlotName();
@@ -31,18 +34,20 @@ namespace Amib.Threading
 		{
 			FieldInfo fi = typeof(HttpContext).GetField("CallContextSlotName", BindingFlags.Static | BindingFlags.NonPublic);
 
-			if( fi != null )
-				return (string)fi.GetValue(null);
-			else // Use the default "HttpContext" slot name
-				return "HttpContext";
+            if (fi != null)
+            {
+                return (string) fi.GetValue(null);
+            }
+
+		    return "HttpContext";
 		}
 
 		#endregion
 
 		#region Private fields
 
-		private HttpContext _httpContext = null;
-		private LogicalCallContext _callContext = null;
+		private HttpContext _httpContext;
+		private LogicalCallContext _callContext;
 
 		#endregion
 
@@ -118,15 +123,16 @@ namespace Amib.Threading
 			{
 				setLogicalCallContextMethodInfo.Invoke(Thread.CurrentThread, new object[] { callerThreadContext._callContext });
 			}
-			
-            // Restore HttpContext 
-            if (callerThreadContext._httpContext != null)
-            {
+
+			// Restore HttpContext 
+			if (callerThreadContext._httpContext != null)
+			{
                 HttpContext.Current = callerThreadContext._httpContext;
-            }
+				//CallContext.SetData(HttpContextSlotName, callerThreadContext._httpContext);
+			}
 		}
 	}
 
 	#endregion
-
 }
+#endif

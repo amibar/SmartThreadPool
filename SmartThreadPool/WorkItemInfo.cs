@@ -1,6 +1,3 @@
-// Ami Bar
-// amibar@gmail.com
-
 namespace Amib.Threading
 {
 	#region WorkItemInfo class
@@ -61,37 +58,55 @@ namespace Amib.Threading
 			_workItemPriority = workItemInfo._workItemPriority;
 		}
 
-		public bool UseCallerCallContext
+        /// <summary>
+        /// Get/Set if to use the caller's security context
+        /// </summary>
+        public bool UseCallerCallContext
 		{
 			get { return _useCallerCallContext; }
 			set { _useCallerCallContext = value; }
 		}
 
-		public bool UseCallerHttpContext
+        /// <summary>
+        /// Get/Set if to use the caller's HTTP context
+        /// </summary>
+        public bool UseCallerHttpContext
 		{
 			get { return _useCallerHttpContext; }
 			set { _useCallerHttpContext = value; }
 		}
 
-		public bool DisposeOfStateObjects
+        /// <summary>
+        /// Get/Set if to dispose of the state object of a work item
+        /// </summary>
+        public bool DisposeOfStateObjects
 		{
 			get { return _disposeOfStateObjects; }
 			set { _disposeOfStateObjects = value; }
 		}
 
-		public CallToPostExecute CallToPostExecute
+        /// <summary>
+        /// Get/Set the run the post execute options
+        /// </summary>
+        public CallToPostExecute CallToPostExecute
 		{
 			get { return _callToPostExecute; }
 			set { _callToPostExecute = value; }
 		}
 
-		public PostExecuteWorkItemCallback PostExecuteWorkItemCallback
+        /// <summary>
+        /// Get/Set the post execute callback
+        /// </summary>
+        public PostExecuteWorkItemCallback PostExecuteWorkItemCallback
 		{
 			get { return _postExecuteWorkItemCallback; }
 			set { _postExecuteWorkItemCallback = value; }
 		}
 
-		public WorkItemPriority WorkItemPriority
+        /// <summary>
+        /// Get/Set the work items priority
+        /// </summary>
+        public WorkItemPriority WorkItemPriority
 		{
 			get { return _workItemPriority; }
 			set { _workItemPriority = value; }

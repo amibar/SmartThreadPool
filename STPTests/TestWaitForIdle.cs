@@ -28,15 +28,17 @@ namespace SmartThreadPoolTests
             SmartThreadPool smartThreadPool = new SmartThreadPool(10*1000, 25, 0);
 
             bool success = false;
+            ManualResetEvent isRunning = new ManualResetEvent(false);
 
-            for(int i = 0; i < 100; ++i)
+            for(int i = 0; i < 4; ++i)
             {
-                smartThreadPool.QueueWorkItem(
-                    new WorkItemCallback(this.DoSomeWork), 
-                    null);
+                smartThreadPool.QueueWorkItem(delegate { isRunning.WaitOne(); });
             }
 
-            success = !smartThreadPool.WaitForIdle(3500);
+            success = !smartThreadPool.WaitForIdle(1000);
+
+            isRunning.Set();
+
             success = success && smartThreadPool.WaitForIdle(1000);
 
             smartThreadPool.Shutdown();

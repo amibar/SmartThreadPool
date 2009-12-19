@@ -1,6 +1,3 @@
-// Ami Bar
-// amibar@gmail.com
-
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -25,17 +22,17 @@ namespace Amib.Threading.Internal
 		/// <summary>
 		/// Work items queues. There is one for each type of priority
 		/// </summary>
-		private Queue [] _queues = new Queue[_queuesCount];
+		private readonly Queue [] _queues = new Queue[_queuesCount];
 
 		/// <summary>
 		/// The total number of work items within the queues 
 		/// </summary>
-		private int _workItemsCount = 0;
+		private int _workItemsCount;
 
 		/// <summary>
 		/// Use with IEnumerable interface
 		/// </summary>
-		private int _version = 0;
+		private int _version;
 
 		#endregion
 
@@ -159,7 +156,7 @@ namespace Amib.Threading.Internal
 		/// </summary>
 		private class PriorityQueueEnumerator : IEnumerator
 		{
-			private PriorityQueue _priorityQueue;
+			private readonly PriorityQueue _priorityQueue;
 			private int _version;
 			private int _queueIndex;
 			private IEnumerator _enumerator;

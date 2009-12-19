@@ -3,7 +3,17 @@ using System.Diagnostics;
 
 namespace Amib.Threading.Internal
 {
-	internal enum STPPerformanceCounterType
+    internal interface ISTPInstancePerformanceCounters : IDisposable
+    {
+        void Close();
+        void SampleThreads(long activeThreads, long inUseThreads);
+        void SampleWorkItems(long workItemsQueued, long workItemsProcessed);
+        void SampleWorkItemsWaitTime(TimeSpan workItemWaitTime);
+        void SampleWorkItemsProcessTime(TimeSpan workItemProcessTime);
+    }
+#if !(WindowsCE)
+
+    internal enum STPPerformanceCounterType
 	{
 		// Fields
 		ActiveThreads				= 0,
@@ -37,7 +47,7 @@ namespace Amib.Threading.Internal
 	internal class STPPerformanceCounter
 	{
 		// Fields
-		private PerformanceCounterType _pcType;
+		private readonly PerformanceCounterType _pcType;
 		protected string _counterHelp;
 		protected string _counterName;
 
@@ -47,9 +57,9 @@ namespace Amib.Threading.Internal
 			string counterHelp, 
 			PerformanceCounterType pcType)
 		{
-			this._counterName = counterName;
-			this._counterHelp = counterHelp;
-			this._pcType = pcType;
+			_counterName = counterName;
+			_counterHelp = counterHelp;
+			_pcType = pcType;
 		}
 
 		public void AddCounterToCollection(CounterCreationDataCollection counterData)
@@ -76,7 +86,7 @@ namespace Amib.Threading.Internal
 	{
 		// Fields
 		internal STPPerformanceCounter[] _stpPerformanceCounters;
-		private static STPPerformanceCounters _instance;
+		private static readonly STPPerformanceCounters _instance;
 		internal const string _stpCategoryHelp = "SmartThreadPool performance counters";
 		internal const string _stpCategoryName = "SmartThreadPool";
 
@@ -149,16 +159,18 @@ namespace Amib.Threading.Internal
 	internal class STPInstancePerformanceCounter : IDisposable
 	{
 		// Fields
+        private bool _isDisposed;
 		private PerformanceCounter _pcs;
 
 		// Methods
 		protected STPInstancePerformanceCounter()
 		{
+            _isDisposed = false;
 		}
 
 		public STPInstancePerformanceCounter(
 			string instance, 
-			STPPerformanceCounterType spcType)
+			STPPerformanceCounterType spcType) : this()
 		{
 			STPPerformanceCounters counters = STPPerformanceCounters.Instance;
 			_pcs = new PerformanceCounter(
@@ -169,10 +181,6 @@ namespace Amib.Threading.Internal
 			_pcs.RawValue = _pcs.RawValue;
 		}
 
-		~STPInstancePerformanceCounter()
-		{
-			Close();
-		}
 
 		public void Close()
 		{
@@ -186,9 +194,20 @@ namespace Amib.Threading.Internal
  
 		public void Dispose()
 		{
-			Close();
-			GC.SuppressFinalize(this);
+            Dispose(true);
 		}
+
+        public virtual void Dispose(bool disposing)
+        {
+            if (!_isDisposed)
+            {
+                if (disposing)
+                {
+                    Close();
+                }
+            }
+            _isDisposed = true;
+        }
  
 		public virtual void Increment()
 		{
@@ -209,27 +228,19 @@ namespace Amib.Threading.Internal
 	internal class STPInstanceNullPerformanceCounter : STPInstancePerformanceCounter
 	{
 		// Methods
-		public STPInstanceNullPerformanceCounter() {}
 		public override void Increment() {}
 		public override void IncrementBy(long value) {}
 		public override void Set(long val) {}
 	}
-		
-	internal interface ISTPInstancePerformanceCounters : IDisposable
-	{
-		void Close();
-		void SampleThreads(long activeThreads, long inUseThreads);
-		void SampleWorkItems(long workItemsQueued, long workItemsProcessed);
-		void SampleWorkItemsWaitTime(TimeSpan workItemWaitTime);
-		void SampleWorkItemsProcessTime(TimeSpan workItemProcessTime);
-	}
 
 
-	internal class STPInstancePerformanceCounters : ISTPInstancePerformanceCounters, IDisposable
+
+	internal class STPInstancePerformanceCounters : ISTPInstancePerformanceCounters
 	{
+        private bool _isDisposed;
 		// Fields
 		private STPInstancePerformanceCounter[] _pcs;
-		private static STPInstancePerformanceCounter _stpInstanceNullPerformanceCounter;
+		private static readonly STPInstancePerformanceCounter _stpInstanceNullPerformanceCounter;
 
 		// Methods
 		static STPInstancePerformanceCounters()
@@ -239,8 +250,13 @@ namespace Amib.Threading.Internal
  
 		public STPInstancePerformanceCounters(string instance)
 		{
+            _isDisposed = false;
 			_pcs = new STPInstancePerformanceCounter[(int)STPPerformanceCounterType.LastCounter];
-			STPPerformanceCounters counters = STPPerformanceCounters.Instance;
+
+            // Call the STPPerformanceCounters.Instance so the static constructor will
+            // intialize the STPPerformanceCounters singleton.
+			STPPerformanceCounters.Instance.GetHashCode();
+
 			for (int i = 0; i < _pcs.Length; i++)
 			{
 				if (instance != null)
@@ -265,23 +281,29 @@ namespace Amib.Threading.Internal
 				{
                     if (null != _pcs[i])
                     {
-                        _pcs[i].Close();
+                        _pcs[i].Dispose();
                     }
 				}
 				_pcs = null;
 			}
 		}
 
-		~STPInstancePerformanceCounters()
-		{
-			Close();
-		}
-
 		public void Dispose()
 		{
-			Close();
-			GC.SuppressFinalize(this);
+            Dispose(true);
 		}
+
+        public virtual void Dispose(bool disposing)
+        {
+            if (!_isDisposed)
+            {
+                if (disposing)
+                {
+                    Close();
+                }
+            }
+            _isDisposed = true;
+        }
  
 		private STPInstancePerformanceCounter GetCounter(STPPerformanceCounterType spcType)
 		{
@@ -319,22 +341,18 @@ namespace Amib.Threading.Internal
 			GetCounter(STPPerformanceCounterType.AvgWorkItemProcessTime).IncrementBy((long)workItemProcessTime.TotalMilliseconds);
 			GetCounter(STPPerformanceCounterType.AvgWorkItemProcessTimeBase).Increment();
 		}
-	}
+    }
+    #endif
 
-	internal class NullSTPInstancePerformanceCounters : ISTPInstancePerformanceCounters, IDisposable
+    internal class NullSTPInstancePerformanceCounters : ISTPInstancePerformanceCounters
 	{
-		static NullSTPInstancePerformanceCounters()
-		{
-		}
-
-		private static NullSTPInstancePerformanceCounters _instance = new NullSTPInstancePerformanceCounters(null);
+		private static readonly NullSTPInstancePerformanceCounters _instance = new NullSTPInstancePerformanceCounters();
 
 		public static NullSTPInstancePerformanceCounters Instance
 		{
 			get { return _instance; }
 		}
 
-		public NullSTPInstancePerformanceCounters(string instance) {}
  		public void Close() {}
 		public void Dispose() {}
  
@@ -342,6 +360,5 @@ namespace Amib.Threading.Internal
 		public void SampleWorkItems(long workItemsQueued, long workItemsProcessed) {}
 		public void SampleWorkItemsWaitTime(TimeSpan workItemWaitTime) {}
 		public void SampleWorkItemsProcessTime(TimeSpan workItemProcessTime) {}
-	}
-
+    }
 }

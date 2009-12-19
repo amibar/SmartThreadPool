@@ -1,7 +1,6 @@
-// Ami Bar
-// amibar@gmail.com
-//
-// Smart thread pool in C#.
+#region Release History
+
+// Smart Thread Pool
 // 7 Aug 2004 - Initial release
 // 14 Sep 2004 - Bug fixes 
 // 15 Oct 2004 - Added new features
@@ -51,6 +50,22 @@
 //		  their won't be a Performance Counter leak.
 //		- Added exception catch in case the Performance Counters cannot 
 //		  be created.
+//
+// 17 May 2008 - Changes:
+//      - Changed the dispose behavior and removed the Finalizers.
+//      - Enabled the change of the MaxThreads and MinThreads at run time.
+//      - Enabled the change of the Concurrency of a IWorkItemsGroup at run 
+//        time If the IWorkItemsGroup is a SmartThreadPool then the Concurrency 
+//        refers to the MaxThreads. 
+//      - Improved the cancel behavior.
+//      - Added events for thread creation and termination. 
+//      - Fixed the HttpContext context capture.
+//      - Changed internal collections so they use generic collections
+//      - Added IsIdle flag to the SmartThreadPool and IWorkItemsGroup
+//      - Added support for WinCE
+//      - Added support for Action<T> and Func<T>
+
+#endregion
 
 using System;
 using System.Security;
@@ -67,9 +82,9 @@ namespace Amib.Threading
 	/// <summary>
 	/// Smart thread pool class.
 	/// </summary>
-	public class SmartThreadPool : IWorkItemsGroup, IDisposable
+	public class SmartThreadPool : WorkItemsGroupBase, IDisposable
 	{
-		#region Default Constants
+		#region Public Default Constants
 
 		/// <summary>
 		/// Default minimum number of threads the thread pool contains. (0)
@@ -102,67 +117,122 @@ namespace Amib.Threading
 		public const bool DefaultDisposeOfStateObjects = false; 
 
 		/// <summary>
-		/// The default option to run the post execute
+        /// The default option to run the post execute (CallToPostExecute.Always)
 		/// </summary>
 		public const CallToPostExecute DefaultCallToPostExecute = CallToPostExecute.Always;
 
 		/// <summary>
-		/// The default post execute method to run. 
+		/// The default post execute method to run. (None)
 		/// When null it means not to call it.
 		/// </summary>
-		public static readonly PostExecuteWorkItemCallback DefaultPostExecuteWorkItemCallback = null;
+		public static readonly PostExecuteWorkItemCallback DefaultPostExecuteWorkItemCallback;
 
 		/// <summary>
-		/// The default work item priority
+        /// The default work item priority (WorkItemPriority.Normal)
 		/// </summary>
 		public const WorkItemPriority DefaultWorkItemPriority = WorkItemPriority.Normal;
 
 		/// <summary>
 		/// The default is to work on work items as soon as they arrive
-		/// and not to wait for the start.
+		/// and not to wait for the start. (false)
 		/// </summary>
 		public const bool DefaultStartSuspended = false;
 
 		/// <summary>
-		/// The default is not to use the performance counters
+        /// The default name to use for the performance counters instance. (null)
 		/// </summary>
-		public static readonly string DefaultPerformanceCounterInstanceName = null;
+		public static readonly string DefaultPerformanceCounterInstanceName;
 
 		/// <summary>
-		/// The default thread priority
+        /// The default thread priority (ThreadPriority.Normal)
 		/// </summary>
 		public const ThreadPriority DefaultThreadPriority = ThreadPriority.Normal;
 
+        /// <summary>
+        /// The default fill state with params. (false)
+        /// It is relevant only to QueueWorkItem of Action<...>/Func<...>
+        /// </summary>
+        public const bool DefaultFillStateWithArgs = false;
+        
 		#endregion
 
-		#region Member Variables
+        #region ThreadEntry class
+
+        private class ThreadEntry
+        {
+            /// <summary>
+            /// The thread creation time
+            /// </summary>
+            private DateTime _creationTime;
+
+            /// <summary>
+            /// The last time this thread has been running
+            /// It is updated by IAmAlive() method
+            /// </summary>
+            private DateTime _lastAliveTime;
+
+            /// <summary>
+            /// A reference to the current work item a thread from the thread pool 
+            /// is executing.
+            /// </summary>
+            private WorkItem _currentWorkItem;
+
+            /// <summary>
+            /// A reference from each thread in the thread pool to its SmartThreadPool
+            /// object container.
+            /// With this variable a thread can know whatever it belongs to a 
+            /// SmartThreadPool.
+            /// </summary>
+            private SmartThreadPool _associatedSmartThreadPool;
+
+            public ThreadEntry(SmartThreadPool stp)
+            {
+                _associatedSmartThreadPool = stp;
+                _creationTime = DateTime.Now;
+                _lastAliveTime = DateTime.MinValue;
+            }
+
+            public WorkItem CurrentWorkItem
+            {
+                get { return _currentWorkItem; }
+                set { _currentWorkItem = value; }
+            }
+
+            public SmartThreadPool AssociatedSmartThreadPool
+            {
+                get { return _associatedSmartThreadPool; }
+            }
+
+            public void IAmAlive()
+            {
+                _lastAliveTime = DateTime.Now;
+            }
+        }
+
+        #endregion
+
+        #region Member Variables
 
 		/// <summary>
-		/// Contains the name of this instance of SmartThreadPool.
-		/// Can be changed by the user.
+		/// Dictionary of all the threads in the thread pool.
 		/// </summary>
-		private string _name = "SmartThreadPool";
-
-		/// <summary>
-		/// Hashtable of all the threads in the thread pool.
-		/// </summary>
-		private Hashtable _workerThreads = Hashtable.Synchronized(new Hashtable());
+        private readonly SynchronizedDictionary<Thread, ThreadEntry> _workerThreads = new SynchronizedDictionary<Thread, ThreadEntry>();
 
 		/// <summary>
 		/// Queue of work items.
 		/// </summary>
-		private WorkItemsQueue _workItemsQueue = new WorkItemsQueue();
+		private readonly WorkItemsQueue _workItemsQueue = new WorkItemsQueue();
 
 		/// <summary>
 		/// Count the work items handled.
 		/// Used by the performance counter.
 		/// </summary>
-		private long _workItemsProcessed = 0;
+		private long _workItemsProcessed;
 
 		/// <summary>
 		/// Number of threads that currently work (not idle).
 		/// </summary>
-		private int _inUseWorkerThreads = 0;
+		private int _inUseWorkerThreads;
 
 		/// <summary>
 		/// Start information to use. 
@@ -170,43 +240,51 @@ namespace Amib.Threading
 		/// </summary>
 		private STPStartInfo _stpStartInfo = new STPStartInfo();
 
+        /// <summary>
+        /// Stored the original reference to the provided _stpStartInfo.
+        /// It is used to change the MinThread and MaxThreads
+        /// </summary>
+        private STPStartInfo _stpStartInfoRW;
+
 		/// <summary>
 		/// Total number of work items that are stored in the work items queue 
 		/// plus the work items that the threads in the pool are working on.
 		/// </summary>
-		private int _currentWorkItemsCount = 0;
+		private int _currentWorkItemsCount;
 
 		/// <summary>
 		/// Signaled when the thread pool is idle, i.e. no thread is busy
 		/// and the work items queue is empty
 		/// </summary>
-		private ManualResetEvent _isIdleWaitHandle = new ManualResetEvent(true);
+		//private ManualResetEvent _isIdleWaitHandle = new ManualResetEvent(true);
+		private ManualResetEvent _isIdleWaitHandle = EventWaitHandleFactory.CreateManualResetEvent(true);
 
 		/// <summary>
 		/// An event to signal all the threads to quit immediately.
 		/// </summary>
-		private ManualResetEvent _shuttingDownEvent = new ManualResetEvent(false);
+		//private ManualResetEvent _shuttingDownEvent = new ManualResetEvent(false);
+		private ManualResetEvent _shuttingDownEvent = EventWaitHandleFactory.CreateManualResetEvent(false);
+
+        /// <summary>
+        /// A flag to indicate if the Smart Thread Pool is now suspended.
+        /// </summary>
+        private bool _isSuspended;
 
 		/// <summary>
 		/// A flag to indicate the threads to quit.
 		/// </summary>
-		private bool _shutdown = false;
+		private bool _shutdown;
 
 		/// <summary>
 		/// Counts the threads created in the pool.
 		/// It is used to name the threads.
 		/// </summary>
-		private int _threadCounter = 0;
+		private int _threadCounter;
 
 		/// <summary>
 		/// Indicate that the SmartThreadPool has been disposed
 		/// </summary>
-		private bool _isDisposed = false;
-
-		/// <summary>
-		/// Event to send that the thread pool is idle
-		/// </summary>
-		private event EventHandler _stpIdle;
+		private bool _isDisposed;
 
 		/// <summary>
 		/// On idle event
@@ -218,34 +296,75 @@ namespace Amib.Threading
 		/// work item int the SmartThreadPool
 		/// This variable is used in case of Shutdown
 		/// </summary>
-		private Hashtable _workItemsGroups = Hashtable.Synchronized(new Hashtable());
+        private readonly SynchronizedDictionary<IWorkItemsGroup, IWorkItemsGroup> _workItemsGroups = new SynchronizedDictionary<IWorkItemsGroup, IWorkItemsGroup>();
 
-		/// <summary>
-		/// A reference from each thread in the thread pool to its SmartThreadPool
-		/// object container.
-		/// With this variable a thread can know whatever it belongs to a 
-		/// SmartThreadPool.
-		/// </summary>
-		[ThreadStatic]
-		private static SmartThreadPool _smartThreadPool;
+        /// <summary>
+        /// A common object for all the work items int the STP
+        /// so we can mark them to cancel in O(1)
+        /// </summary>
+        private CanceledWorkItemsGroup _canceledSmartThreadPool = new CanceledWorkItemsGroup();
 
-		/// <summary>
-		/// A reference to the current work item a thread from the thread pool 
-		/// is executing.
-		/// </summary>
-		[ThreadStatic]
-		private static WorkItem _currentWorkItem;
+        /// <summary>
+        /// STP performance counters
+        /// </summary>
+        private ISTPInstancePerformanceCounters _pcs = NullSTPInstancePerformanceCounters.Instance;
 
-		/// <summary>
-		/// STP performance counters
-		/// </summary>
-		private ISTPInstancePerformanceCounters _pcs = NullSTPInstancePerformanceCounters.Instance;
 
-		#endregion
+#if (WindowsCE)
+        private static LocalDataStoreSlot _threadEntrySlot = Thread.AllocateDataSlot();
+#else
+        [ThreadStatic]
+        private static ThreadEntry _threadEntry;
 
-		#region Construction and Finalization
+#endif
 
-		/// <summary>
+        /// <summary>
+        /// An event to call after a thread is created, but before 
+        /// it's first use.
+        /// </summary>
+        private event ThreadInitializationHandler _onThreadInitialization;
+
+        /// <summary>
+        /// An event to call when a thread is about to exit, after 
+        /// it is no longer belong to the pool.
+        /// </summary>
+        private event ThreadTerminationHandler _onThreadTermination;
+
+        #endregion
+
+        #region Per thread properties
+
+        /// <summary>
+        /// A reference to the current work item a thread from the thread pool 
+        /// is executing.
+        /// </summary>
+        private static ThreadEntry CurrentThreadEntry
+        {
+#if (WindowsCE)
+            get
+            {
+                return Thread.GetData(_threadEntrySlot) as ThreadEntry;
+            }
+            set
+            {
+                Thread.SetData(_threadEntrySlot, value);
+            }
+#else
+            get
+            {
+                return _threadEntry;
+            }
+            set
+            {
+                _threadEntry = value;
+            }
+#endif
+        }
+        #endregion
+
+        #region Construction and Finalization
+
+        /// <summary>
 		/// Constructor
 		/// </summary>
 		public SmartThreadPool()
@@ -294,9 +413,10 @@ namespace Amib.Threading
 			Initialize();
 		}
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="stpStartInfo">A SmartThreadPool configuration that overrides the default behavior</param>
 		public SmartThreadPool(STPStartInfo stpStartInfo)
 		{
 			_stpStartInfo = new STPStartInfo(stpStartInfo);
@@ -305,29 +425,54 @@ namespace Amib.Threading
 
 		private void Initialize()
 		{
+		    Name = "SmartThreadPool";
 			ValidateSTPStartInfo();
 
+            // _stpStartInfoRW holds a read/write reference to the original _stpStartInfo.
+            _stpStartInfoRW = _stpStartInfo;
+
+            // From now on _stpStartInfo is readonly
+            _stpStartInfo = _stpStartInfo.AsReadOnly();
+
+            _isSuspended = _stpStartInfo.StartSuspended;
+
+#if (WindowsCE)
 			if (null != _stpStartInfo.PerformanceCounterInstanceName)
 			{
-				try
-				{
-					_pcs = new STPInstancePerformanceCounters(_stpStartInfo.PerformanceCounterInstanceName);
-				}
-				catch(Exception e)
-				{
-					Debug.WriteLine("Unable to create Performance Counters: " + e.ToString());
-					_pcs = NullSTPInstancePerformanceCounters.Instance;
-				}
-			}
+                throw new NotSupportedException("Performance counters are not implemented for Compact Framework");
+            }
 
-			StartOptimalNumberOfThreads();
+#else
+            if (null != _stpStartInfo.PerformanceCounterInstanceName)
+            {
+                try
+                {
+                    _pcs = new STPInstancePerformanceCounters(_stpStartInfo.PerformanceCounterInstanceName);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("Unable to create Performance Counters: " + e);
+                    _pcs = NullSTPInstancePerformanceCounters.Instance;
+                }
+            }
+#endif
+
+            // If the STP is not started suspended then start the threads.
+            if (!_isSuspended)
+            {
+                StartOptimalNumberOfThreads();
+            }
 		}
 
 		private void StartOptimalNumberOfThreads()
 		{
 			int threadsCount = Math.Max(_workItemsQueue.Count, _stpStartInfo.MinWorkerThreads);
 			threadsCount = Math.Min(threadsCount, _stpStartInfo.MaxWorkerThreads);
-			StartThreads(threadsCount);
+            threadsCount -= _workerThreads.Count;
+            if (threadsCount > 0)
+            {
+                StartThreads(threadsCount);
+            }
 		}
 
 		private void ValidateSTPStartInfo()
@@ -352,7 +497,7 @@ namespace Amib.Threading
 			}
 		}
 
-		private void ValidateCallback(Delegate callback)
+		private static void ValidateCallback(Delegate callback)
 		{
 			if(callback.GetInvocationList().Length > 1)
 			{
@@ -382,25 +527,14 @@ namespace Amib.Threading
 		/// Put a new work item in the queue
 		/// </summary>
 		/// <param name="workItem">A work item to queue</param>
-		private void Enqueue(WorkItem workItem)
-		{
-			Enqueue(workItem, true);
-		}
-
-		/// <summary>
-		/// Put a new work item in the queue
-		/// </summary>
-		/// <param name="workItem">A work item to queue</param>
-		internal void Enqueue(WorkItem workItem, bool incrementWorkItems)
+		internal override void Enqueue(WorkItem workItem)
 		{
 			// Make sure the workItem is not null
 			Debug.Assert(null != workItem);
 
-			if (incrementWorkItems)
-			{
-				IncrementWorkItemsCount();
-			}
+			IncrementWorkItemsCount();
 
+            workItem.CanceledSmartThreadPool = _canceledSmartThreadPool;
 			_workItemsQueue.EnqueueWorkItem(workItem);
 			workItem.WorkItemIsQueued();
 
@@ -419,8 +553,8 @@ namespace Amib.Threading
 			//Trace.WriteLine("WorkItemsCount = " + _currentWorkItemsCount.ToString());
 			if (count == 1) 
 			{
-				//Trace.WriteLine("STP is NOT idle");
-				_isIdleWaitHandle.Reset();
+                IsIdle = false;
+                _isIdleWaitHandle.Reset();
 			}
 		}
 
@@ -428,16 +562,19 @@ namespace Amib.Threading
 		{
 			++_workItemsProcessed;
 
-			// The counter counts even if the work item was cancelled
-			_pcs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
+            if (!_shutdown)
+            {
+			    // The counter counts even if the work item was cancelled
+			    _pcs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
+            }
 
 			int count = Interlocked.Decrement(ref _currentWorkItemsCount);
 			//Trace.WriteLine("WorkItemsCount = " + _currentWorkItemsCount.ToString());
 			if (count == 0) 
 			{
-				//Trace.WriteLine("STP is idle");
-				_isIdleWaitHandle.Set();
-			}
+                IsIdle = true;
+                _isIdleWaitHandle.Set();
+            }
 		}
 
 		internal void RegisterWorkItemsGroup(IWorkItemsGroup workItemsGroup)
@@ -461,7 +598,7 @@ namespace Amib.Threading
 		{
 			// There is no need to lock the two methods together 
 			// since only the current thread removes itself
-			// and the _workerThreads is a synchronized hashtable
+			// and the _workerThreads is a synchronized dictionary
 			if (_workerThreads.Contains(Thread.CurrentThread))
 			{
 				_workerThreads.Remove(Thread.CurrentThread);
@@ -475,7 +612,7 @@ namespace Amib.Threading
 		/// <param name="threadsCount">The number of threads to start</param>
 		private void StartThreads(int threadsCount)
 		{
-			if (_stpStartInfo.StartSuspended)
+            if (_isSuspended)
 			{
 				return;
 			}
@@ -497,7 +634,7 @@ namespace Amib.Threading
 					}
 
 					// Create a new thread
-					Thread workerThread = new Thread(new ThreadStart(ProcessQueuedItems));
+					Thread workerThread = new Thread(ProcessQueuedItems);
 
 					// Configure the new thread and start it
 					workerThread.Name = "STP " + Name + " Thread #" + _threadCounter;
@@ -506,9 +643,9 @@ namespace Amib.Threading
 					workerThread.Start();
 					++_threadCounter;
 
-					// Add the new thread to the hashtable and update its creation
-					// time.
-					_workerThreads[workerThread] = DateTime.Now;
+                    // Add it to the dictionary and update its creation time.
+                    _workerThreads[workerThread] = new ThreadEntry(this);
+
 					_pcs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
 				}
 			}
@@ -519,8 +656,11 @@ namespace Amib.Threading
 		/// </summary>
 		private void ProcessQueuedItems()
 		{
-			// Initialize the _smartThreadPool variable
-			_smartThreadPool = this;
+            // Keep the entry of the dictionary as thread's variable to avoid the synchronization locks
+            // of the dictionary.
+            CurrentThreadEntry = _workerThreads[Thread.CurrentThread];
+
+            FireOnThreadInitialization();
 
 			try
 			{
@@ -531,14 +671,33 @@ namespace Amib.Threading
 				{
 					// Update the last time this thread was seen alive.
 					// It's good for debugging.
-					_workerThreads[Thread.CurrentThread] = DateTime.Now;
+                    CurrentThreadEntry.IAmAlive();
+
+                    // The following block handles the when the MaxWorkerThreads has been
+                    // incremented by the user at run-time.
+                    // Double lock for quit.
+                    if (_workerThreads.Count > _stpStartInfo.MaxWorkerThreads)
+                    {
+                        lock (_workerThreads.SyncRoot)
+                        {
+                            if (_workerThreads.Count > _stpStartInfo.MaxWorkerThreads)
+                            {
+                                // Inform that the thread is quiting and then quit.
+                                // This method must be called within this lock or else
+                                // more threads will quit and the thread pool will go
+                                // below the lower limit.
+                                InformCompleted();
+                                break;
+                            }
+                        }
+                    }
 
 					// Wait for a work item, shutdown, or timeout
 					WorkItem workItem = Dequeue();
 
 					// Update the last time this thread was seen alive.
 					// It's good for debugging.
-					_workerThreads[Thread.CurrentThread] = DateTime.Now;
+                    CurrentThreadEntry.IAmAlive();
 
 					// On timeout or shut down.
 					if (null == workItem)
@@ -572,6 +731,16 @@ namespace Amib.Threading
 						// Initialize the value to false
 						bInUseWorkerThreadsWasIncremented = false;
 
+                        // Set the Current Work Item of the thread.
+                        // Store the Current Work Item  before the workItem.StartingWorkItem() is called, 
+                        // so WorkItem.Cancel can work when the work item is between InQueue and InProgress 
+                        // states.
+                        // If the work item has been cancelled BEFORE the workItem.StartingWorkItem() 
+                        // (work item is in InQueue state) then workItem.StartingWorkItem() will return false.
+                        // If the work item has been cancelled AFTER the workItem.StartingWorkItem() then
+                        // (work item is in InProgress state) then the thread will be aborted
+                        CurrentThreadEntry.CurrentWorkItem = workItem;
+
 						// Change the state of the work item to 'in progress' if possible.
 						// We do it here so if the work item has been canceled we won't 
 						// increment the _inUseWorkerThreads.
@@ -595,8 +764,7 @@ namespace Amib.Threading
 						// statement we will decrement it correctly.
 						bInUseWorkerThreadsWasIncremented = true;
 
-						// Set the _currentWorkItem to the current work item
-						_currentWorkItem = workItem;
+                        workItem.FireWorkItemStarted();
 
 						ExecuteWorkItem(workItem);
 					}
@@ -607,14 +775,11 @@ namespace Amib.Threading
 					}
 					finally
 					{
-						if (null != workItem)
-						{
-							workItem.DisposeOfState();
-						}
+						workItem.DisposeOfState();
 
-						// Set the _currentWorkItem to null, since we 
+						// Set the CurrentWorkItem to null, since we 
 						// no longer run user's code.
-						_currentWorkItem = null;
+                        CurrentThreadEntry.CurrentWorkItem = null;
 
 						// Decrement the _inUseWorkerThreads only if we had 
 						// incremented it. Note the cancelled work items don't
@@ -639,7 +804,9 @@ namespace Amib.Threading
 			{
                 tae.GetHashCode();
 				// Handle the abort exception gracfully.
+#if !(WindowsCE)
 				Thread.ResetAbort();
+#endif
 			}
 			catch(Exception e)
 			{
@@ -648,6 +815,7 @@ namespace Amib.Threading
 			finally
 			{
 				InformCompleted();
+                FireOnThreadTermination();
 			}
 		}
 
@@ -657,10 +825,6 @@ namespace Amib.Threading
 			try
 			{
 				workItem.Execute();
-			}
-			catch
-			{
-				throw;
 			}
 			finally
 			{
@@ -673,260 +837,43 @@ namespace Amib.Threading
 
 		#region Public Methods
 
-		/// <summary>
-		/// Queue a work item
-		/// </summary>
-		/// <param name="callback">A callback to execute</param>
-		/// <returns>Returns a work item result</returns>
-		public IWorkItemResult QueueWorkItem(WorkItemCallback callback)
-		{
-			ValidateNotDisposed();
-			ValidateCallback(callback);
-			WorkItem workItem = WorkItemFactory.CreateWorkItem(this, _stpStartInfo, callback);
-			Enqueue(workItem);
-			return workItem.GetWorkItemResult();
-		}
-
-		/// <summary>
-		/// Queue a work item
-		/// </summary>
-		/// <param name="callback">A callback to execute</param>
-		/// <param name="workItemPriority">The priority of the work item</param>
-		/// <returns>Returns a work item result</returns>
-		public IWorkItemResult QueueWorkItem(WorkItemCallback callback, WorkItemPriority workItemPriority)
-		{
-			ValidateNotDisposed();
-			ValidateCallback(callback);
-			WorkItem workItem = WorkItemFactory.CreateWorkItem(this, _stpStartInfo, callback, workItemPriority);
-			Enqueue(workItem);
-			return workItem.GetWorkItemResult();
-		}
-
-		/// <summary>
-		/// Queue a work item
-		/// </summary>
-		/// <param name="workItemInfo">Work item info</param>
-		/// <param name="callback">A callback to execute</param>
-		/// <returns>Returns a work item result</returns>
-		public IWorkItemResult QueueWorkItem(WorkItemInfo workItemInfo, WorkItemCallback callback)
-		{
-			ValidateNotDisposed();
-			ValidateCallback(callback);
-			WorkItem workItem = WorkItemFactory.CreateWorkItem(this, _stpStartInfo, workItemInfo, callback);
-			Enqueue(workItem);
-			return workItem.GetWorkItemResult();
-		}
-
-		/// <summary>
-		/// Queue a work item
-		/// </summary>
-		/// <param name="callback">A callback to execute</param>
-		/// <param name="state">
-		/// The context object of the work item. Used for passing arguments to the work item. 
-		/// </param>
-		/// <returns>Returns a work item result</returns>
-		public IWorkItemResult QueueWorkItem(WorkItemCallback callback, object state)
-		{
-			ValidateNotDisposed();
-			ValidateCallback(callback);
-			WorkItem workItem = WorkItemFactory.CreateWorkItem(this, _stpStartInfo, callback, state);
-			Enqueue(workItem);
-			return workItem.GetWorkItemResult();
-		}
-
-		/// <summary>
-		/// Queue a work item
-		/// </summary>
-		/// <param name="callback">A callback to execute</param>
-		/// <param name="state">
-		/// The context object of the work item. Used for passing arguments to the work item. 
-		/// </param>
-		/// <param name="workItemPriority">The work item priority</param>
-		/// <returns>Returns a work item result</returns>
-		public IWorkItemResult QueueWorkItem(WorkItemCallback callback, object state, WorkItemPriority workItemPriority)
-		{
-			ValidateNotDisposed();
-			ValidateCallback(callback);
-			WorkItem workItem = WorkItemFactory.CreateWorkItem(this, _stpStartInfo, callback, state, workItemPriority);
-			Enqueue(workItem);
-			return workItem.GetWorkItemResult();
-		}
-
-		/// <summary>
-		/// Queue a work item
-		/// </summary>
-		/// <param name="workItemInfo">Work item information</param>
-		/// <param name="callback">A callback to execute</param>
-		/// <param name="state">
-		/// The context object of the work item. Used for passing arguments to the work item. 
-		/// </param>
-		/// <returns>Returns a work item result</returns>
-		public IWorkItemResult QueueWorkItem(WorkItemInfo workItemInfo, WorkItemCallback callback, object state)
-		{
-			ValidateNotDisposed();
-			ValidateCallback(callback);
-			WorkItem workItem = WorkItemFactory.CreateWorkItem(this, _stpStartInfo, workItemInfo, callback, state);
-			Enqueue(workItem);
-			return workItem.GetWorkItemResult();
-		}
-
-		/// <summary>
-		/// Queue a work item
-		/// </summary>
-		/// <param name="callback">A callback to execute</param>
-		/// <param name="state">
-		/// The context object of the work item. Used for passing arguments to the work item. 
-		/// </param>
-		/// <param name="postExecuteWorkItemCallback">
-		/// A delegate to call after the callback completion
-		/// </param>
-		/// <returns>Returns a work item result</returns>
-		public IWorkItemResult QueueWorkItem(
-			WorkItemCallback callback, 
-			object state,
-			PostExecuteWorkItemCallback postExecuteWorkItemCallback)
-		{
-			ValidateNotDisposed();
-			ValidateCallback(callback);
-			WorkItem workItem = WorkItemFactory.CreateWorkItem(this, _stpStartInfo, callback, state, postExecuteWorkItemCallback);
-			Enqueue(workItem);
-			return workItem.GetWorkItemResult();
-		}
-
-		/// <summary>
-		/// Queue a work item
-		/// </summary>
-		/// <param name="callback">A callback to execute</param>
-		/// <param name="state">
-		/// The context object of the work item. Used for passing arguments to the work item. 
-		/// </param>
-		/// <param name="postExecuteWorkItemCallback">
-		/// A delegate to call after the callback completion
-		/// </param>
-		/// <param name="workItemPriority">The work item priority</param>
-		/// <returns>Returns a work item result</returns>
-		public IWorkItemResult QueueWorkItem(
-			WorkItemCallback callback, 
-			object state,
-			PostExecuteWorkItemCallback postExecuteWorkItemCallback,
-			WorkItemPriority workItemPriority)
-		{
-			ValidateNotDisposed();
-			ValidateCallback(callback);
-			WorkItem workItem = WorkItemFactory.CreateWorkItem(this, _stpStartInfo, callback, state, postExecuteWorkItemCallback, workItemPriority);
-			Enqueue(workItem);
-			return workItem.GetWorkItemResult();
-		}
-
-		/// <summary>
-		/// Queue a work item
-		/// </summary>
-		/// <param name="callback">A callback to execute</param>
-		/// <param name="state">
-		/// The context object of the work item. Used for passing arguments to the work item. 
-		/// </param>
-		/// <param name="postExecuteWorkItemCallback">
-		/// A delegate to call after the callback completion
-		/// </param>
-		/// <param name="callToPostExecute">Indicates on which cases to call to the post execute callback</param>
-		/// <returns>Returns a work item result</returns>
-		public IWorkItemResult QueueWorkItem(
-			WorkItemCallback callback, 
-			object state,
-			PostExecuteWorkItemCallback postExecuteWorkItemCallback,
-			CallToPostExecute callToPostExecute)
-		{
-			ValidateNotDisposed();
-			ValidateCallback(callback);
-			WorkItem workItem = WorkItemFactory.CreateWorkItem(this, _stpStartInfo, callback, state, postExecuteWorkItemCallback, callToPostExecute);
-			Enqueue(workItem);
-			return workItem.GetWorkItemResult();
-		}
-
-		/// <summary>
-		/// Queue a work item
-		/// </summary>
-		/// <param name="callback">A callback to execute</param>
-		/// <param name="state">
-		/// The context object of the work item. Used for passing arguments to the work item. 
-		/// </param>
-		/// <param name="postExecuteWorkItemCallback">
-		/// A delegate to call after the callback completion
-		/// </param>
-		/// <param name="callToPostExecute">Indicates on which cases to call to the post execute callback</param>
-		/// <param name="workItemPriority">The work item priority</param>
-		/// <returns>Returns a work item result</returns>
-		public IWorkItemResult QueueWorkItem(
-			WorkItemCallback callback, 
-			object state,
-			PostExecuteWorkItemCallback postExecuteWorkItemCallback,
-			CallToPostExecute callToPostExecute,
-			WorkItemPriority workItemPriority)
-		{
-			ValidateNotDisposed();
-			ValidateCallback(callback);
-			WorkItem workItem = WorkItemFactory.CreateWorkItem(this, _stpStartInfo, callback, state, postExecuteWorkItemCallback, callToPostExecute, workItemPriority);
-			Enqueue(workItem);
-			return workItem.GetWorkItemResult();
-		}
-
-		/// <summary>
-		/// Wait for the thread pool to be idle
-		/// </summary>
-		public void WaitForIdle()
-		{
-			WaitForIdle(Timeout.Infinite);
-		}
-
-		/// <summary>
-		/// Wait for the thread pool to be idle
-		/// </summary>
-		public bool WaitForIdle(TimeSpan timeout)
-		{
-			return WaitForIdle((int)timeout.TotalMilliseconds);
-		}
-
-		/// <summary>
-		/// Wait for the thread pool to be idle
-		/// </summary>
-		public bool WaitForIdle(int millisecondsTimeout)
-		{
-			ValidateWaitForIdle();
-			return _isIdleWaitHandle.WaitOne(millisecondsTimeout, false);
-		}
 
 		private void ValidateWaitForIdle()
 		{
-			if(_smartThreadPool == this)
+            if (null != CurrentThreadEntry && CurrentThreadEntry.AssociatedSmartThreadPool == this)
 			{
 				throw new NotSupportedException(
-					"WaitForIdle cannot be called from a thread on its SmartThreadPool, it will cause may cause a deadlock");
+					"WaitForIdle cannot be called from a thread on its SmartThreadPool, it causes a deadlock");
 			}
 		}
 
-		internal void ValidateWorkItemsGroupWaitForIdle(IWorkItemsGroup workItemsGroup)
+		internal static void ValidateWorkItemsGroupWaitForIdle(IWorkItemsGroup workItemsGroup)
 		{
-			ValidateWorkItemsGroupWaitForIdleImpl(workItemsGroup, SmartThreadPool._currentWorkItem);
-			if ((null != workItemsGroup) && 
-				(null != SmartThreadPool._currentWorkItem) &&
-				SmartThreadPool._currentWorkItem.WasQueuedBy(workItemsGroup))
+            if (null == CurrentThreadEntry)
+            {
+                return;
+            }
+
+            WorkItem workItem = CurrentThreadEntry.CurrentWorkItem;
+            ValidateWorkItemsGroupWaitForIdleImpl(workItemsGroup, workItem);
+			if ((null != workItemsGroup) &&
+                (null != workItem) &&
+                CurrentThreadEntry.CurrentWorkItem.WasQueuedBy(workItemsGroup))
 			{
-				throw new NotSupportedException("WaitForIdle cannot be called from a thread on its SmartThreadPool, it will cause may cause a deadlock");
+				throw new NotSupportedException("WaitForIdle cannot be called from a thread on its SmartThreadPool, it causes a deadlock");
 			}
 		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		private void ValidateWorkItemsGroupWaitForIdleImpl(IWorkItemsGroup workItemsGroup, WorkItem workItem)
+		private static void ValidateWorkItemsGroupWaitForIdleImpl(IWorkItemsGroup workItemsGroup, WorkItem workItem)
 		{
 			if ((null != workItemsGroup) && 
 				(null != workItem) &&
 				workItem.WasQueuedBy(workItemsGroup))
 			{
-				throw new NotSupportedException("WaitForIdle cannot be called from a thread on its SmartThreadPool, it will cause may cause a deadlock");
+				throw new NotSupportedException("WaitForIdle cannot be called from a thread on its SmartThreadPool, it causes a deadlock");
 			}
 		}
-
-
 
 		/// <summary>
 		/// Force the SmartThreadPool to shutdown
@@ -936,7 +883,10 @@ namespace Amib.Threading
 			Shutdown(true, 0);
 		}
 
-		public void Shutdown(bool forceAbort, TimeSpan timeout)
+        /// <summary>
+        /// Force the SmartThreadPool to shutdown with timeout
+        /// </summary>
+        public void Shutdown(bool forceAbort, TimeSpan timeout)
 		{
 			Shutdown(forceAbort, (int)timeout.TotalMilliseconds);
 		}
@@ -952,13 +902,14 @@ namespace Amib.Threading
 
 			if (NullSTPInstancePerformanceCounters.Instance != _pcs)
 			{
-				_pcs.Dispose();
 				// Set the _pcs to "null" to stop updating the performance
 				// counters
 				_pcs = NullSTPInstancePerformanceCounters.Instance;
+
+                pcs.Dispose();
 			}
 
-			Thread [] threads = null;
+			Thread [] threads;
 			lock(_workerThreads.SyncRoot)
 			{
 				// Shutdown the work items queue
@@ -1009,7 +960,12 @@ namespace Amib.Threading
 				// Abort the threads in the pool
 				foreach(Thread thread in threads)
 				{
-					if ((thread != null) && thread.IsAlive) 
+                    
+					if ((thread != null)
+#if !(WindowsCE)
+                        && thread.IsAlive
+#endif                        
+                        )
 					{
 						try 
 						{
@@ -1028,28 +984,25 @@ namespace Amib.Threading
 					}
 				}
 			}
-
-			// Dispose of the performance counters
-			pcs.Dispose();
 		}
 
 		/// <summary>
 		/// Wait for all work items to complete
 		/// </summary>
-		/// <param name="workItemResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects</param>
 		/// <returns>
 		/// true when every work item in workItemResults has completed; otherwise false.
 		/// </returns>
 		public static bool WaitAll(
-			IWorkItemResult [] workItemResults)
+			IWaitableResult [] waitableResults)
 		{
-			return WaitAll(workItemResults, Timeout.Infinite, true);
+            return WaitAll(waitableResults, Timeout.Infinite, true);
 		}
 
 		/// <summary>
 		/// Wait for all work items to complete
 		/// </summary>
-		/// <param name="workItemResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects</param>
 		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely. </param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
@@ -1058,17 +1011,17 @@ namespace Amib.Threading
 		/// true when every work item in workItemResults has completed; otherwise false.
 		/// </returns>
 		public static bool WaitAll(
-			IWorkItemResult [] workItemResults,
+			IWaitableResult [] waitableResults,
 			TimeSpan timeout,
 			bool exitContext)
 		{
-			return WaitAll(workItemResults, (int)timeout.TotalMilliseconds, exitContext);
+            return WaitAll(waitableResults, (int)timeout.TotalMilliseconds, exitContext);
 		}
 
 		/// <summary>
 		/// Wait for all work items to complete
 		/// </summary>
-		/// <param name="workItemResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects</param>
 		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely. </param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
@@ -1078,18 +1031,18 @@ namespace Amib.Threading
 		/// true when every work item in workItemResults has completed; otherwise false.
 		/// </returns>
 		public static bool WaitAll(
-			IWorkItemResult [] workItemResults,  
+            IWaitableResult[] waitableResults,  
 			TimeSpan timeout,
 			bool exitContext,
 			WaitHandle cancelWaitHandle)
 		{
-			return WaitAll(workItemResults, (int)timeout.TotalMilliseconds, exitContext, cancelWaitHandle);
+            return WaitAll(waitableResults, (int)timeout.TotalMilliseconds, exitContext, cancelWaitHandle);
 		}
 
 		/// <summary>
 		/// Wait for all work items to complete
 		/// </summary>
-		/// <param name="workItemResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects</param>
 		/// <param name="millisecondsTimeout">The number of milliseconds to wait, or Timeout.Infinite (-1) to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
@@ -1098,17 +1051,17 @@ namespace Amib.Threading
 		/// true when every work item in workItemResults has completed; otherwise false.
 		/// </returns>
 		public static bool WaitAll(
-			IWorkItemResult [] workItemResults,  
+			IWaitableResult [] waitableResults,  
 			int millisecondsTimeout,
 			bool exitContext)
 		{
-			return WorkItem.WaitAll(workItemResults, millisecondsTimeout, exitContext, null);
+            return WorkItem.WaitAll(waitableResults, millisecondsTimeout, exitContext, null);
 		}
 
 		/// <summary>
 		/// Wait for all work items to complete
 		/// </summary>
-		/// <param name="workItemResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects</param>
 		/// <param name="millisecondsTimeout">The number of milliseconds to wait, or Timeout.Infinite (-1) to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
@@ -1118,32 +1071,32 @@ namespace Amib.Threading
 		/// true when every work item in workItemResults has completed; otherwise false.
 		/// </returns>
 		public static bool WaitAll(
-			IWorkItemResult [] workItemResults,  
+            IWaitableResult[] waitableResults,  
 			int millisecondsTimeout,
 			bool exitContext,
 			WaitHandle cancelWaitHandle)
 		{
-			return WorkItem.WaitAll(workItemResults, millisecondsTimeout, exitContext, cancelWaitHandle);
+            return WorkItem.WaitAll(waitableResults, millisecondsTimeout, exitContext, cancelWaitHandle);
 		}
 
 
 		/// <summary>
 		/// Waits for any of the work items in the specified array to complete, cancel, or timeout
 		/// </summary>
-		/// <param name="workItemResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects</param>
 		/// <returns>
 		/// The array index of the work item result that satisfied the wait, or WaitTimeout if any of the work items has been canceled.
 		/// </returns>
 		public static int WaitAny(
-			IWorkItemResult [] workItemResults)
+			IWaitableResult [] waitableResults)
 		{
-			return WaitAny(workItemResults, Timeout.Infinite, true);
+            return WaitAny(waitableResults, Timeout.Infinite, true);
 		}
 
 		/// <summary>
 		/// Waits for any of the work items in the specified array to complete, cancel, or timeout
 		/// </summary>
-		/// <param name="workItemResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects</param>
 		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely. </param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
@@ -1152,17 +1105,17 @@ namespace Amib.Threading
 		/// The array index of the work item result that satisfied the wait, or WaitTimeout if no work item result satisfied the wait and a time interval equivalent to millisecondsTimeout has passed or the work item has been canceled.
 		/// </returns>
 		public static int WaitAny(
-			IWorkItemResult [] workItemResults,
+            IWaitableResult[] waitableResults,
 			TimeSpan timeout,
 			bool exitContext)
 		{
-			return WaitAny(workItemResults, (int)timeout.TotalMilliseconds, exitContext);
+            return WaitAny(waitableResults, (int)timeout.TotalMilliseconds, exitContext);
 		}
 
 		/// <summary>
 		/// Waits for any of the work items in the specified array to complete, cancel, or timeout
 		/// </summary>
-		/// <param name="workItemResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects</param>
 		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely. </param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
@@ -1172,18 +1125,18 @@ namespace Amib.Threading
 		/// The array index of the work item result that satisfied the wait, or WaitTimeout if no work item result satisfied the wait and a time interval equivalent to millisecondsTimeout has passed or the work item has been canceled.
 		/// </returns>
 		public static int WaitAny(
-			IWorkItemResult [] workItemResults,
+			IWaitableResult [] waitableResults,
 			TimeSpan timeout,
 			bool exitContext,
 			WaitHandle cancelWaitHandle)
 		{
-			return WaitAny(workItemResults, (int)timeout.TotalMilliseconds, exitContext, cancelWaitHandle);
+            return WaitAny(waitableResults, (int)timeout.TotalMilliseconds, exitContext, cancelWaitHandle);
 		}
 
 		/// <summary>
 		/// Waits for any of the work items in the specified array to complete, cancel, or timeout
 		/// </summary>
-		/// <param name="workItemResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects</param>
 		/// <param name="millisecondsTimeout">The number of milliseconds to wait, or Timeout.Infinite (-1) to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
@@ -1192,17 +1145,17 @@ namespace Amib.Threading
 		/// The array index of the work item result that satisfied the wait, or WaitTimeout if no work item result satisfied the wait and a time interval equivalent to millisecondsTimeout has passed or the work item has been canceled.
 		/// </returns>
 		public static int WaitAny(
-			IWorkItemResult [] workItemResults,  
+			IWaitableResult [] waitableResults,  
 			int millisecondsTimeout,
 			bool exitContext)
 		{
-			return WorkItem.WaitAny(workItemResults, millisecondsTimeout, exitContext, null);
+            return WorkItem.WaitAny(waitableResults, millisecondsTimeout, exitContext, null);
 		}
 
 		/// <summary>
 		/// Waits for any of the work items in the specified array to complete, cancel, or timeout
 		/// </summary>
-		/// <param name="workItemResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects</param>
 		/// <param name="millisecondsTimeout">The number of milliseconds to wait, or Timeout.Infinite (-1) to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
@@ -1212,111 +1165,167 @@ namespace Amib.Threading
 		/// The array index of the work item result that satisfied the wait, or WaitTimeout if no work item result satisfied the wait and a time interval equivalent to millisecondsTimeout has passed or the work item has been canceled.
 		/// </returns>
 		public static int WaitAny(
-			IWorkItemResult [] workItemResults,  
+			IWaitableResult [] waitableResults,  
 			int millisecondsTimeout,
 			bool exitContext,
 			WaitHandle cancelWaitHandle)
 		{
-			return WorkItem.WaitAny(workItemResults, millisecondsTimeout, exitContext, cancelWaitHandle);
+            return WorkItem.WaitAny(waitableResults, millisecondsTimeout, exitContext, cancelWaitHandle);
 		}
 
+        /// <summary>
+        /// Creates a new WorkItemsGroup.
+        /// </summary>
+        /// <param name="concurrency">The number of work items that can be run concurrently</param>
+        /// <returns>A reference to the WorkItemsGroup</returns>
 		public IWorkItemsGroup CreateWorkItemsGroup(int concurrency)
 		{
 			IWorkItemsGroup workItemsGroup = new WorkItemsGroup(this, concurrency, _stpStartInfo);
 			return workItemsGroup;
 		}
 
+        /// <summary>
+        /// Creates a new WorkItemsGroup.
+        /// </summary>
+        /// <param name="concurrency">The number of work items that can be run concurrently</param>
+        /// <param name="wigStartInfo">A WorkItemsGroup configuration that overrides the default behavior</param>
+        /// <returns>A reference to the WorkItemsGroup</returns>
 		public IWorkItemsGroup CreateWorkItemsGroup(int concurrency, WIGStartInfo wigStartInfo)
 		{
 			IWorkItemsGroup workItemsGroup = new WorkItemsGroup(this, concurrency, wigStartInfo);
 			return workItemsGroup;
 		}
 
-		public event WorkItemsGroupIdleHandler OnIdle
-		{
-			add
-			{
-				throw new NotImplementedException("This event is not implemented in the SmartThreadPool class. Please create a WorkItemsGroup in order to use this feature.");
-				//_onIdle += value;
-			}
-			remove
-			{
-				throw new NotImplementedException("This event is not implemented in the SmartThreadPool class. Please create a WorkItemsGroup in order to use this feature.");
-				//_onIdle -= value;
-			}
-		}
+        #region Fire Thread's Events
 
-		public void Cancel()
-		{
-			ICollection workItemsGroups = _workItemsGroups.Values;
-			foreach(WorkItemsGroup workItemsGroup in workItemsGroups)
-			{
-				workItemsGroup.Cancel();
-			}
-		}
+        private void FireOnThreadInitialization()
+        {
+            if (null != _onThreadInitialization)
+            {
+                foreach (ThreadInitializationHandler tih in _onThreadInitialization.GetInvocationList())
+                {
+                    try
+                    {
+                        tih();
+                    }
+                    catch (Exception e)
+                    {
+                        e.GetHashCode();
+                        Debug.Assert(false);
+                        throw;
+                    }
+                }
+            }
+        }
 
-		public void Start()
-		{
-			lock (this)
-			{
-				if (!this._stpStartInfo.StartSuspended)
-				{
-					return;
-				}
-				_stpStartInfo.StartSuspended = false;
-			}
-			
-			ICollection workItemsGroups = _workItemsGroups.Values;
-			foreach(WorkItemsGroup workItemsGroup in workItemsGroups)
-			{
-				workItemsGroup.OnSTPIsStarting();
-			}
+        private void FireOnThreadTermination()
+        {
+            if (null != _onThreadTermination)
+            {
+                foreach (ThreadTerminationHandler tth in _onThreadTermination.GetInvocationList())
+                {
+                    try
+                    {
+                        tth();
+                    }
+                    catch (Exception e)
+                    {
+                        e.GetHashCode();
+                        Debug.Assert(false);
+                        throw;
+                    }
+                }
+            }
+        }
 
-			StartOptimalNumberOfThreads();
-		}
+        #endregion
+
+        /// <summary>
+        /// This event is fired when a thread is created.
+        /// Use it to initialize a thread before the work items use it.
+        /// </summary>
+        public event ThreadInitializationHandler OnThreadInitialization
+        {
+            add { _onThreadInitialization += value; }
+            remove { _onThreadInitialization -= value; }
+        }
+
+        /// <summary>
+        /// This event is fired when a thread is terminating.
+        /// Use it for cleanup.
+        /// </summary>
+        public event ThreadTerminationHandler OnThreadTermination
+        {
+            add { _onThreadTermination += value; }
+            remove { _onThreadTermination -= value; }
+        }
+
+
+        internal void CancelAbortWorkItemsGroup(WorkItemsGroup wig)
+        {
+            foreach (ThreadEntry threadEntry in _workerThreads.Values)
+            {
+                WorkItem workItem = threadEntry.CurrentWorkItem;
+                if (null != workItem &&
+                    workItem.WasQueuedBy(wig) &&
+                    !workItem.IsCanceled)
+                {
+                    threadEntry.CurrentWorkItem.GetWorkItemResult().Cancel(true);
+                }
+            }
+        }
+
+        
 
 		#endregion
 
 		#region Properties
 
 		/// <summary>
-		/// Get/Set the name of the SmartThreadPool instance
-		/// </summary>
-		public string Name 
-		{ 
-			get
-			{
-				return _name;
-			}
-
-			set
-			{
-				_name = value;
-			}
-		}
-
-		/// <summary>
-		/// Get the lower limit of threads in the pool.
+		/// Get/Set the lower limit of threads in the pool.
 		/// </summary>
 		public int MinThreads 
 		{ 
 			get 
 			{
 				ValidateNotDisposed();
-				return _stpStartInfo.MinWorkerThreads; 
+                return _stpStartInfo.MinWorkerThreads; 
 			}
+            set
+            {
+                Debug.Assert(value >= 0);
+                Debug.Assert(value <= _stpStartInfo.MaxWorkerThreads);
+                if (_stpStartInfo.MaxWorkerThreads < value)
+                {
+                    _stpStartInfoRW.MaxWorkerThreads = value;
+                }
+                _stpStartInfoRW.MinWorkerThreads = value;
+                StartOptimalNumberOfThreads();
+            }
 		}
 
-		/// <summary>
-		/// Get the upper limit of threads in the pool.
+	    /// <summary>
+		/// Get/Set the upper limit of threads in the pool.
 		/// </summary>
 		public int MaxThreads 
 		{ 
 			get 
 			{
 				ValidateNotDisposed();
-				return _stpStartInfo.MaxWorkerThreads; 
+                return _stpStartInfo.MaxWorkerThreads; 
 			} 
+
+			set 
+			{
+                Debug.Assert(value > 0);
+                Debug.Assert(value >= _stpStartInfo.MinWorkerThreads);
+                if (_stpStartInfo.MinWorkerThreads > value)
+                {
+                    _stpStartInfoRW.MinWorkerThreads = value;
+                }
+                _stpStartInfoRW.MaxWorkerThreads = value;
+                StartOptimalNumberOfThreads();
+            } 
 		}
 		/// <summary>
 		/// Get the number of threads in the thread pool.
@@ -1343,40 +1352,31 @@ namespace Amib.Threading
 			} 
 		}
 
-		/// <summary>
-		/// Get the number of work items in the queue.
-		/// </summary>
-		public int WaitingCallbacks 
-		{ 
-			get 
-			{ 
-				ValidateNotDisposed();
-				return _workItemsQueue.Count;
-			} 
-		}
+        /// <summary>
+        /// Returns true if the current running work item has been cancelled.
+        /// Must be used within the work item's callback method.
+        /// The work item should sample this value in order to know if it
+        /// needs to quit before its completion.
+        /// </summary>
+        public static bool IsWorkItemCanceled
+        {
+            get
+            {
+                return CurrentThreadEntry.CurrentWorkItem.IsCanceled;
+            }
+        }
 
-
-		public event EventHandler Idle
-		{
-			add
-			{
-				_stpIdle += value;
-			}
-
-			remove
-			{
-				_stpIdle -= value;
-			}
-		}
+        /// <summary>
+        /// Thread Pool start information (readonly)
+        /// </summary>
+        public STPStartInfo STPStartInfo
+        {
+            get { return _stpStartInfo; }
+        }
 
         #endregion
 
         #region IDisposable Members
-
-        ~SmartThreadPool()
-        {
-            Dispose();
-		}
 
         public void Dispose()
         {
@@ -1393,8 +1393,14 @@ namespace Amib.Threading
                     _shuttingDownEvent = null;
                 }
                 _workerThreads.Clear();
+                
+                if (null != _isIdleWaitHandle)
+                {
+                    _isIdleWaitHandle.Close();
+                    _isIdleWaitHandle = null;
+                }
+
                 _isDisposed = true;
-                GC.SuppressFinalize(this);
             }
         }
 
@@ -1405,6 +1411,134 @@ namespace Amib.Threading
                 throw new ObjectDisposedException(GetType().ToString(), "The SmartThreadPool has been shutdown");
             }
         }
+        #endregion
+
+        #region WorkItemsGroupBase Overrides
+
+        /// <summary>
+        /// Get/Set the maximum number of work items that execute cocurrency on the thread pool
+        /// </summary>
+        public override int Concurrency
+	    {
+	        get { return MaxThreads; }
+	        set { MaxThreads = value; }
+	    }
+
+	    /// <summary>
+	    /// Get the number of work items in the queue.
+	    /// </summary>
+	    public override int WaitingCallbacks
+	    {
+	        get
+	        {
+	            ValidateNotDisposed();
+	            return _workItemsQueue.Count;
+	        }
+	    }
+
+        /// <summary>
+        /// Get an array with all the state objects of the currently running items.
+        /// The array represents a snap shot and impact performance.
+        /// </summary>
+        public override object[] GetStates()
+        {
+            object[] states = _workItemsQueue.GetStates();
+            return states;
+        }
+
+        /// <summary>
+        /// WorkItemsGroup start information (readonly)
+        /// </summary>
+        public override WIGStartInfo WIGStartInfo
+        {
+            get { return _stpStartInfo; }
+        }
+
+	    /// <summary>
+        /// Start the thread pool if it was started suspended.
+        /// If it is already running, this method is ignored.
+        /// </summary>
+        public override void Start()
+        {
+            if (!_isSuspended)
+            {
+                return;
+            }
+            _isSuspended = false;
+
+            ICollection workItemsGroups = _workItemsGroups.Values;
+            foreach (WorkItemsGroup workItemsGroup in workItemsGroups)
+            {
+                workItemsGroup.OnSTPIsStarting();
+            }
+
+            StartOptimalNumberOfThreads();
+        }
+
+        /// <summary>
+        /// Cancel all work items using thread abortion
+        /// </summary>
+        /// <param name="abortExecution">True to stop work items by raising ThreadAbortException</param>
+        public override void Cancel(bool abortExecution)
+        {
+            _canceledSmartThreadPool.IsCanceled = true;
+            _canceledSmartThreadPool = new CanceledWorkItemsGroup();
+
+            ICollection workItemsGroups = _workItemsGroups.Values;
+            foreach (WorkItemsGroup workItemsGroup in workItemsGroups)
+            {
+                workItemsGroup.Cancel(abortExecution);
+            }
+
+            if (abortExecution)
+            {
+                foreach (ThreadEntry threadEntry in _workerThreads.Values)
+                {
+                    WorkItem workItem = threadEntry.CurrentWorkItem;
+                    if (null != workItem &&
+                        threadEntry.AssociatedSmartThreadPool == this &&
+                        !workItem.IsCanceled)
+                    {
+                        threadEntry.CurrentWorkItem.GetWorkItemResult().Cancel(true);
+                    }
+                }
+            }
+        }
+
+	    /// <summary>
+        /// Wait for the thread pool to be idle
+        /// </summary>
+        public override bool WaitForIdle(int millisecondsTimeout)
+        {
+            ValidateWaitForIdle();
+            return _isIdleWaitHandle.WaitOne(millisecondsTimeout, false);
+        }
+
+        /// <summary>
+        /// This event is fired when all work items are completed.
+        /// (When IsIdle changes to true)
+        /// This event only work on WorkItemsGroup. On SmartThreadPool
+        /// it throws the NotImplementedException.
+        /// </summary>
+        public override event WorkItemsGroupIdleHandler OnIdle
+        {
+            add
+            {
+                throw new NotImplementedException("This event is not implemented in the SmartThreadPool class. Please create a WorkItemsGroup in order to use this feature.");
+                //_onIdle += value;
+            }
+            remove
+            {
+                throw new NotImplementedException("This event is not implemented in the SmartThreadPool class. Please create a WorkItemsGroup in order to use this feature.");
+                //_onIdle -= value;
+            }
+        }
+
+	    internal override void PreQueueWorkItem()
+        {
+            ValidateNotDisposed();   
+        }
+
         #endregion
     }
 	#endregion

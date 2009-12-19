@@ -5,7 +5,7 @@ using NUnit.Framework;
 
 using Amib.Threading;
 
-namespace SmartThreadPoolTests
+namespace WorkItemsGroupTests
 {
 	/// <summary>
 	/// Summary description for TestWIGConcurrency.

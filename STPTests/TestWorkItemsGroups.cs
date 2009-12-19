@@ -71,53 +71,6 @@ namespace WorkItemsGroupTests
 		} 
 
 		/// <summary>
-		/// Example of how to queue a work item and then cancel it while it is in the queue.
-		/// </summary>
-		[Test]
-		public void WorkItemCanceling() 
-		{ 
-			// Create a SmartThreadPool with only one thread.
-			// It just to show how to use the work item canceling feature
-			SmartThreadPool smartThreadPool = new SmartThreadPool(10*1000, 1);
-			IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue);
-
-			bool success = false;
-
-			// Queue a work item that will occupy the thread in the pool
-			IWorkItemResult wir1 = 
-				workItemsGroup.QueueWorkItem(new WorkItemCallback(this.DoSomeWork), null);
-
-			// Queue another work item that will wait for the first to complete
-			IWorkItemResult wir2 = 
-				workItemsGroup.QueueWorkItem(new WorkItemCallback(this.DoSomeWork), null);
-
-			// Wait a while for the thread pool to start executing the first work item
-			Thread.Sleep(100);
-
-			// The first work item cannot be canceled since it is currently executing
-			if (!wir1.Cancel())
-			{
-				// Cancel the second work item while it still in the queue
-				if (wir2.Cancel())
-				{
-					try
-					{
-						// Retreiving result of a canceled work item throws an exception
-						wir2.GetResult();
-					}
-					catch (WorkItemCancelException)
-					{
-						success = true;
-					}
-				}
-			}
-
-			smartThreadPool.Shutdown();
-
-			Assert.IsTrue(success);
-		} 
-
-		/// <summary>
 		/// Example of how to interrupt the waiting for a work item to complete.
 		/// </summary>
 		[Test]
