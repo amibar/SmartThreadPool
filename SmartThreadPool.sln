@@ -1,53 +1,21 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartThreadPoolCE", "SmartThreadPool\SmartThreadPoolCE.csproj", "{D81DD596-C71F-4AC2-816C-63C19589E7E0}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartThreadPool", "SmartThreadPool\SmartThreadPool.csproj", "{74D4C33F-7CC8-4B2A-A7DF-D8B6E63B6EBD}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "STPExamples", "STPExamples\STPExamples.csproj", "{AE943A5A-7CFD-4E0D-BA51-FB763AAEA9A3}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "STPTests", "STPTests\STPTests.csproj", "{6A3E4DBF-12AD-4636-ACB3-24B5172FAE03}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestSmartThreadPool", "TestSmartThreadPool\TestSmartThreadPool.csproj", "{976DB12F-9198-4AD9-981A-1652615C9B0D}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UsageControl", "UsageControl\UsageControl.csproj", "{C11A4561-CCB5-4C96-8DF2-B804031D89D8}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkItemsGroupDemo", "WorkItemsGroupDemo\WorkItemsGroupDemo.csproj", "{DC005A64-FAE9-4CFA-ADC8-F1D1FE7FE6CD}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "STPCEDemo", "STPCEDemo\STPCEDemo.csproj", "{356114BA-5F10-4DB6-9971-987CE11F765F}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,7 +25,6 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{D81DD596-C71F-4AC2-816C-63C19589E7E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D81DD596-C71F-4AC2-816C-63C19589E7E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D81DD596-C71F-4AC2-816C-63C19589E7E0}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{D81DD596-C71F-4AC2-816C-63C19589E7E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D81DD596-C71F-4AC2-816C-63C19589E7E0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{74D4C33F-7CC8-4B2A-A7DF-D8B6E63B6EBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -86,7 +53,6 @@ Global
 		{DC005A64-FAE9-4CFA-ADC8-F1D1FE7FE6CD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{356114BA-5F10-4DB6-9971-987CE11F765F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{356114BA-5F10-4DB6-9971-987CE11F765F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{356114BA-5F10-4DB6-9971-987CE11F765F}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{356114BA-5F10-4DB6-9971-987CE11F765F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{356114BA-5F10-4DB6-9971-987CE11F765F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{356114BA-5F10-4DB6-9971-987CE11F765F}.Release|Any CPU.Deploy.0 = Release|Any CPU
