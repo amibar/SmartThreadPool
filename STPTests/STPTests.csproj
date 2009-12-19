@@ -1,0 +1,168 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6A3E4DBF-12AD-4636-ACB3-24B5172FAE03}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>STPTests</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Library</OutputType>
+    <RootNamespace>STPTests</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>false</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>true</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>none</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework, Version=2.2.5.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL" />
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Data">
+      <Name>System.Data</Name>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Name>System.XML</Name>
+    </Reference>
+    <ProjectReference Include="..\SmartThreadPool\SmartThreadPool.csproj">
+      <Name>SmartThreadPool</Name>
+      <Project>{8684FC56-A679-4E2E-8F96-E172FB062EB6}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PermutationGenerator.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestChainedDelegates.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestExceptions.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestGetResult.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestMultipleWorkItems.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestPostExecute.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestPriorityQueue.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestStartSuspended.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestStateDispose.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestThreadPriority.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWaitForIdle.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWIGChainedDelegates.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWIGConcurrency.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWIGExceptions.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWIGGetResult.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWIGMultipleWorkItems.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWIGPostExecute.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWIGStateDispose.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWIGWaitForIdle.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWorkItemsGroups.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TestWorkItemsQueue.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>
