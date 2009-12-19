@@ -10,7 +10,7 @@ namespace Amib.Threading
     /// <summary>
     /// Represents an exception in case IWorkItemResult.GetResult has been canceled
     /// </summary>
-    public sealed partial class WorkItemCancelException : ApplicationException
+    public sealed partial class WorkItemCancelException : Exception
     {
         public WorkItemCancelException()
         {
@@ -30,7 +30,7 @@ namespace Amib.Threading
     /// <summary>
     /// Represents an exception in case IWorkItemResult.GetResult has been timed out
     /// </summary>
-    public sealed partial class WorkItemTimeoutException : ApplicationException
+    public sealed partial class WorkItemTimeoutException : Exception
     {
         public WorkItemTimeoutException()
         {
@@ -50,7 +50,7 @@ namespace Amib.Threading
     /// <summary>
     /// Represents an exception in case IWorkItemResult.GetResult has been timed out
     /// </summary>
-    public sealed partial class WorkItemResultException : ApplicationException
+    public sealed partial class WorkItemResultException : Exception
     {
         public WorkItemResultException()
         {

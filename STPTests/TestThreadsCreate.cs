@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 
 using NUnit.Framework;
 
@@ -31,8 +30,8 @@ namespace SmartThreadPoolTests
 
             SmartThreadPool stp = new SmartThreadPool();
 
-            stp.OnThreadInitialization += new ThreadInitializationHandler(OnInitialization);
-            stp.OnThreadTermination += new ThreadTerminationHandler(OnTermination);
+            stp.OnThreadInitialization += OnInitialization;
+            stp.OnThreadTermination += OnTermination;
 
             stp.QueueWorkItem(new WorkItemCallback(DoSomeWork), null);
 
@@ -72,13 +71,7 @@ namespace SmartThreadPoolTests
         [ThreadStatic]
         private static ThreadContextState _threadContextState;
 
-        private int _counter = 0;
-
-        public int Counter
-        {
-            get { return _counter; }
-            set { _counter = value; }
-        }
+        public int Counter { get; set; }
 
         // Static member so it can be used anywhere in code of the work item method
         public static ThreadContextState Current

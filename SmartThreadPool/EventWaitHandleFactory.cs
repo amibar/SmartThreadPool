@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Diagnostics;
+
+#if (WindowsCE)
+using System;
+using System.Runtime.InteropServices;
+#endif
 
 namespace Amib.Threading.Internal
 {

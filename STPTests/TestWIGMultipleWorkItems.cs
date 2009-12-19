@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
 
 using NUnit.Framework;
@@ -114,9 +113,7 @@ namespace WorkItemsGroupTests
 			SmartThreadPool smartThreadPool = new SmartThreadPool();
 			IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue);
 
-			bool success = true;
-
-			IWorkItemResult [] wirs = new IWorkItemResult[5];
+		    IWorkItemResult [] wirs = new IWorkItemResult[5];
 
 			for(int i = 0; i < wirs.Length; ++i)
 			{
@@ -125,7 +122,7 @@ namespace WorkItemsGroupTests
 			}
 
 			bool timeout = !SmartThreadPool.WaitAll(wirs, 1500, true);
-			success = !timeout;
+			bool success = !timeout;
 
 			smartThreadPool.Shutdown();
 
@@ -142,9 +139,7 @@ namespace WorkItemsGroupTests
 			SmartThreadPool smartThreadPool = new SmartThreadPool();
 			IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue);
 
-			bool success = true;
-
-			IWorkItemResult [] wirs = new IWorkItemResult[5];
+		    IWorkItemResult [] wirs = new IWorkItemResult[5];
 
 			for(int i = 0; i < wirs.Length; ++i)
 			{
@@ -153,7 +148,7 @@ namespace WorkItemsGroupTests
 			}
 
 			bool timeout = !SmartThreadPool.WaitAll(wirs, 10, true);
-			success = timeout;
+			bool success = timeout;
 
 			smartThreadPool.Shutdown();
 
@@ -170,7 +165,7 @@ namespace WorkItemsGroupTests
 			SmartThreadPool smartThreadPool = new SmartThreadPool();
 			IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue);
 
-			bool success = true;
+			bool success;
 
 			IWorkItemResult [] wirs = new IWorkItemResult[5];
 
@@ -199,9 +194,7 @@ namespace WorkItemsGroupTests
 			SmartThreadPool smartThreadPool = new SmartThreadPool();
 			IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue);
 
-			bool success = true;
-
-			IWorkItemResult [] wirs = new IWorkItemResult[5];
+		    IWorkItemResult [] wirs = new IWorkItemResult[5];
 
 			for(int i = 0; i < wirs.Length; ++i)
 			{
@@ -211,7 +204,7 @@ namespace WorkItemsGroupTests
 
 			int index = SmartThreadPool.WaitAny(wirs, 10, true);
 
-			success = (index == WaitHandle.WaitTimeout);
+			bool success = (index == WaitHandle.WaitTimeout);
 
 			smartThreadPool.Shutdown();
 

@@ -1,6 +1,4 @@
 using System;
-using System.Threading;
-
 using NUnit.Framework;
 
 using Amib.Threading;
@@ -14,11 +12,7 @@ namespace WorkItemsGroupTests
 	[Category("Test WorkItemsGroup ChainedDelegates")]
 	public class TestChainedDelegates
 	{
-		public TestChainedDelegates()
-		{
-		}
-
-		[Test]
+	    [Test]
 		public void GoodCallback()
 		{
 			SmartThreadPool smartThreadPool = new SmartThreadPool();

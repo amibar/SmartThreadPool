@@ -1,9 +1,6 @@
 using System;
 using System.Collections;
 
-using NUnit.Framework;
-
-using Amib.Threading;
 /*
  * The code below generates permutations.
  * 

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Drawing;
 
 namespace UsageControl
@@ -9,10 +6,6 @@ namespace UsageControl
     {
         public class QueueUsageEntry
         {
-            private string _text;
-            private Color _color;
-            private bool _isExecuting;
-
             public QueueUsageEntry(
                 string text,
                 Color color) : this (text, color, false)
@@ -24,26 +17,16 @@ namespace UsageControl
                 Color color,
                 bool blink)
             {
-                _text = text;
-                _color = color;
-                _isExecuting = blink;
+                Text = text;
+                Color = color;
+                IsExecuting = blink;
             }
 
-            public Color Color
-            {
-                get { return _color; }
-            }
+            public Color Color { get; private set; }
 
-            public string Text
-            {
-                get { return _text; }
-            }
+            public string Text { get; private set; }
 
-            public bool IsExecuting
-            {
-                get { return _isExecuting; }
-                set { _isExecuting = value; }
-            }
+            public bool IsExecuting { get; set; }
         }
     }
 }

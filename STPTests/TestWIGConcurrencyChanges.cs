@@ -1,7 +1,5 @@
 using System;
 using System.Threading;
-using System.Diagnostics;
-
 using NUnit.Framework;
 
 using Amib.Threading;
@@ -15,11 +13,7 @@ namespace WorkItemsGroupTests
 	[Category("TestWIGConcurrencyChanges")]
 	public class TestWIGConcurrencyChanges
 	{
-        public TestWIGConcurrencyChanges()
-		{
-		}
-
-        /// <summary>
+	    /// <summary>
         /// Example of waiting for idle
         /// </summary>
         [Test]

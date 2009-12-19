@@ -1,11 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
-using System.Drawing;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Windows.Forms;
 using Amib.Threading;
 using System.Threading;
@@ -26,11 +21,11 @@ namespace STPCEDemo
 
             uiTimer = new System.Windows.Forms.Timer();
             uiTimer.Interval = 1000;
-            uiTimer.Tick += new EventHandler(uiTimer_Tick);
+            uiTimer.Tick += uiTimer_Tick;
 
             wiTimer = new System.Windows.Forms.Timer();
             wiTimer.Interval = 1000;
-            wiTimer.Tick += new EventHandler(wiTimer_Tick);
+            wiTimer.Tick += wiTimer_Tick;
             //Debug.WriteLine("Form Thread Priority is " + (int)GetCurrentThreadPriority());
         }
 
@@ -50,11 +45,11 @@ namespace STPCEDemo
                 int inUse = _stp.InUseThreads;
                 int inPool = _stp.ActiveThreads;
 
-                this.usageHistoryControl1.AddValues(inUse, inPool);
-                this.usageControl1.Value1 = inUse;
-                this.usageControl1.Value2 = inPool;
-                this.lblThreadsInUse.Text = inUse.ToString();
-                this.lblThreadsInPool.Text = inPool.ToString();
+                usageHistoryControl1.AddValues(inUse, inPool);
+                usageControl1.Value1 = inUse;
+                usageControl1.Value2 = inPool;
+                lblThreadsInUse.Text = inUse.ToString();
+                lblThreadsInPool.Text = inPool.ToString();
             }
             catch(Exception ex)
             {

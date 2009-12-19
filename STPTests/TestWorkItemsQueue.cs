@@ -1,11 +1,5 @@
-using System;
-
 using NUnit.Framework;
-
-using Amib.Threading;
 using Amib.Threading.Internal;
-
-using SmartThreadPoolTests;
 
 namespace PriorityQueueTests
 {
@@ -16,11 +10,7 @@ namespace PriorityQueueTests
 	[Category("TestWorkItemsQueue")]
 	public class TestWorkItemsQueue
 	{
-		public TestWorkItemsQueue()
-		{
-		}
-	
-		[Test]
+	    [Test]
 		public void Init()
 		{
 		}
@@ -32,7 +22,7 @@ namespace PriorityQueueTests
 
 			Assert.AreEqual(0, q.WaitersCount);
 
-			WorkItemsQueue.WaiterEntry we1 = new Amib.Threading.Internal.WorkItemsQueue.WaiterEntry();
+			WorkItemsQueue.WaiterEntry we1 = new WorkItemsQueue.WaiterEntry();
 			q.PushWaiter(we1);
 
 			Assert.AreEqual(1, q.WaitersCount);
@@ -41,7 +31,7 @@ namespace PriorityQueueTests
 	
 			Assert.AreEqual(1, q.WaitersCount);
 
-			WorkItemsQueue.WaiterEntry we2 = new Amib.Threading.Internal.WorkItemsQueue.WaiterEntry();
+			WorkItemsQueue.WaiterEntry we2 = new WorkItemsQueue.WaiterEntry();
 			q.PushWaiter(we2);	
 
 			Assert.AreEqual(2, q.WaitersCount);

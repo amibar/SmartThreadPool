@@ -1,5 +1,6 @@
+using System;
 using System.Threading;
-
+using Amib.Threading.Internal;
 using NUnit.Framework;
 
 using Amib.Threading;
@@ -628,25 +629,12 @@ namespace SmartThreadPoolTests
             Assert.IsTrue(success);
         }
 
-        private static WorkItemInfo GetCurrentWorkItemInfo()
-        {
-            object threadEntry = typeof(SmartThreadPool).GetField("_threadEntry", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
-            object workitem = threadEntry.GetType().GetField("_currentWorkItem", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(threadEntry);
-            WorkItemInfo wii = (WorkItemInfo)workitem.GetType().GetField("_workItemInfo", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(workitem);
-            return wii;
-        }
-
         private class WorkItemInfoComparer
         {
             private WorkItemInfo _neededWorkItemInfo;
             private object _state;
-            private int _sleepTime = 0;
 
-            public int SleepTime
-            {
-                get { return _sleepTime; }
-                set { _sleepTime = value; }
-            }
+            public int SleepTime { get; set; }
 
             public WorkItemInfoComparer(WorkItemInfo workItemInfo)
             {
@@ -665,12 +653,12 @@ namespace SmartThreadPoolTests
                 bool equals = object.Equals(_state, state);
                 if (equals)
                 {
-                    WorkItemInfo currentWorkItemInfo = GetCurrentWorkItemInfo();
+                    WorkItemInfo currentWorkItemInfo = SmartThreadPool.CurrentThreadEntry.CurrentWorkItem.WorkItemInfo;
                     equals = CompareWorkItemInfo(currentWorkItemInfo, _neededWorkItemInfo);
                 }
-                if (_sleepTime > 0)
+                if (SleepTime > 0)
                 {
-                    Thread.Sleep(_sleepTime);
+                    Thread.Sleep(SleepTime);
                 }
 
                 return equals;

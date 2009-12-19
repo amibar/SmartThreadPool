@@ -23,7 +23,7 @@ namespace Examples
 				smartThreadPool.QueueWorkItem(new 
 					WorkItemCallback(this.DoDiv), divArgs);
 
-			Exception e = null;
+			Exception e;
 			object obj = wir.GetResult(out e);
 			// e contains the expetion that DoDiv threw
 			if(null == e)

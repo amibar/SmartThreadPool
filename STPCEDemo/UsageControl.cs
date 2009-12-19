@@ -1,9 +1,5 @@
 using System;
-using System.Collections;
-using System.ComponentModel;
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Data;
 using System.Windows.Forms;
 using STPCEDemo;
 
@@ -12,7 +8,7 @@ namespace UsageControl
 	/// <summary>
 	/// Summary description for UsageControl.
 	/// </summary>
-	public class UsageControl : System.Windows.Forms.UserControl
+	public class UsageControl : UserControl
 	{
 		private System.ComponentModel.IContainer components = null;
 		
@@ -83,7 +79,7 @@ namespace UsageControl
 			Width = fixedWidth;
 			rows = (ClientRectangle.Height / 4) - 1;
 			// Invalidate the control to get a repaint.
-			this.Invalidate();
+			Invalidate();
 		}
 
 		protected override void OnPaint(PaintEventArgs e)
@@ -99,7 +95,7 @@ namespace UsageControl
 
 			int emptyCount = rows - Math.Max(filledCount1, filledCount2);
 
-			int i = 0;
+			int i;
 
 			for(i = 0; i < filledCount1; ++i)
 			{
@@ -176,7 +172,7 @@ namespace UsageControl
 				}
 
 				// Invalidate the control to get a repaint.
-				this.Invalidate();
+				Invalidate();
 			}
 		}
 
@@ -310,17 +306,17 @@ namespace UsageControl
 			int PenWidth = (int)Pens.White.Width;
 
 			g.DrawLine(Pens.DarkGray,
-				this.ClientRectangle.Left, this.ClientRectangle.Top,
-				this.ClientRectangle.Width - PenWidth, this.ClientRectangle.Top);
+				ClientRectangle.Left, ClientRectangle.Top,
+				ClientRectangle.Width - PenWidth, ClientRectangle.Top);
 			g.DrawLine(Pens.DarkGray,
-				this.ClientRectangle.Left, this.ClientRectangle.Top,
-				this.ClientRectangle.Left, this.ClientRectangle.Height - PenWidth);
+				ClientRectangle.Left, ClientRectangle.Top,
+				ClientRectangle.Left, ClientRectangle.Height - PenWidth);
 			g.DrawLine(Pens.White,
-				this.ClientRectangle.Left, this.ClientRectangle.Height - PenWidth,
-				this.ClientRectangle.Width - PenWidth, this.ClientRectangle.Height - PenWidth);
+				ClientRectangle.Left, ClientRectangle.Height - PenWidth,
+				ClientRectangle.Width - PenWidth, ClientRectangle.Height - PenWidth);
 			g.DrawLine(Pens.White,
-				this.ClientRectangle.Width - PenWidth, this.ClientRectangle.Top,
-				this.ClientRectangle.Width - PenWidth, this.ClientRectangle.Height - PenWidth);
+				ClientRectangle.Width - PenWidth, ClientRectangle.Top,
+				ClientRectangle.Width - PenWidth, ClientRectangle.Height - PenWidth);
 		}
 
 

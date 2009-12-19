@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using UsageControl;
 using Amib.Threading;
@@ -180,7 +177,7 @@ namespace WorkItemsGroupDemo
         {
             lblStatus6.Text = _stp.IsIdle ? "Idle" : "Working";
 
-            object [] statesWorking = null;
+            object[] statesWorking;
             lock (_workingStates.SyncRoot)
             {
                 statesWorking = new object[_workingStates.Count];

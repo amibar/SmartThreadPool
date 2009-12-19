@@ -1,14 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.Data;
-using System.Text;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
-using System.Diagnostics;
-using System.Reflection;
-using System.Drawing.Imaging;
 
 
 namespace UsageControl
@@ -40,9 +34,8 @@ namespace UsageControl
         {
             //Debug.WriteLine("GenerateItemImage");
 
-            Bitmap itemImage = null;
             Rectangle rc = new Rectangle(0, 0, width, height);
-            itemImage = new Bitmap(rc.Width, rc.Height);
+            Bitmap itemImage = new Bitmap(rc.Width, rc.Height);
 
             /// Create button
             rc.Inflate(-3, -3);
@@ -90,11 +83,11 @@ namespace UsageControl
         {
             //Debug.WriteLine("GetItemsImage");
 
-            Bitmap itemImage = null;
+            Bitmap itemImage;
 
             if (!_imagesCache.ContainsKey(color))
             {
-                Rectangle rc = new Rectangle(0, 0, this.Width, _itemHeight);
+                Rectangle rc = new Rectangle(0, 0, Width, _itemHeight);
                 itemImage = new Bitmap(rc.Width, rc.Height);
 
                 /// Create button
@@ -120,7 +113,7 @@ namespace UsageControl
                 GraphicsPath path3 = GetPath(rc3, rc3.Height);
                 LinearGradientBrush br3 = new LinearGradientBrush(rc3, Color.FromArgb(255, Color.White), Color.FromArgb(0, Color.White), LinearGradientMode.Vertical);
 
-                itemImage = new Bitmap(this.Width - 2, _itemHeight);
+                itemImage = new Bitmap(Width - 2, _itemHeight);
                 Graphics g = Graphics.FromImage(itemImage);
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.FillPath(br2, path2);
@@ -140,12 +133,12 @@ namespace UsageControl
             //Debug.WriteLine("EnableDoubleBuffering");
 
             // Set the value of the double-buffering style bits to true.
-            this.SetStyle(ControlStyles.DoubleBuffer |
+            SetStyle(ControlStyles.DoubleBuffer |
                 ControlStyles.UserPaint |
                 ControlStyles.AllPaintingInWmPaint |
                 ControlStyles.SupportsTransparentBackColor,
                 true);
-            this.UpdateStyles();
+            UpdateStyles();
         }
 
         public void Reset()
@@ -245,7 +238,7 @@ namespace UsageControl
                     text = "(" + (_queuedItems.Count - _maxItemsVisible) + ")...";
                 }
 
-                SizeF size = g.MeasureString(entry.Text, this.Font);
+                SizeF size = g.MeasureString(entry.Text, Font);
                 //Debug.WriteLine(size.Width);
 
                 Bitmap itemImage = GetItemsImage(entry.Color);
@@ -256,7 +249,7 @@ namespace UsageControl
                 g.DrawImage(itemImage, -1, slot.Top-2);
                 
                 //g.DrawString(text, this.Font, Brushes.Black, new RectangleF((this.Width - size.Width) / 2, top + 2, this.Width, bottom));
-                g.DrawString(text, this.Font, Brushes.Black, slot);
+                g.DrawString(text, Font, Brushes.Black, slot);
                 ++i;
             }
 
@@ -282,15 +275,15 @@ namespace UsageControl
         private void ControlRezised()
         {
             //Debug.WriteLine("ControlRezised");
-            Graphics g = Graphics.FromHwnd(this.Handle);
-            SizeF size = g.MeasureString("X", this.Font);
+            Graphics g = Graphics.FromHwnd(Handle);
+            SizeF size = g.MeasureString("X", Font);
             g.Dispose();
             _itemHeight = (int)size.Height + 5;
-            _maxItemsVisible = this.Height / _itemHeight - 1;
+            _maxItemsVisible = Height / _itemHeight - 1;
             _lastVisibleItemIndex = _maxItemsVisible;
             _imagesCache = new Dictionary<Color, Bitmap>();
 
-            Rectangle border = new Rectangle(0, 0, this.ClientRectangle.Width - 1, this.ClientRectangle.Height - 1);
+            Rectangle border = new Rectangle(0, 0, ClientRectangle.Width - 1, ClientRectangle.Height - 1);
             _pathBorder = GetPath(border, 20);
 
             PrepareSlots();
@@ -303,8 +296,8 @@ namespace UsageControl
             _slots = new RectangleF[_maxItemsVisible+5];
             for (int i = 0; i < _slots.Length; i++)
             {
-                int top = 0;
-                int bottom = 0;
+                int top;
+                int bottom;
                 if (topdown)
                 {
                     bottom = 1;
@@ -314,13 +307,13 @@ namespace UsageControl
                 }
                 else
                 {
-                    bottom = this.Height - 1;
+                    bottom = Height - 1;
                     top = bottom;
                     bottom -= i * _itemHeight;
                     top -= (i + 1) * _itemHeight;
                 }
 
-                _slots[i] = new RectangleF((this.Width - 55) / 2, top + 2, this.Width, bottom);
+                _slots[i] = new RectangleF((Width - 55) / 2, top + 2, Width, bottom);
             }
         }
 

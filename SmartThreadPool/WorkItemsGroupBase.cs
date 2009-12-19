@@ -13,11 +13,10 @@ namespace Amib.Threading.Internal
         /// </summary>
         private string _name = "WorkItemsGroupBase";
 
-        /// <summary>
-        /// Inidcates if the SmartThreadPool/WorkItemsGroup is idle.
-        /// Its value is true if the _isIdleWaitHandle is set.
-        /// </summary>
-        private bool _isIdle = true;
+        public WorkItemsGroupBase()
+        {
+            IsIdle = true;
+        }
 
         #endregion
 
@@ -82,11 +81,7 @@ namespace Amib.Threading.Internal
         /// <summary>
         /// IsIdle is true when there are no work items running or queued.
         /// </summary>
-        public bool IsIdle
-        {
-            get { return _isIdle; }
-            protected set { _isIdle = value; }
-        }
+        public bool IsIdle { get; protected set; }
 
         #endregion
 
@@ -302,11 +297,11 @@ namespace Amib.Threading.Internal
             WorkItem workItem = WorkItemFactory.CreateWorkItem(
                 this,
                 WIGStartInfo,
-                delegate
-                {
-                    action.Invoke(arg);
-                    return null;
-                },
+                state =>
+                    {
+                        action.Invoke(arg);
+                        return null;
+                    },
                 WIGStartInfo.FillStateWithArgs ? new object[] { arg } : null);
             Enqueue(workItem);
             return workItem.GetWorkItemResult();
@@ -318,7 +313,7 @@ namespace Amib.Threading.Internal
             WorkItem workItem = WorkItemFactory.CreateWorkItem(
                 this,
                 WIGStartInfo,
-                delegate
+                state =>
                 {
                     action.Invoke(arg1, arg2);
                     return null;
@@ -334,7 +329,7 @@ namespace Amib.Threading.Internal
             WorkItem workItem = WorkItemFactory.CreateWorkItem(
                 this,
                 WIGStartInfo,
-                delegate
+                state =>
                 {
                     action.Invoke(arg1, arg2, arg3);
                     return null;
@@ -351,7 +346,7 @@ namespace Amib.Threading.Internal
             WorkItem workItem = WorkItemFactory.CreateWorkItem(
                            this,
                            WIGStartInfo,
-                           delegate
+                           state =>
                            {
                                action.Invoke(arg1, arg2, arg3, arg4);
                                return null;
@@ -371,7 +366,7 @@ namespace Amib.Threading.Internal
             WorkItem workItem = WorkItemFactory.CreateWorkItem(
                             this,
                             WIGStartInfo,
-                            delegate
+                            state =>
                             {
                                 return func.Invoke();
                             });
@@ -385,7 +380,7 @@ namespace Amib.Threading.Internal
             WorkItem workItem = WorkItemFactory.CreateWorkItem(
                 this,
                 WIGStartInfo,
-                delegate
+                state =>
                 {
                     return func.Invoke(arg);
                 },
@@ -400,7 +395,7 @@ namespace Amib.Threading.Internal
             WorkItem workItem = WorkItemFactory.CreateWorkItem(
                             this,
                             WIGStartInfo,
-                            delegate
+                            state =>
                             {
                                 return func.Invoke(arg1, arg2);
                             },
@@ -416,7 +411,7 @@ namespace Amib.Threading.Internal
             WorkItem workItem = WorkItemFactory.CreateWorkItem(
                             this,
                             WIGStartInfo,
-                            delegate
+                            state =>
                             {
                                 return func.Invoke(arg1, arg2, arg3);
                             },
@@ -432,7 +427,7 @@ namespace Amib.Threading.Internal
             WorkItem workItem = WorkItemFactory.CreateWorkItem(
                             this,
                             WIGStartInfo,
-                            delegate
+                            state =>
                             {
                                 return func.Invoke(arg1, arg2, arg3, arg4);
                             },

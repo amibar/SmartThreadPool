@@ -4,68 +4,10 @@ using System.Diagnostics;
 
 namespace Amib.Threading.Internal
 {
-	#region WorkItem Delegate
-
-	/// <summary>
-	/// An internal delegate to call when the WorkItem starts or completes
-	/// </summary>
-	internal delegate void WorkItemStateCallback(WorkItem workItem);
-
-	#endregion
-
-    #region CanceledWorkItemsGroup class
-
-    public class CanceledWorkItemsGroup
-	{
-		public readonly static CanceledWorkItemsGroup NotCanceledWorkItemsGroup = new CanceledWorkItemsGroup();
-
-		private bool _isCanceled = false;
-		public bool IsCanceled 
-		{ 
-			get { return _isCanceled; }
-			set { _isCanceled = value; }
-		}
-    }
-
-    #endregion
-
-    #region IInternalWorkItemResult interface
-
-    internal interface IInternalWorkItemResult
-	{
-		event WorkItemStateCallback OnWorkItemStarted;
-		event WorkItemStateCallback OnWorkItemCompleted;
-	}
-
-	#endregion
-
-    #region IInternalWaitableResult interface
-
-    internal interface IInternalWaitableResult
-    {
-        /// <summary>
-        /// This method is intent for internal use.
-        /// </summary>   
-        IWorkItemResult GetWorkItemResult();
-    }
-
-    #endregion
-
-    #region IHasWorkItemPriority interface
-
-    public interface IHasWorkItemPriority
-    {
-        WorkItemPriority WorkItemPriority { get; }
-    }
-
-    #endregion
-
-    #region WorkItem class
-
     /// <summary>
 	/// Holds a callback delegate and the state for that delegate.
 	/// </summary>
-	public class WorkItem : IHasWorkItemPriority
+	public partial class WorkItem : IHasWorkItemPriority
 	{
 		#region WorkItemState enum
 
@@ -236,6 +178,14 @@ namespace Amib.Threading.Internal
 			}
 		}
 
+        internal WorkItemInfo WorkItemInfo
+        {
+            get 
+            {
+                return _workItemInfo;
+            }
+        }
+
 		#endregion
 
 		#region Construction
@@ -292,13 +242,13 @@ namespace Amib.Threading.Internal
 
 		#region Methods
 
-		public CanceledWorkItemsGroup CanceledWorkItemsGroup
+		internal CanceledWorkItemsGroup CanceledWorkItemsGroup
 		{
 			get { return _canceledWorkItemsGroup; }
 			set { _canceledWorkItemsGroup = value; }
 		}
 
-        public CanceledWorkItemsGroup CanceledSmartThreadPool
+        internal CanceledWorkItemsGroup CanceledSmartThreadPool
         {
             get { return _canceledSmartThreadPool; }
             set { _canceledSmartThreadPool = value; }
@@ -994,186 +944,6 @@ namespace Amib.Threading.Internal
 			}
 		}
 
-
-		#region WorkItemResult class
-
-        private class WorkItemResult : IWorkItemResult, IInternalWorkItemResult, IInternalWaitableResult
-		{
-			/// <summary>
-			/// A back reference to the work item
-			/// </summary>
-			private readonly WorkItem _workItem;
-
-			public WorkItemResult(WorkItem workItem)
-			{
-				_workItem = workItem;
-			}
-
-			internal WorkItem GetWorkItem()
-			{
-				return _workItem;
-			}
-
-			#region IWorkItemResult Members
-
-			public bool IsCompleted
-			{
-				get
-				{
-					return _workItem.IsCompleted;
-				}
-			}
-
-            public bool IsCanceled
-            {
-                get
-                {
-                    return _workItem.IsCanceled;
-                }
-            }
-
-			public object GetResult()
-			{
-				return _workItem.GetResult(Timeout.Infinite, true, null);
-			}
-	
-			public object GetResult(int millisecondsTimeout, bool exitContext)
-			{
-				return _workItem.GetResult(millisecondsTimeout, exitContext, null);
-			}
-
-			public object GetResult(TimeSpan timeout, bool exitContext)
-			{
-				return _workItem.GetResult((int)timeout.TotalMilliseconds, exitContext, null);
-			}
-
-			public object GetResult(int millisecondsTimeout, bool exitContext, WaitHandle cancelWaitHandle)
-			{
-				return _workItem.GetResult(millisecondsTimeout, exitContext, cancelWaitHandle);
-			}
-
-			public object GetResult(TimeSpan timeout, bool exitContext, WaitHandle cancelWaitHandle)
-			{
-				return _workItem.GetResult((int)timeout.TotalMilliseconds, exitContext, cancelWaitHandle);
-			}
-
-			public object GetResult(out Exception e)
-			{
-				return _workItem.GetResult(Timeout.Infinite, true, null, out e);
-			}
-	
-			public object GetResult(int millisecondsTimeout, bool exitContext, out Exception e)
-			{
-				return _workItem.GetResult(millisecondsTimeout, exitContext, null, out e);
-			}
-
-			public object GetResult(TimeSpan timeout, bool exitContext, out Exception e)
-			{
-				return _workItem.GetResult((int)timeout.TotalMilliseconds, exitContext, null, out e);
-			}
-
-			public object GetResult(int millisecondsTimeout, bool exitContext, WaitHandle cancelWaitHandle, out Exception e)
-			{
-				return _workItem.GetResult(millisecondsTimeout, exitContext, cancelWaitHandle, out e);
-			}
-
-			public object GetResult(TimeSpan timeout, bool exitContext, WaitHandle cancelWaitHandle, out Exception e)
-			{
-				return _workItem.GetResult((int)timeout.TotalMilliseconds, exitContext, cancelWaitHandle, out e);
-			}
-
-            public bool Cancel()
-			{
-                return Cancel(false);
-			}
-
-            public bool Cancel(bool abortExecution)
-            {
-                return _workItem.Cancel(abortExecution);
-            }
-
-			public object State
-			{
-				get
-				{
-					return _workItem._state;
-				}
-			}
-
-			public WorkItemPriority WorkItemPriority 
-			{ 
-				get
-				{
-					return _workItem._workItemInfo.WorkItemPriority;
-				}
-			}
-
-			/// <summary>
-			/// Return the result, same as GetResult()
-			/// </summary>
-			public object Result
-			{
-				get { return GetResult(); }
-			}
-
-			/// <summary>
-			/// Returns the exception if occured otherwise returns null.
-			/// This value is valid only after the work item completed,
-			/// before that it is always null.
-			/// </summary>
-			public object Exception
-			{
-				get { return _workItem._exception; }
-			}
-
-			#endregion
-
-			#region IInternalWorkItemResult Members
-
-			public event WorkItemStateCallback OnWorkItemStarted
-			{
-				add
-				{
-					_workItem.OnWorkItemStarted += value;
-				}
-				remove
-				{
-					_workItem.OnWorkItemStarted -= value;
-				}
-			}
-
-
-			public event WorkItemStateCallback OnWorkItemCompleted
-			{
-				add
-				{
-					_workItem.OnWorkItemCompleted += value;
-				}
-				remove
-				{
-					_workItem.OnWorkItemCompleted -= value;
-				}
-			}
-
-			#endregion
-
-            #region IInternalWorkItemResult Members
-
-            public IWorkItemResult GetWorkItemResult()
-            {
-                return this;
-            }
-
-            public IWorkItemResult<TResult> GetWorkItemResultT<TResult>()
-            {
-                return new WorkItemResultTWrapper<TResult>(this);
-            }
-
-            #endregion
-        }
-
-		#endregion
-
         public void DisposeOfState()
         {
 			if (_workItemInfo.DisposeOfStateObjects)
@@ -1187,5 +957,4 @@ namespace Amib.Threading.Internal
 			}
         }
     }
-	#endregion
 }

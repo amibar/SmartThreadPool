@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Amib.Threading;
 
 namespace STPExamples
@@ -26,8 +24,8 @@ namespace STPExamples
         {
 
             SmartThreadPool stp = new SmartThreadPool();
-            stp.OnThreadInitialization += new ThreadInitializationHandler(OnInitialization);
-            stp.OnThreadTermination += new ThreadTerminationHandler(OnTermination);
+            stp.OnThreadInitialization += OnInitialization;
+            stp.OnThreadTermination += OnTermination;
 
             stp.QueueWorkItem(DoSomeWork);
         }

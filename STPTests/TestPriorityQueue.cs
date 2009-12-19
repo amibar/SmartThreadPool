@@ -15,11 +15,7 @@ namespace PriorityQueueTests
 	[Category("TestPriorityQueue")]
 	public class TestPriorityQueue
 	{
-		public TestPriorityQueue()
-		{
-		}
-	
-		[Test]
+	    [Test]
 		public void Init()
 		{
 			PriorityQueue pq = new PriorityQueue();
@@ -149,20 +145,12 @@ namespace PriorityQueueTests
 
 		private class PriorityItem : IHasWorkItemPriority
 		{
-			private WorkItemPriority _workItemPriority;
+		    public PriorityItem(WorkItemPriority workItemPriority)
+			{
+				WorkItemPriority = workItemPriority;
+			}
 
-			public PriorityItem(WorkItemPriority workItemPriority)
-			{
-				_workItemPriority = workItemPriority;
-			}
-			
-			public WorkItemPriority WorkItemPriority
-			{
-				get
-				{
-					return _workItemPriority;
-				}
-			}
+		    public WorkItemPriority WorkItemPriority { get; private set; }
 		}
 
 	}

@@ -9,16 +9,11 @@ namespace SmartThreadPoolTests
 {
     public class CallerState
     {
-        private int _val = 0;
-
-        public int Value
-        {
-            get { return _val; }
-        }
+        public int Value { get; private set; }
 
         protected void IncValue()
         {
-            ++_val;
+            ++Value;
         }
     }
 
@@ -55,11 +50,7 @@ namespace SmartThreadPoolTests
 	[Category("TestStateDispose")]
 	public class TestStateDispose
 	{
-		public TestStateDispose()
-		{
-		}
-
-        /// <summary>
+	    /// <summary>
         /// Example of non disposable caller state
         /// </summary>
         [Test]
@@ -108,8 +99,6 @@ namespace SmartThreadPoolTests
      
             SmartThreadPool smartThreadPool = new SmartThreadPool(stpStartInfo);
 
-            bool success = false;
-
             CallerState nonDisposableCallerState = new NonDisposableCallerState();
             CallerState disposableCallerState = new DisposableCallerState();
 
@@ -124,7 +113,7 @@ namespace SmartThreadPoolTests
                 disposableCallerState);
 
             wir1.GetResult();
-            success = (1 == nonDisposableCallerState.Value);
+            bool success = (1 == nonDisposableCallerState.Value);
 
             wir2.GetResult();
 

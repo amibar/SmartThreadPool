@@ -82,7 +82,7 @@ namespace Amib.Threading
 	/// <summary>
 	/// Smart thread pool class.
 	/// </summary>
-	public class SmartThreadPool : WorkItemsGroupBase, IDisposable
+	public partial class SmartThreadPool : WorkItemsGroupBase, IDisposable
 	{
 		#region Public Default Constants
 
@@ -156,61 +156,6 @@ namespace Amib.Threading
         
 		#endregion
 
-        #region ThreadEntry class
-
-        private class ThreadEntry
-        {
-            /// <summary>
-            /// The thread creation time
-            /// </summary>
-            private DateTime _creationTime;
-
-            /// <summary>
-            /// The last time this thread has been running
-            /// It is updated by IAmAlive() method
-            /// </summary>
-            private DateTime _lastAliveTime;
-
-            /// <summary>
-            /// A reference to the current work item a thread from the thread pool 
-            /// is executing.
-            /// </summary>
-            private WorkItem _currentWorkItem;
-
-            /// <summary>
-            /// A reference from each thread in the thread pool to its SmartThreadPool
-            /// object container.
-            /// With this variable a thread can know whatever it belongs to a 
-            /// SmartThreadPool.
-            /// </summary>
-            private SmartThreadPool _associatedSmartThreadPool;
-
-            public ThreadEntry(SmartThreadPool stp)
-            {
-                _associatedSmartThreadPool = stp;
-                _creationTime = DateTime.Now;
-                _lastAliveTime = DateTime.MinValue;
-            }
-
-            public WorkItem CurrentWorkItem
-            {
-                get { return _currentWorkItem; }
-                set { _currentWorkItem = value; }
-            }
-
-            public SmartThreadPool AssociatedSmartThreadPool
-            {
-                get { return _associatedSmartThreadPool; }
-            }
-
-            public void IAmAlive()
-            {
-                _lastAliveTime = DateTime.Now;
-            }
-        }
-
-        #endregion
-
         #region Member Variables
 
 		/// <summary>
@@ -234,17 +179,11 @@ namespace Amib.Threading
 		/// </summary>
 		private int _inUseWorkerThreads;
 
-		/// <summary>
-		/// Start information to use. 
-		/// It is simpler than providing many constructors.
-		/// </summary>
-		private STPStartInfo _stpStartInfo = new STPStartInfo();
-
         /// <summary>
-        /// Stored the original reference to the provided _stpStartInfo.
+        /// Stores a copy of the original STPStartInfo.
         /// It is used to change the MinThread and MaxThreads
         /// </summary>
-        private STPStartInfo _stpStartInfoRW;
+        private STPStartInfo _stpStartInfo;
 
 		/// <summary>
 		/// Total number of work items that are stored in the work items queue 
@@ -338,7 +277,7 @@ namespace Amib.Threading
         /// A reference to the current work item a thread from the thread pool 
         /// is executing.
         /// </summary>
-        private static ThreadEntry CurrentThreadEntry
+        internal static ThreadEntry CurrentThreadEntry
         {
 #if (WindowsCE)
             get
@@ -369,7 +308,8 @@ namespace Amib.Threading
 		/// </summary>
 		public SmartThreadPool()
 		{
-			Initialize();
+            _stpStartInfo = new STPStartInfo();
+            Initialize();
 		}
 
 		/// <summary>
@@ -378,7 +318,10 @@ namespace Amib.Threading
 		/// <param name="idleTimeout">Idle timeout in milliseconds</param>
 		public SmartThreadPool(int idleTimeout)
 		{
-			_stpStartInfo.IdleTimeout = idleTimeout;
+            _stpStartInfo = new STPStartInfo
+            {
+                IdleTimeout = idleTimeout,
+            };
 			Initialize();
 		}
 
@@ -391,8 +334,11 @@ namespace Amib.Threading
 			int idleTimeout,
 			int maxWorkerThreads)
 		{
-			_stpStartInfo.IdleTimeout = idleTimeout;
-			_stpStartInfo.MaxWorkerThreads = maxWorkerThreads;
+            _stpStartInfo = new STPStartInfo
+            {
+                IdleTimeout = idleTimeout,
+                MaxWorkerThreads = maxWorkerThreads,
+            };
 			Initialize();
 		}
 
@@ -407,9 +353,12 @@ namespace Amib.Threading
 			int maxWorkerThreads,
 			int minWorkerThreads)
 		{
-			_stpStartInfo.IdleTimeout = idleTimeout;
-			_stpStartInfo.MaxWorkerThreads = maxWorkerThreads;
-			_stpStartInfo.MinWorkerThreads = minWorkerThreads;
+            _stpStartInfo = new STPStartInfo
+            {
+                IdleTimeout = idleTimeout,
+                MaxWorkerThreads = maxWorkerThreads,
+                MinWorkerThreads = minWorkerThreads,
+            };
 			Initialize();
 		}
 
@@ -428,11 +377,8 @@ namespace Amib.Threading
 		    Name = "SmartThreadPool";
 			ValidateSTPStartInfo();
 
-            // _stpStartInfoRW holds a read/write reference to the original _stpStartInfo.
-            _stpStartInfoRW = _stpStartInfo;
-
-            // From now on _stpStartInfo is readonly
-            _stpStartInfo = _stpStartInfo.AsReadOnly();
+            // _stpStartInfoRW stores a read/write copy of the STPStartInfo.
+            // Actually only MaxWorkerThreads and MinWorkerThreads are overwritten
 
             _isSuspended = _stpStartInfo.StartSuspended;
 
@@ -467,7 +413,7 @@ namespace Amib.Threading
 		private void StartOptimalNumberOfThreads()
 		{
 			int threadsCount = Math.Max(_workItemsQueue.Count, _stpStartInfo.MinWorkerThreads);
-			threadsCount = Math.Min(threadsCount, _stpStartInfo.MaxWorkerThreads);
+            threadsCount = Math.Min(threadsCount, _stpStartInfo.MaxWorkerThreads);
             threadsCount -= _workerThreads.Count;
             if (threadsCount > 0)
             {
@@ -477,19 +423,19 @@ namespace Amib.Threading
 
 		private void ValidateSTPStartInfo()
 		{
-			if (_stpStartInfo.MinWorkerThreads < 0)
+            if (_stpStartInfo.MinWorkerThreads < 0)
 			{
 				throw new ArgumentOutOfRangeException(
 					"MinWorkerThreads", "MinWorkerThreads cannot be negative");
 			}
 
-			if (_stpStartInfo.MaxWorkerThreads <= 0)
+            if (_stpStartInfo.MaxWorkerThreads <= 0)
 			{
 				throw new ArgumentOutOfRangeException(
 					"MaxWorkerThreads", "MaxWorkerThreads must be greater than zero");
 			}
 
-			if (_stpStartInfo.MinWorkerThreads > _stpStartInfo.MaxWorkerThreads)
+            if (_stpStartInfo.MinWorkerThreads > _stpStartInfo.MaxWorkerThreads)
 			{
 				throw new ArgumentOutOfRangeException(
 					"MinWorkerThreads, maxWorkerThreads", 
@@ -517,8 +463,8 @@ namespace Amib.Threading
 		/// </returns>
 		private WorkItem Dequeue()
 		{
-			WorkItem workItem = 
-				_workItemsQueue.DequeueWorkItem(_stpStartInfo.IdleTimeout, _shuttingDownEvent);
+			WorkItem workItem =
+                _workItemsQueue.DequeueWorkItem(_stpStartInfo.IdleTimeout, _shuttingDownEvent);
 
 			return workItem;
 		}
@@ -628,7 +574,7 @@ namespace Amib.Threading
 				for(int i = 0; i < threadsCount; ++i)
 				{
 					// Don't create more threads then the upper limit
-					if (_workerThreads.Count >= _stpStartInfo.MaxWorkerThreads)
+                    if (_workerThreads.Count >= _stpStartInfo.MaxWorkerThreads)
 					{
 						return;
 					}
@@ -639,7 +585,7 @@ namespace Amib.Threading
 					// Configure the new thread and start it
 					workerThread.Name = "STP " + Name + " Thread #" + _threadCounter;
 					workerThread.IsBackground = true;
-					workerThread.Priority = _stpStartInfo.ThreadPriority;
+                    workerThread.Priority = _stpStartInfo.ThreadPriority;
 					workerThread.Start();
 					++_threadCounter;
 
@@ -703,11 +649,11 @@ namespace Amib.Threading
 					if (null == workItem)
 					{
 						// Double lock for quit.
-						if (_workerThreads.Count > _stpStartInfo.MinWorkerThreads)
+                        if (_workerThreads.Count > _stpStartInfo.MinWorkerThreads)
 						{
 							lock(_workerThreads.SyncRoot)
 							{
-								if (_workerThreads.Count > _stpStartInfo.MinWorkerThreads)
+                                if (_workerThreads.Count > _stpStartInfo.MinWorkerThreads)
 								{
 									// Inform that the thread is quiting and then quit.
 									// This method must be called within this lock or else
@@ -1180,7 +1126,7 @@ namespace Amib.Threading
         /// <returns>A reference to the WorkItemsGroup</returns>
 		public IWorkItemsGroup CreateWorkItemsGroup(int concurrency)
 		{
-			IWorkItemsGroup workItemsGroup = new WorkItemsGroup(this, concurrency, _stpStartInfo);
+            IWorkItemsGroup workItemsGroup = new WorkItemsGroup(this, concurrency, _stpStartInfo);
 			return workItemsGroup;
 		}
 
@@ -1297,9 +1243,9 @@ namespace Amib.Threading
                 Debug.Assert(value <= _stpStartInfo.MaxWorkerThreads);
                 if (_stpStartInfo.MaxWorkerThreads < value)
                 {
-                    _stpStartInfoRW.MaxWorkerThreads = value;
+                    _stpStartInfo.MaxWorkerThreads = value;
                 }
-                _stpStartInfoRW.MinWorkerThreads = value;
+                _stpStartInfo.MinWorkerThreads = value;
                 StartOptimalNumberOfThreads();
             }
 		}
@@ -1321,9 +1267,9 @@ namespace Amib.Threading
                 Debug.Assert(value >= _stpStartInfo.MinWorkerThreads);
                 if (_stpStartInfo.MinWorkerThreads > value)
                 {
-                    _stpStartInfoRW.MinWorkerThreads = value;
+                    _stpStartInfo.MinWorkerThreads = value;
                 }
-                _stpStartInfoRW.MaxWorkerThreads = value;
+                _stpStartInfo.MaxWorkerThreads = value;
                 StartOptimalNumberOfThreads();
             } 
 		}
@@ -1371,7 +1317,10 @@ namespace Amib.Threading
         /// </summary>
         public STPStartInfo STPStartInfo
         {
-            get { return _stpStartInfo; }
+            get 
+            {
+                return _stpStartInfo.AsReadOnly(); 
+            }
         }
 
         #endregion
@@ -1451,7 +1400,7 @@ namespace Amib.Threading
         /// </summary>
         public override WIGStartInfo WIGStartInfo
         {
-            get { return _stpStartInfo; }
+            get { return _stpStartInfo.AsReadOnly(); }
         }
 
 	    /// <summary>

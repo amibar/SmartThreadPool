@@ -1,7 +1,5 @@
 using System;
 using System.Threading;
-using System.Diagnostics;
-
 using NUnit.Framework;
 
 using Amib.Threading;
@@ -15,11 +13,7 @@ namespace WorkItemsGroupTests
 	[Category("TestWorkItemsGroups")]
 	public class TestWorkItemsGroups
 	{
-		public TestWorkItemsGroups()
-		{
-		}
-
-		[Test]
+	    [Test]
 		public void BlockingCall() 
 		{ 
 			SmartThreadPool smartThreadPool = new SmartThreadPool();

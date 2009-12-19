@@ -1,5 +1,8 @@
 using System;
+#if !(WindowsCE)
+
 using System.Diagnostics;
+#endif
 
 namespace Amib.Threading.Internal
 {

@@ -15,19 +15,13 @@ namespace SmartThreadPoolTests
 	[Category("TestConcurrencyChanges")]
 	public class TestConcurrencyChanges
 	{
-		public TestConcurrencyChanges()
-		{
-		}
-
-        /// <summary>
+	    /// <summary>
         /// Example of waiting for idle
         /// </summary>
         [Test]
         public void TestMaxThreadsChange()
         {
             SmartThreadPool smartThreadPool = new SmartThreadPool(1 * 1000, 1, 0);
-
-            bool success = false;
 
             for (int i = 0; i < 100; ++i)
             {
@@ -36,7 +30,7 @@ namespace SmartThreadPoolTests
                     null);
             }
 
-            success = WaitForMaxThreadsValue(smartThreadPool, 1, 1 * 1000);
+            bool success = WaitForMaxThreadsValue(smartThreadPool, 1, 1 * 1000);
             Assert.IsTrue(success);
 
             smartThreadPool.MaxThreads = 5;
@@ -59,9 +53,9 @@ namespace SmartThreadPoolTests
         {
             SmartThreadPool smartThreadPool = new SmartThreadPool(1 * 1000, 25, 0);
 
-            bool success = false;
 
-            success = WaitForMinThreadsValue(smartThreadPool, 0, 1 * 1000);
+
+            bool success = WaitForMinThreadsValue(smartThreadPool, 0, 1 * 1000);
             Assert.IsTrue(success);
 
             smartThreadPool.MinThreads = 5;

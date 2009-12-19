@@ -1,6 +1,4 @@
 using System;
-using System.Threading;
-
 using NUnit.Framework;
 
 using Amib.Threading;
@@ -14,11 +12,7 @@ namespace SmartThreadPoolTests
 	[Category("TestChainedDelegates")]
 	public class TestChainedDelegates
 	{
-		public TestChainedDelegates()
-		{
-		}
-
-		[Test]
+	    [Test]
 		public void GoodCallback()
 		{
 			SmartThreadPool stp = new SmartThreadPool();
@@ -67,10 +61,8 @@ namespace SmartThreadPoolTests
 		{
 			SmartThreadPool stp = new SmartThreadPool();
 
-			PostExecuteWorkItemCallback postExecuteWorkItemCallback = 
-				new PostExecuteWorkItemCallback(DoPostExecute);
-			postExecuteWorkItemCallback += 
-				new PostExecuteWorkItemCallback(DoPostExecute);
+            PostExecuteWorkItemCallback postExecuteWorkItemCallback = DoPostExecute;
+			postExecuteWorkItemCallback += DoPostExecute;
 
 			stp.QueueWorkItem(
 				new WorkItemCallback(DoWork),

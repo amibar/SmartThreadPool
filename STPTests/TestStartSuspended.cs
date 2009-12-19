@@ -14,11 +14,7 @@ namespace SmartThreadPoolTests
 	[Category("TestStartSuspended")]
 	public class TestStartSuspended
 	{
-		public TestStartSuspended()
-		{
-		}
-
-		[Test]
+	    [Test]
 		public void StartSuspended()
 		{
 			STPStartInfo stpStartInfo = new STPStartInfo();

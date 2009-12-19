@@ -1,7 +1,5 @@
 using System;
 using System.Threading;
-using System.Diagnostics;
-
 using NUnit.Framework;
 
 using Amib.Threading;
@@ -15,11 +13,7 @@ namespace WorkItemsGroupTests
 	[Category("WorkItemsGroup")]
 	public class TestWaitForIdle
 	{
-		public TestWaitForIdle()
-		{
-		}
-
-        /// <summary>
+	    /// <summary>
         /// Example of waiting for idle
         /// </summary>
         [Test]
@@ -28,7 +22,6 @@ namespace WorkItemsGroupTests
             SmartThreadPool smartThreadPool = new SmartThreadPool(10*1000, 25, 0);
 			IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue);
 
-            bool success = false;
             ManualResetEvent isRunning = new ManualResetEvent(false);
 
             for (int i = 0; i < 4; ++i)
@@ -36,7 +29,7 @@ namespace WorkItemsGroupTests
                 workItemsGroup.QueueWorkItem(delegate { isRunning.WaitOne(); });
             }
 
-            success = !workItemsGroup.WaitForIdle(1000);
+            bool success = !workItemsGroup.WaitForIdle(1000);
 
             isRunning.Set();
 

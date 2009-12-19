@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 
 using NUnit.Framework;
@@ -28,7 +27,7 @@ namespace SmartThreadPoolTests
             stpStartInfo.StartSuspended = true;
 
             SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
-            IWorkItemResult wir = stp.QueueWorkItem(delegate(object state) { return null; });
+            IWorkItemResult wir = stp.QueueWorkItem(arg => null);
 
             wir.Cancel();
 
@@ -59,7 +58,7 @@ namespace SmartThreadPoolTests
 
             SmartThreadPool stp = new SmartThreadPool();
             IWorkItemResult wir = stp.QueueWorkItem(
-                delegate(object state) { waitToStart.Set();  Thread.Sleep(100); return null; }
+                 state => { waitToStart.Set();  Thread.Sleep(100); return null; }
                 );
 
             waitToStart.WaitOne();
@@ -98,7 +97,7 @@ namespace SmartThreadPoolTests
 
             SmartThreadPool stp = new SmartThreadPool();
             IWorkItemResult wir = stp.QueueWorkItem(
-                delegate(object state) { waitToStart.Set() ; Thread.Sleep(100); ++counter; return null; }
+                state => { waitToStart.Set() ; Thread.Sleep(100); ++counter; return null; }
                 );
 
             waitToStart.WaitOne();
@@ -137,7 +136,7 @@ namespace SmartThreadPoolTests
 
             SmartThreadPool stp = new SmartThreadPool();
             IWorkItemResult wir = stp.QueueWorkItem(
-                delegate(object state) {
+                state => {
                     waitToStart.Set();
                     Thread.Sleep(100);
                     cancelled = SmartThreadPool.IsWorkItemCanceled;
@@ -174,7 +173,7 @@ namespace SmartThreadPoolTests
             stpStartInfo.StartSuspended = true;
 
             SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
-            IWorkItemResult wir = stp.QueueWorkItem(delegate(object state) { return null; });
+            IWorkItemResult wir = stp.QueueWorkItem(state =>  { return null; });
 
             int counter = 0;
 
@@ -217,7 +216,7 @@ namespace SmartThreadPoolTests
         {
             SmartThreadPool stp = new SmartThreadPool();
             IWorkItemResult wir = stp.QueueWorkItem(
-                delegate(object state) { return 1; }
+                state => 1
                 );
 
             stp.WaitForIdle();
@@ -250,7 +249,7 @@ namespace SmartThreadPoolTests
             for (int i = 0; i < 10; i++)
             {
                 stp.QueueWorkItem(
-                    delegate(object state) { Thread.Sleep(500); ++counter; return null; }
+                    state =>  { Thread.Sleep(500); ++counter; return null; }
                     );
             }
 
@@ -285,7 +284,7 @@ namespace SmartThreadPoolTests
             for (int i = 0; i < 10; i++)
             {
                 wig.QueueWorkItem(
-                    delegate(object state) { Thread.Sleep(500); ++counter; return null; }
+                    state => { Thread.Sleep(500); ++counter; return null; }
                     );
             }
 
@@ -324,14 +323,14 @@ namespace SmartThreadPoolTests
             for (int i = 0; i < 3; i++)
             {
                 wig1.QueueWorkItem(
-                    delegate(object state) { Interlocked.Increment(ref counter1); Thread.Sleep(500); Interlocked.Increment(ref counter1); return null; }
+                    state => { Interlocked.Increment(ref counter1); Thread.Sleep(500); Interlocked.Increment(ref counter1); return null; }
                     );
             }
 
             for (int i = 0; i < 3; i++)
             {
                 wig2.QueueWorkItem(
-                    delegate(object state) { Thread.Sleep(500); Interlocked.Increment(ref counter2); return null; }
+                    state => { Thread.Sleep(500); Interlocked.Increment(ref counter2); return null; }
                     );
             }
 

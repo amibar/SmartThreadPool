@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using Amib.Threading;
 
@@ -11,7 +12,7 @@ namespace Examples
 
 			IWorkItemsGroup wig = smartThreadPool.CreateWorkItemsGroup(1);
 
-			wig.OnIdle += new WorkItemsGroupIdleHandler(wig_OnIdle);
+            wig.OnIdle += wig_OnIdle;
 
 			foreach(object state in states)
 			{

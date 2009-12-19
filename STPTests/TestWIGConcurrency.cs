@@ -19,11 +19,7 @@ namespace WorkItemsGroupTests
 		private int _concurrencyPerWig;
 		private bool _success;
 
-		public TestWIGConcurrency()
-		{
-		}
-
-		[Test]
+	    [Test]
 		public void TestConcurrencies()
 		{
 			Concurrency(1, 1, 10);

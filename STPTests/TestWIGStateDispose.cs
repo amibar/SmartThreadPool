@@ -9,16 +9,11 @@ namespace WorkItemsGroupTests
 {
     public class CallerState
     {
-        private int _val = 0;
-
-        public int Value
-        {
-            get { return _val; }
-        }
+        public int Value { get; private set; }
 
         protected void IncValue()
         {
-            ++_val;
+            ++Value;
         }
     }
 
@@ -55,11 +50,7 @@ namespace WorkItemsGroupTests
 	[Category("WorkItemsGroup")]
 	public class TestStateDispose
 	{
-		public TestStateDispose()
-		{
-		}
-
-        /// <summary>
+	    /// <summary>
         /// Example of non disposable caller state
         /// </summary>
         [Test]
@@ -112,8 +103,6 @@ namespace WorkItemsGroupTests
 
 			IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue, wigStartInfo);
 
-            bool success = false;
-
             CallerState nonDisposableCallerState = new NonDisposableCallerState();
             CallerState disposableCallerState = new DisposableCallerState();
 
@@ -128,7 +117,7 @@ namespace WorkItemsGroupTests
                 disposableCallerState);
 
             wir1.GetResult();
-            success = (1 == nonDisposableCallerState.Value);
+            bool success = (1 == nonDisposableCallerState.Value);
 
             wir2.GetResult();
 

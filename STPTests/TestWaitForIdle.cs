@@ -15,11 +15,7 @@ namespace SmartThreadPoolTests
 	[Category("TestWaitForIdle")]
 	public class TestWaitForIdle
 	{
-		public TestWaitForIdle()
-		{
-		}
-
-        /// <summary>
+	    /// <summary>
         /// Example of waiting for idle
         /// </summary>
         [Test]
@@ -27,7 +23,6 @@ namespace SmartThreadPoolTests
         { 
             SmartThreadPool smartThreadPool = new SmartThreadPool(10*1000, 25, 0);
 
-            bool success = false;
             ManualResetEvent isRunning = new ManualResetEvent(false);
 
             for(int i = 0; i < 4; ++i)
@@ -35,7 +30,7 @@ namespace SmartThreadPoolTests
                 smartThreadPool.QueueWorkItem(delegate { isRunning.WaitOne(); });
             }
 
-            success = !smartThreadPool.WaitForIdle(1000);
+            bool success = !smartThreadPool.WaitForIdle(1000);
 
             isRunning.Set();
 

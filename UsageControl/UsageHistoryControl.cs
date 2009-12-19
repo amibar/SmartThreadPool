@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Windows.Forms;
 
 namespace UsageControl
@@ -10,12 +8,12 @@ namespace UsageControl
 	/// <summary>
 	/// Summary description for UsageHistoryControl.
 	/// </summary>
-	public class UsageHistoryControl : System.Windows.Forms.UserControl
+	public class UsageHistoryControl : UserControl
 	{
 		/// <summary> 
 		/// Required designer variable.
 		/// </summary>
-		private System.ComponentModel.Container components = null;
+		private Container components = null;
 
 		private const int squareWidth = 12;
 		private const int maxLastValuesCount = 2000;
@@ -83,17 +81,17 @@ namespace UsageControl
 		private void EnableDoubleBuffering()
 		{
 			// Set the value of the double-buffering style bits to true.
-			this.SetStyle(ControlStyles.DoubleBuffer | 
+			SetStyle(ControlStyles.DoubleBuffer | 
 				ControlStyles.UserPaint | 
 				ControlStyles.AllPaintingInWmPaint,
 				true);
-			this.UpdateStyles();
+			UpdateStyles();
 		}
 
 		protected override void OnResize(EventArgs e)
 		{
 			// Invalidate the control to get a repaint.
-			this.Invalidate();
+			Invalidate();
 		}
 
 		protected override void OnPaint(PaintEventArgs e)
@@ -183,7 +181,7 @@ namespace UsageControl
 				max = value;
 
 				// Invalidate the control to get a repaint.
-				this.Invalidate();
+				Invalidate();
 			}
 		}
 

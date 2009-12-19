@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
 
 using NUnit.Framework;
@@ -111,9 +110,7 @@ namespace SmartThreadPoolTests
 		{ 
 			SmartThreadPool smartThreadPool = new SmartThreadPool();
 
-			bool success = true;
-
-			IWorkItemResult [] wirs = new IWorkItemResult[5];
+		    IWorkItemResult [] wirs = new IWorkItemResult[5];
 
 			for(int i = 0; i < wirs.Length; ++i)
 			{
@@ -122,7 +119,7 @@ namespace SmartThreadPoolTests
 			}
 
 			bool timeout = !SmartThreadPool.WaitAll(wirs, 1500, true);
-			success = !timeout;
+			bool success = !timeout;
 
 			smartThreadPool.Shutdown();
 
@@ -138,9 +135,7 @@ namespace SmartThreadPoolTests
 		{ 
 			SmartThreadPool smartThreadPool = new SmartThreadPool();
 
-			bool success = true;
-
-			IWorkItemResult [] wirs = new IWorkItemResult[5];
+		    IWorkItemResult [] wirs = new IWorkItemResult[5];
 
 			for(int i = 0; i < wirs.Length; ++i)
 			{
@@ -149,7 +144,7 @@ namespace SmartThreadPoolTests
 			}
 
 			bool timeout = !SmartThreadPool.WaitAll(wirs, 10, true);
-			success = timeout;
+			bool success = timeout;
 
 			smartThreadPool.Shutdown();
 
@@ -193,7 +188,7 @@ namespace SmartThreadPoolTests
 		{ 
 			SmartThreadPool smartThreadPool = new SmartThreadPool();
 
-			bool success = true;
+			bool success;
 
 			IWorkItemResult [] wirs = new IWorkItemResult[5];
 

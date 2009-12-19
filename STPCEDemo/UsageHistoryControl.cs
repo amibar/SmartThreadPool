@@ -1,8 +1,5 @@
 using System;
-using System.Collections;
-using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Windows.Forms;
 using STPCEDemo;
 
@@ -11,7 +8,7 @@ namespace UsageControl
 	/// <summary>
 	/// Summary description for UsageHistoryControl.
 	/// </summary>
-	public class UsageHistoryControl : System.Windows.Forms.UserControl
+	public class UsageHistoryControl : UserControl
 	{
 		/// <summary> 
 		/// Required designer variable.
@@ -94,7 +91,7 @@ namespace UsageControl
 		protected override void OnResize(EventArgs e)
 		{
 			// Invalidate the control to get a repaint.
-			this.Invalidate();
+			Invalidate();
 		}
 
 		protected override void OnPaint(PaintEventArgs e)
@@ -184,7 +181,7 @@ namespace UsageControl
 				max = value;
 
 				// Invalidate the control to get a repaint.
-				this.Invalidate();
+				Invalidate();
 			}
 		}
 

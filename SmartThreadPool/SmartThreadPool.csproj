@@ -49,16 +49,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="WorkItem.WorkItemResult.cs" />
     <Compile Include="CallerThreadContext.cs" />
+    <Compile Include="CanceledWorkItemsGroup.cs" />
     <Compile Include="EventWaitHandleFactory.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Interfaces.cs" />
+    <Compile Include="InternalInterfaces.cs" />
     <Compile Include="PriorityQueue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SmartThreadPool.cs" />
     <Compile Include="STPPerformanceCounter.cs" />
     <Compile Include="STPStartInfo.cs" />
     <Compile Include="SynchronizedDictionary.cs" />
+    <Compile Include="SmartThreadPool.ThreadEntry.cs" />
     <Compile Include="WIGStartInfo.cs" />
     <Compile Include="WorkItem.cs" />
     <Compile Include="WorkItemFactory.cs" />
