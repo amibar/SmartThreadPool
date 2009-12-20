@@ -1,4 +1,10 @@
 <head>
+    <style type="text/css">
+        .style1
+        {
+            font-weight: normal;
+        }
+    </style>
 </head>
 <P><IMG src="SmartThreadPool.jpg" width="616" height="416"></P>
 <P>See the <A href="#History">history</A> section at the bottom for changes.</P>
@@ -40,6 +46,8 @@
     <li>Mono i<t>s supported.</t></li>
     <li>
         <t>Performance Counters (Windows &amp; internal)</t><t></t></li>
+    <li>
+        Work Item timeout (passive)</li>
 </UL>
 <H2>Why do you need a thread pool?</H2>
 <BLOCKQUOTE>
@@ -96,8 +104,11 @@
     <li><A href="#Feature26">Added new methods: Join, Choice, and Pipe.</A></li>
 </ol>
     
-<p>
-</p>
+<h2>
+    New features added in December 2009</h2>
+<ol>
+    <li value="27"><A href="#Feature27">Added work item timeout (passive).</A></li>
+</ol>
 <H2>What about the .NET ThreadPool?</H2>
 <P>The Windows system provides one .NET ThreadPool for each process. The .NET ThreadPool can contain up to 25 (by default) threads per processor. It is also stated that the operations in .NET ThreadPool should be quick to avoid suspension of the work of others who use the .NET ThreadPool. Note that several AppDomains in the same process share the same .NET ThreadPool. If you want a thread to work for a long period of time, then the .NET ThreadPool is not a good choice for you (unless you know what you are doing). Note that each asynchronous method call from the .NET Framework that begins with "Begin…" (e.g., <code>BeginInvoke</code>, <code>BeginSend</code>, <code>BeginReceive</code>, etc.) uses the .NET ThreadPool to run its callback. Also note that the .NET ThreadPool
     doesn't support calls to COM with single threaded apartment (STA), since the ThreadPool
@@ -397,7 +408,7 @@ SmartThreadPool.WaitAny(new IWaitableResult[] { wir1, wir2});</PRE>
     <p>
         There is no guarantee that a work item will be cancelled, it depends on the state
         of the work item when the cancel is called and the cooperation of the work item.
-        (Note the work item's state I mention here has nothing to do with the state object
+        (Note that the work item's state I mention here has nothing to do with the state object
         argument provided in the <code>QueueWorkItem</code>).</p>
     <p>
         These are the possible states of a work item: (defined in the <code>WorkItemState</code> enum)<br/>
@@ -747,6 +758,13 @@ to simplfy the initiation of a parallel task.</p>
 <li>Choice - Executes several work items and returns when the first one completes. <A href="#ChoiceExample">(Choice example)</A></li>
 <li>Pipe - Executes several work items sequently and wait until the last work item completes. <A href="#PipeExample">(Pipe example)</A></li>
 </ul>
+<p>
+<li><a name=#Feature27><b>Work item timeout (passive)</b></a></li>
+<p>This featue let the user specify a timeout for the work item in milliseconds. When the timeout expires the work item is cancelled 
+    automatically. The cancel works the same as a call to Cancel with the <code>abortExecution</code> argument set to false (This is why the timeout is passive).</p>
+<p>To sample the cancel use <code>SmartThreadPool.IsWorkItemCanceled</code> which is a static property, or you can use <code>SmartThreadPool.AbortOnWorkItemOnCancel</code>
+which check if the current work item is cancelled and if so abort the thread (<code>Thread.CurrentThread.Abort()</code>).</p>
+</p>
 </OL>
 <H2>When to use?</H2>
 <P>The Smart Thread Pool is good when your work items don't do too much, but wait for events, IOs, sockets, etc. This means that the work items don't use CPU, but run for a long time. It is also good when you don't need to keep alive too many threads in the air all the time. If your work items do a short time work, then use the .NET ThreadPool. If you have a constant heavy load of work, then use Toub's thread pool and define the maximum number of threads accordingly.</P>
@@ -1348,16 +1366,20 @@ public class <A name=PipeExample>PipeExample</A>
 <li>Added support for WinCE</li>
 <li>Added support for Action&lt;T&gt; and Func&lt;T&gt;</li>
     </ul>
-</li><li><b>7th April 2009: Changes
-    </b>
+</li><li>7th April 2009: Changes
     <ul>
-<li><strong>Added support for Silverlight and Mono.</strong></li>
-<li><strong>Added Join, Choice, and Pipe to SmartThreadPool.</strong></li>
-<li><strong>Added local performance counters (for Mono, Silverlight, and WindowsCE)</strong></li>
-<li><strong>Changed duration measures from DateTime.Now to Stopwatch.</strong></li>
-<li><strong>Queues changed from System.Collections.Queue to System.Collections.Generic.LinkedList&lt;T&gt;.</strong></li>
+<li><strong class="style1">Added support for Silverlight and Mono.</strong></li>
+<li><strong class="style1">Added Join, Choice, and Pipe to SmartThreadPool.</strong></li>
+<li><strong class="style1">Added local performance counters (for Mono, Silverlight, and WindowsCE)</strong></li>
+<li><strong class="style1">Changed duration measures from DateTime.Now to Stopwatch.</strong></li>
+<li><strong class="style1">Queues changed from System.Collections.Queue to System.Collections.Generic.LinkedList&lt;T&gt;.</strong></li>
     </ul>
 </li>
+    <li>21st December 2009: Changes
+        <ul>
+            <li><strong class="style1">Added work item timeout (passive).</strong></li>
+        </ul>
+    </li>
 </UL>
 
 

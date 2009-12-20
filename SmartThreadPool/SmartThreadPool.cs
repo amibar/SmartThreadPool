@@ -71,6 +71,9 @@
 //      - Added local performance counters (for Mono, Silverlight, and WindowsCE)
 //      - Changed duration measures from DateTime.Now to Stopwatch.
 //      - Queues changed from System.Collections.Queue to System.Collections.Generic.LinkedList<T>.
+//
+// 21 December 2009 - Changes:
+//      - Added work item timeout (passive)
 
 #endregion
 
@@ -1337,6 +1340,18 @@ namespace Amib.Threading
             get
             {
                 return CurrentThreadEntry.CurrentWorkItem.IsCanceled;
+            }
+        } 
+        
+        /// <summary>
+        /// Checks if the work item has been cancelled, and if yes then abort the thread.
+        /// Can be used with Cancel and timeout
+        /// </summary>
+        public static void AbortOnWorkItemOnCancel()
+        {
+            if (IsWorkItemCanceled)
+            {
+                Thread.CurrentThread.Abort();
             }
         }
 

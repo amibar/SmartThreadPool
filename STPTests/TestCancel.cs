@@ -13,7 +13,7 @@ namespace SmartThreadPoolTests
 	[Category("TestCancel")]
 	public class TestCancel
 	{
-        /// <summary>
+	    /// <summary>
         /// 1. Create STP in suspended mode
         /// 2. Queue work item into the STP
         /// 3. Cancel the work item
@@ -152,6 +152,46 @@ namespace SmartThreadPoolTests
             waitToComplete.WaitOne();
 
             Assert.IsTrue(cancelled);
+
+            stp.Shutdown();
+        }   
+        
+        /// <summary>
+        /// 1. Create STP
+        /// 2. Queue work item that takes some time
+        /// 3. Wait for it to start
+        /// 4. Cancel the work item (soft)
+        /// 5. Call to AbortOnWorkItemOnCancel
+        /// 5. Wait for the STP to get idle
+        /// 6. Make sure nothing ran in the work item after the AbortOnWorkItemOnCancel
+        /// </summary>        
+        [Test]
+        public void CancelInProgressWorkItemSoftWithAbortOnWorkItemOnCancel()
+        {
+            bool abortFailed = false;
+            ManualResetEvent waitToStart = new ManualResetEvent(false);
+            ManualResetEvent waitToCancel = new ManualResetEvent(false);
+
+            SmartThreadPool stp = new SmartThreadPool();
+            IWorkItemResult wir = stp.QueueWorkItem(
+                state => {
+                    waitToStart.Set();
+                    waitToCancel.WaitOne();
+                    SmartThreadPool.AbortOnWorkItemOnCancel();
+                    abortFailed = true;
+                    return null;
+                });
+
+            waitToStart.WaitOne();
+
+            wir.Cancel(false);
+
+            waitToCancel.Set();
+
+            stp.WaitForIdle();
+
+            Assert.IsTrue(wir.IsCanceled);
+            Assert.IsFalse(abortFailed);
 
             stp.Shutdown();
         }
