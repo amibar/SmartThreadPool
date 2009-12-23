@@ -61,7 +61,7 @@ namespace Amib.Threading.Internal
 		/// </summary>
 		private object _state;
 
-#if !(WindowsCE) && !(SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
         /// <summary>
         /// Stores the caller's context
         /// </summary>
@@ -209,7 +209,7 @@ namespace Amib.Threading.Internal
 			_workItemsGroup = workItemsGroup;
 			_workItemInfo = workItemInfo;
 
-#if !(WindowsCE) && !(SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
 			if (_workItemInfo.UseCallerCallContext || _workItemInfo.UseCallerHttpContext)
 			{
 				_callerContext = CallerThreadContext.Capture(_workItemInfo.UseCallerCallContext, _workItemInfo.UseCallerHttpContext);
@@ -360,7 +360,7 @@ namespace Amib.Threading.Internal
         private void ExecuteWorkItem()
         {
 
-#if !(WindowsCE) && !(SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
             CallerThreadContext ctc = null;
             if (null != _callerContext)
             {
@@ -405,13 +405,13 @@ namespace Amib.Threading.Internal
                 // work items was cancelled.
                 if (!SmartThreadPool.CurrentThreadEntry.AssociatedSmartThreadPool.IsShuttingdown)
                 {
-#if !(WindowsCE) && !(SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
                     Thread.ResetAbort();
 #endif
                 }
             }
 
-#if !(WindowsCE) && !(SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
             if (null != _callerContext)
             {
                 CallerThreadContext.Apply(ctc);
@@ -708,7 +708,7 @@ namespace Amib.Threading.Internal
 		/// <returns>Returns true on success or false if the work item is in progress or already completed</returns>
         private bool Cancel(bool abortExecution)
 		{
-#if (WindowsCE)
+#if (_WINDOWS_CE)
             if(abortExecution)
             {
                 throw new ArgumentOutOfRangeException("abortExecution", "WindowsCE doesn't support this feature");

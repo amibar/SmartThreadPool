@@ -33,7 +33,7 @@ namespace Amib.Threading.Internal
         private bool _isWorkItemsQueueActive = true;
 
 
-#if (WindowsCE)
+#if (_WINDOWS_CE)
         private static LocalDataStoreSlot _waiterEntrySlot = Thread.AllocateDataSlot();
 #else
 
@@ -47,7 +47,7 @@ namespace Amib.Threading.Internal
         /// </summary>
         private static WaiterEntry CurrentWaiterEntry
         {
-#if (WindowsCE)
+#if (_WINDOWS_CE)
             get
             {
                 return Thread.GetData(_waiterEntrySlot) as WaiterEntry;

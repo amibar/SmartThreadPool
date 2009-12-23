@@ -1,4 +1,4 @@
-#if (WindowsCE)
+#if (_WINDOWS_CE)
 
 using System;
 using System.Runtime.InteropServices;

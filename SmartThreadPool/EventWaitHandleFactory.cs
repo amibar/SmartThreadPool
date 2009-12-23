@@ -1,6 +1,6 @@
 using System.Threading;
 
-#if (WindowsCE)
+#if (_WINDOWS_CE)
 using System;
 using System.Runtime.InteropServices;
 #endif
@@ -25,7 +25,7 @@ namespace Amib.Threading.Internal
         {
             AutoResetEvent waitHandle = new AutoResetEvent(false);
 
-#if (WindowsCE)
+#if (_WINDOWS_CE)
             ReplaceEventHandle(waitHandle, false, false);
 #endif
 
@@ -40,14 +40,14 @@ namespace Amib.Threading.Internal
         {
             ManualResetEvent waitHandle = new ManualResetEvent(initialState);
 
-#if (WindowsCE)
+#if (_WINDOWS_CE)
             ReplaceEventHandle(waitHandle, true, initialState);
 #endif
 
             return waitHandle;
         }
 
-#if (WindowsCE)
+#if (_WINDOWS_CE)
 
         /// <summary>
         /// Replace the event handle

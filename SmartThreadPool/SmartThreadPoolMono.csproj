@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>.\bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;NO_WINDOWS</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;_MONO</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
   </PropertyGroup>
@@ -26,7 +26,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>.\bin\Release\</OutputPath>
-    <DefineConstants>TRACE;NO_WINDOWS</DefineConstants>
+    <DefineConstants>TRACE;_MONO</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

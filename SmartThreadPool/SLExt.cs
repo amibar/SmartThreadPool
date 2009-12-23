@@ -1,4 +1,4 @@
-﻿#if SILVERLIGHT
+﻿#if _SILVERLIGHT
 
 using System.Threading;
 

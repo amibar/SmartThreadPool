@@ -1,5 +1,5 @@
 using System;
-#if !(WindowsCE)
+#if !(_WINDOWS_CE)
 using System.Runtime.Serialization;
 #endif
 
@@ -68,7 +68,7 @@ namespace Amib.Threading
     }
 
 
-#if !(WindowsCE) && !(SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
     /// <summary>
     /// Represents an exception in case IWorkItemResult.GetResult has been canceled
     /// </summary>

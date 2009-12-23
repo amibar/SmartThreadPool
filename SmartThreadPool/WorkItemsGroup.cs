@@ -88,7 +88,7 @@ namespace Amib.Threading.Internal
 			{
 				throw new ArgumentOutOfRangeException(
                     "concurrency", 
-#if !(WindowsCE) && !(SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
                     concurrency,
 #endif
                     "concurrency must be greater than zero");

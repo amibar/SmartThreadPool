@@ -265,7 +265,7 @@ namespace Amib.Threading
         private ISTPInstancePerformanceCounters _localPCs = NullSTPInstancePerformanceCounters.Instance;
 
 
-#if (WindowsCE)
+#if (_WINDOWS_CE)
         private static LocalDataStoreSlot _threadEntrySlot = Thread.AllocateDataSlot();
 #else
         [ThreadStatic]
@@ -295,7 +295,7 @@ namespace Amib.Threading
         /// </summary>
         internal static ThreadEntry CurrentThreadEntry
         {
-#if (WindowsCE)
+#if (_WINDOWS_CE)
             get
             {
                 return Thread.GetData(_threadEntrySlot) as ThreadEntry;
@@ -398,10 +398,10 @@ namespace Amib.Threading
 
             _isSuspended = _stpStartInfo.StartSuspended;
 
-#if (WindowsCE) || (SILVERLIGHT)
+#if (_WINDOWS_CE) || (_SILVERLIGHT) || (_MONO)
 			if (null != _stpStartInfo.PerformanceCounterInstanceName)
 			{
-                throw new NotSupportedException("Performance counters are not implemented for Compact Framework/Silverlight");
+                throw new NotSupportedException("Performance counters are not implemented for Compact Framework/Silverlight/Mono, instead use StpStartInfo.EnableLocalPerformanceCounters");
             }
 #else
             if (null != _stpStartInfo.PerformanceCounterInstanceName)
@@ -609,7 +609,7 @@ namespace Amib.Threading
 					// Configure the new thread and start it
 					workerThread.Name = "STP " + Name + " Thread #" + _threadCounter;
 					workerThread.IsBackground = true;
-#if !(SILVERLIGHT)
+#if !(_SILVERLIGHT)
 					workerThread.Priority = _stpStartInfo.ThreadPriority;
 #endif
 					workerThread.Start();
@@ -779,7 +779,7 @@ namespace Amib.Threading
 			{
                 tae.GetHashCode();
                 // Handle the abort exception gracfully.
-#if !(WindowsCE) && !(SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
 				Thread.ResetAbort();
 #endif
 			}
@@ -939,7 +939,7 @@ namespace Amib.Threading
 				{
                     
 					if ((thread != null)
-#if !(WindowsCE)
+#if !(_WINDOWS_CE)
                         && thread.IsAlive
 #endif                        
                         )
