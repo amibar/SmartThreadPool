@@ -10,7 +10,7 @@ namespace TestSmartThreadPool
 	/// <summary>
 	/// Summary description for Form1.
 	/// </summary>
-	public class Form1 : System.Windows.Forms.Form
+	public partial class Form1 : System.Windows.Forms.Form
 	{
 		private System.Windows.Forms.Button btnStart;
 		private System.Windows.Forms.Button btnStop;
@@ -63,6 +63,8 @@ namespace TestSmartThreadPool
         private Func<long> _getQueuedWorkItems;
         private Func<long> _getCompletedWorkItems;
 
+        private static bool _useWindowsPerformanceCounters;
+
 		public Form1()
 		{
 			//
@@ -75,48 +77,65 @@ namespace TestSmartThreadPool
 
         private void InitializeGUIPerformanceCounters()
         {
-#if _WINDOWS
-            this._pcActiveThreads = new System.Diagnostics.PerformanceCounter();
-            this._pcInUseThreads = new System.Diagnostics.PerformanceCounter();
-            this._pcQueuedWorkItems = new System.Diagnostics.PerformanceCounter();
-            this._pcCompletedWorkItems = new System.Diagnostics.PerformanceCounter();
-
-            // 
-            // pcActiveThreads
-            // 
-            this._pcActiveThreads.CategoryName = "SmartThreadPool";
-            this._pcActiveThreads.CounterName = "Active threads";
-            this._pcActiveThreads.InstanceName = "Test SmartThreadPool";
-            // 
-            // pcInUseThreads
-            // 
-            this._pcInUseThreads.CategoryName = "SmartThreadPool";
-            this._pcInUseThreads.CounterName = "In use threads";
-            this._pcInUseThreads.InstanceName = "Test SmartThreadPool";
-            // 
-            // pcQueuedWorkItems
-            // 
-            this._pcQueuedWorkItems.CategoryName = "SmartThreadPool";
-            this._pcQueuedWorkItems.CounterName = "Work Items in queue";
-            this._pcQueuedWorkItems.InstanceName = "Test SmartThreadPool";
-            // 
-            // pcCompletedWorkItems
-            // 
-            this._pcCompletedWorkItems.CategoryName = "SmartThreadPool";
-            this._pcCompletedWorkItems.CounterName = "Work Items processed";
-            this._pcCompletedWorkItems.InstanceName = "Test SmartThreadPool";
-
-            _getActiveThreads = () => (long)_pcActiveThreads.NextValue();
-            _getInUseThreads = () => (long)_pcInUseThreads.NextValue();
-            _getQueuedWorkItems = () => (long)_pcQueuedWorkItems.NextValue();
-            _getCompletedWorkItems = () => (long)_pcCompletedWorkItems.NextValue();
-#else
-            _getActiveThreads = delegate () { return _smartThreadPool.PerformanceCountersReader.ActiveThreads; };
-            _getInUseThreads = delegate () { return _smartThreadPool.PerformanceCountersReader.InUseThreads; };
-            _getQueuedWorkItems = delegate () { return _smartThreadPool.PerformanceCountersReader.WorkItemsQueued; };
-            _getCompletedWorkItems = delegate () { return _smartThreadPool.PerformanceCountersReader.WorkItemsProcessed; };
-#endif
+            if (_useWindowsPerformanceCounters)
+            {
+                InitializeWindowsPerformanceCounters();
+            }
+            else
+            {
+                InitializeLocalPerformanceCounters();
+            }
         }
+
+        partial void InitializeWindowsPerformanceCounters();
+
+#if _WINDOWS
+	    partial void InitializeWindowsPerformanceCounters()
+	    {
+	        this._pcActiveThreads = new System.Diagnostics.PerformanceCounter();
+	        this._pcInUseThreads = new System.Diagnostics.PerformanceCounter();
+	        this._pcQueuedWorkItems = new System.Diagnostics.PerformanceCounter();
+	        this._pcCompletedWorkItems = new System.Diagnostics.PerformanceCounter();
+
+	        // 
+	        // pcActiveThreads
+	        // 
+	        this._pcActiveThreads.CategoryName = "SmartThreadPool";
+	        this._pcActiveThreads.CounterName = "Active threads";
+	        this._pcActiveThreads.InstanceName = "Test SmartThreadPool";
+	        // 
+	        // pcInUseThreads
+	        // 
+	        this._pcInUseThreads.CategoryName = "SmartThreadPool";
+	        this._pcInUseThreads.CounterName = "In use threads";
+	        this._pcInUseThreads.InstanceName = "Test SmartThreadPool";
+	        // 
+	        // pcQueuedWorkItems
+	        // 
+	        this._pcQueuedWorkItems.CategoryName = "SmartThreadPool";
+	        this._pcQueuedWorkItems.CounterName = "Work Items in queue";
+	        this._pcQueuedWorkItems.InstanceName = "Test SmartThreadPool";
+	        // 
+	        // pcCompletedWorkItems
+	        // 
+	        this._pcCompletedWorkItems.CategoryName = "SmartThreadPool";
+	        this._pcCompletedWorkItems.CounterName = "Work Items processed";
+	        this._pcCompletedWorkItems.InstanceName = "Test SmartThreadPool";
+
+	        _getActiveThreads = () => (long) _pcActiveThreads.NextValue();
+	        _getInUseThreads = () => (long) _pcInUseThreads.NextValue();
+	        _getQueuedWorkItems = () => (long) _pcQueuedWorkItems.NextValue();
+	        _getCompletedWorkItems = () => (long) _pcCompletedWorkItems.NextValue();
+        }
+#endif
+
+        private void InitializeLocalPerformanceCounters()
+	    {
+	        _getActiveThreads = () => _smartThreadPool.PerformanceCountersReader.ActiveThreads;
+	        _getInUseThreads = () => _smartThreadPool.PerformanceCountersReader.InUseThreads;
+	        _getQueuedWorkItems = () => _smartThreadPool.PerformanceCountersReader.WorkItemsQueued;
+	        _getCompletedWorkItems = () => _smartThreadPool.PerformanceCountersReader.WorkItemsProcessed;
+	    }
 
 	    /// <summary>
 		/// Clean up any resources being used.
@@ -605,12 +624,10 @@ namespace TestSmartThreadPool
 		[STAThread]
 		static void Main() 
 		{
-#if _WINDOWS			
-			bool runApplication = InitializePerformanceCounters();
-			if (!runApplication)
-			{
-				return;
-			}
+            //PerformanceCounterCategory.Delete("SmartThreadPool");
+            //return;
+#if _WINDOWS
+            _useWindowsPerformanceCounters = InitializePerformanceCounters();
 #endif			
             Application.EnableVisualStyles();
 
@@ -648,7 +665,7 @@ namespace TestSmartThreadPool
 
 				if (!PerformanceCounterCategory.Exists("SmartThreadPool"))
 				{
-					MessageBox.Show("Failed to create Performance Counters.", "Test Smart Thread Pool", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					MessageBox.Show("Failed to create Performance Counters category.\r\nIf you run on Vista or Windows 7, you need to run for the first time as Administrator to create the performance counters category.\r\n\r\nUsing internal performance counters instead.", "Test Smart Thread Pool", MessageBoxButtons.OK, MessageBoxIcon.Error);
 					return false;
 				}
 
@@ -683,8 +700,14 @@ namespace TestSmartThreadPool
 			stpStartInfo.IdleTimeout = Convert.ToInt32(spinIdleTimeout.Value)*1000;
 			stpStartInfo.MaxWorkerThreads = Convert.ToInt32(spinMaxThreads.Value);
 			stpStartInfo.MinWorkerThreads = Convert.ToInt32(spinMinThreads.Value);
-			stpStartInfo.PerformanceCounterInstanceName = "Test SmartThreadPool";
-			stpStartInfo.EnableLocalPerformanceCounters = true;
+            if (_useWindowsPerformanceCounters)
+            {
+                stpStartInfo.PerformanceCounterInstanceName = "Test SmartThreadPool";
+            }
+            else
+            {
+                stpStartInfo.EnableLocalPerformanceCounters = true;
+            }
 
 			_smartThreadPool = new SmartThreadPool(stpStartInfo);
 

@@ -17,7 +17,7 @@ namespace WorkItemsGroupDemo
         private bool _advancedMode = false;
         private int _workItemsGenerated;
         Hashtable _workingStates = Hashtable.Synchronized(new Hashtable());
-        private SmartThreadPool _stp;
+        private SmartThreadPool _smartThreadPool;
         private IWorkItemsGroup _wig1;
         private IWorkItemsGroup _wig2;
         private IWorkItemsGroup _wig3;
@@ -42,6 +42,8 @@ namespace WorkItemsGroupDemo
         private Func<long> _getInUseThreads;
         private Func<long> _getQueuedWorkItems;
         private Func<long> _getCompletedWorkItems;
+
+        private static bool _useWindowsPerformanceCounters;
 
         private class WigEntry
         {
@@ -80,20 +82,27 @@ namespace WorkItemsGroupDemo
                 {
                     StartSuspended = true,
                     MaxWorkerThreads = ((int)spinCon6.Value),
-                    IdleTimeout = int.Parse(spinIdleTimeout.Text)*1000,
-                    PerformanceCounterInstanceName = "SmartThreadPoolDemo",
-                    EnableLocalPerformanceCounters = true,
+                    IdleTimeout = int.Parse(spinIdleTimeout.Text) * 1000,
                 };
 
-            _stp = new SmartThreadPool(stpStartInfo);
-            _wig1 = _stp.CreateWorkItemsGroup((int)spinCon1.Value);
-            _wig2 = _stp.CreateWorkItemsGroup((int)spinCon2.Value);
-            _wig3 = _stp.CreateWorkItemsGroup((int)spinCon3.Value);
+            if (_useWindowsPerformanceCounters)
+            {
+                stpStartInfo.PerformanceCounterInstanceName = "WIG Test SmartThreadPool";
+            }
+            else
+            {
+                stpStartInfo.EnableLocalPerformanceCounters = true;
+            }
+
+            _smartThreadPool = new SmartThreadPool(stpStartInfo);
+            _wig1 = _smartThreadPool.CreateWorkItemsGroup((int)spinCon1.Value);
+            _wig2 = _smartThreadPool.CreateWorkItemsGroup((int)spinCon2.Value);
+            _wig3 = _smartThreadPool.CreateWorkItemsGroup((int)spinCon3.Value);
 
             spinCon1.Tag = _wig1;
             spinCon2.Tag = _wig2;
             spinCon3.Tag = _wig3;
-            spinCon6.Tag = _stp;
+            spinCon6.Tag = _smartThreadPool;
 
             comboWIPriority1.SelectedIndex = 1;
             comboWIPriority2.SelectedIndex = 1;
@@ -112,9 +121,85 @@ namespace WorkItemsGroupDemo
             }
         }
 
-        private void InitializeGUIPerformanceCounters()
+        public static void Init()
         {
 #if _WINDOWS
+            _useWindowsPerformanceCounters = InitializePerformanceCounters();
+#endif
+        }
+
+        // This method is a work around for the Peformance Counter issue.
+        // When the first SmartThreadPool is created with a Peformance 
+        // Counter name on a machine, it creates the SmartThreadPool 
+        // Peformance Counter category. In this demo I am using the Performance 
+        // Counters to update the GUI. 
+        // The issue is that if this demo runs for the first time on the 
+        // machine, it creates the Peformance Counter category and then 
+        // uses it. 
+        // I don't know why, but every time the demo runs for the first
+        // time on a machine, it fails to connect to the Peformance Counters,
+        // because it can't find the Peformance Counter category. 
+        // The work around is to check if the category exists, and if not 
+        // create a SmartThreadPool instance that will create the category.
+        // After that I spawn another process that runs the demo.
+        // I tried the another work around and thats to check for the category
+        // existance, run a second process that will create the category,
+        // and then continue with the first process, but it doesn't work.
+        // Thank you for reading the whole comment. If you have another way
+        // to solve this issue please contact me: amibar@gmail.com.
+        private static bool InitializePerformanceCounters()
+        {
+            if (!PerformanceCounterCategory.Exists("SmartThreadPool"))
+            {
+                STPStartInfo stpStartInfo = new STPStartInfo();
+                stpStartInfo.PerformanceCounterInstanceName = "WIG Test SmartThreadPool";
+
+                SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
+                stp.Shutdown();
+
+                if (!PerformanceCounterCategory.Exists("SmartThreadPool"))
+                {
+                    MessageBox.Show("Failed to create Performance Counters category.\r\nIf you run on Vista or Windows 7, you need to run for the first time as Administrator to create the performance counters category.\r\n\r\nUsing internal performance counters instead.", "Test Smart Thread Pool", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
+
+                Process process = new Process();
+                process.StartInfo.FileName = Application.ExecutablePath;
+
+                try
+                {
+                    process.Start();
+                }
+                catch (Exception e)
+                {
+                    e.GetHashCode();
+                    MessageBox.Show("If this is the first time you get this message,\r\nplease try to run the demo again.", "Test Smart Thread Pool");
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+
+        private void InitializeGUIPerformanceCounters()
+        {
+            if (_useWindowsPerformanceCounters)
+            {
+                InitializeWindowsPerformanceCounters();
+            }
+            else
+            {
+                InitializeLocalPerformanceCounters();
+            }
+        }
+
+        partial void InitializeWindowsPerformanceCounters();
+
+#if _WINDOWS
+        partial void InitializeWindowsPerformanceCounters()
+        {
             this._pcActiveThreads = new System.Diagnostics.PerformanceCounter();
             this._pcInUseThreads = new System.Diagnostics.PerformanceCounter();
             this._pcQueuedWorkItems = new System.Diagnostics.PerformanceCounter();
@@ -125,40 +210,40 @@ namespace WorkItemsGroupDemo
             // 
             this._pcActiveThreads.CategoryName = "SmartThreadPool";
             this._pcActiveThreads.CounterName = "Active threads";
-            this._pcActiveThreads.InstanceName = "SmartThreadPoolDemo";
+            this._pcActiveThreads.InstanceName = "Test SmartThreadPool";
             // 
             // pcInUseThreads
             // 
             this._pcInUseThreads.CategoryName = "SmartThreadPool";
             this._pcInUseThreads.CounterName = "In use threads";
-            this._pcInUseThreads.InstanceName = "SmartThreadPoolDemo";
+            this._pcInUseThreads.InstanceName = "Test SmartThreadPool";
             // 
             // pcQueuedWorkItems
             // 
             this._pcQueuedWorkItems.CategoryName = "SmartThreadPool";
             this._pcQueuedWorkItems.CounterName = "Work Items in queue";
-            this._pcQueuedWorkItems.InstanceName = "SmartThreadPoolDemo";
+            this._pcQueuedWorkItems.InstanceName = "Test SmartThreadPool";
             // 
             // pcCompletedWorkItems
             // 
             this._pcCompletedWorkItems.CategoryName = "SmartThreadPool";
             this._pcCompletedWorkItems.CounterName = "Work Items processed";
-            this._pcCompletedWorkItems.InstanceName = "SmartThreadPoolDemo";
+            this._pcCompletedWorkItems.InstanceName = "Test SmartThreadPool";
 
             _getActiveThreads = () => (long)_pcActiveThreads.NextValue();
             _getInUseThreads = () => (long)_pcInUseThreads.NextValue();
             _getQueuedWorkItems = () => (long)_pcQueuedWorkItems.NextValue();
             _getCompletedWorkItems = () => (long)_pcCompletedWorkItems.NextValue();
-#else
-            _getActiveThreads = delegate () { return _stp.PerformanceCountersReader.ActiveThreads; };
-            _getInUseThreads = delegate () { return _stp.PerformanceCountersReader.InUseThreads; };
-            _getQueuedWorkItems = delegate () { return _stp.PerformanceCountersReader.WorkItemsQueued; };
-            _getCompletedWorkItems = delegate () { return _stp.PerformanceCountersReader.WorkItemsProcessed; };
-
-#endif
         }
+#endif
 
-      
+        private void InitializeLocalPerformanceCounters()
+        {
+            _getActiveThreads = () => _smartThreadPool.PerformanceCountersReader.ActiveThreads;
+            _getInUseThreads = () => _smartThreadPool.PerformanceCountersReader.InUseThreads;
+            _getQueuedWorkItems = () => _smartThreadPool.PerformanceCountersReader.WorkItemsQueued;
+            _getCompletedWorkItems = () => _smartThreadPool.PerformanceCountersReader.WorkItemsProcessed;
+        }
 
         private void btnStart_Click(object sender, EventArgs e)
         {
@@ -179,7 +264,7 @@ namespace WorkItemsGroupDemo
         {
             _workItemsGenerated = 0;
             UpdateControls(true);
-            _stp.Start();
+            _smartThreadPool.Start();
             _wig1.Start();
             _wig2.Start();
             _wig3.Start();
@@ -187,7 +272,7 @@ namespace WorkItemsGroupDemo
 
         private void Shutdown()
         {
-            _stp.Shutdown(false, 2000);
+            _smartThreadPool.Shutdown(false, 2000);
             InitSTP();
             UpdateControls(false);
         }
@@ -244,7 +329,7 @@ namespace WorkItemsGroupDemo
 
         private void UpdateWorkingSet()
         {
-            lblStatus6.Text = _stp.IsIdle ? "Idle" : "Working";
+            lblStatus6.Text = _smartThreadPool.IsIdle ? "Idle" : "Working";
 
             object [] statesWorking = null;
             lock (_workingStates.SyncRoot)
@@ -253,7 +338,7 @@ namespace WorkItemsGroupDemo
                 _workingStates.Keys.CopyTo(statesWorking, 0);
             }
 
-            object[] statesSTP = _stp.GetStates();
+            object[] statesSTP = _smartThreadPool.GetStates();
 
             List<QueueUsageControl.QueueUsageEntry> list = new List<QueueUsageControl.QueueUsageEntry>();
 
@@ -373,7 +458,7 @@ namespace WorkItemsGroupDemo
 
         private void btnCancel6_Click(object sender, EventArgs e)
         {
-            _stp.Cancel();
+            _smartThreadPool.Cancel();
         }
 
         private void spinCon_ValueChanged(object sender, EventArgs e)
@@ -388,7 +473,7 @@ namespace WorkItemsGroupDemo
             EnqueueWorkItems(ref _lastIndex[0], Convert.ToInt32(spinProduction1.Value), "#", _wig1Color, (WorkItemPriority)(2 * comboWIPriority1.SelectedIndex), _wig1, Convert.ToInt32(spinDuration1.Value));
             EnqueueWorkItems(ref _lastIndex[1], Convert.ToInt32(spinProduction2.Value), "#", _wig2Color, (WorkItemPriority)(2 * comboWIPriority2.SelectedIndex), _wig2, Convert.ToInt32(spinDuration2.Value));
             EnqueueWorkItems(ref _lastIndex[2], Convert.ToInt32(spinProduction3.Value), "#", _wig3Color, (WorkItemPriority)(2 * comboWIPriority3.SelectedIndex), _wig3, Convert.ToInt32(spinDuration3.Value));
-            EnqueueWorkItems(ref _lastIndex[3], Convert.ToInt32(spinProduction6.Value), "#", _stpColor, (WorkItemPriority)(2 * comboWIPriority6.SelectedIndex), _stp, Convert.ToInt32(spinDuration6.Value));
+            EnqueueWorkItems(ref _lastIndex[3], Convert.ToInt32(spinProduction6.Value), "#", _stpColor, (WorkItemPriority)(2 * comboWIPriority6.SelectedIndex), _smartThreadPool, Convert.ToInt32(spinDuration6.Value));
         }
 
         private void btnMode_Click(object sender, EventArgs e)
@@ -400,13 +485,13 @@ namespace WorkItemsGroupDemo
         private void UpdateModeControls()
         {
             btnMode.Text = _advancedMode ? "Basic <<" : "Advanced >>";
-            panelWIGsCtrls.Visible = _advancedMode;
-            groupWIGQueues.Visible = _advancedMode;
+            panelWIGsCtrls.Enabled = _advancedMode;
+            groupWIGQueues.Enabled = _advancedMode;
         }
 
         private void timerPoll_Tick(object sender, EventArgs e)
         {
-            SmartThreadPool stp = _stp;
+            SmartThreadPool stp = _smartThreadPool;
             if (null == stp)
             {
                 return;

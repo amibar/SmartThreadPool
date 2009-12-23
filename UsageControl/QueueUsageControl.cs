@@ -200,7 +200,16 @@ namespace UsageControl
             Bitmap bitmap = new Bitmap(Width, Height);
             Graphics g = Graphics.FromImage(bitmap);
 
+            if (!Enabled)
+            {
+                g.FillPath(Brushes.LightGray, _pathBorder);
+                g.DrawPath(Pens.Black, _pathBorder);
+                e.Graphics.DrawImage(bitmap, 0, 0);
+                return;
+            }
+
             g.FillPath(Brushes.White, _pathBorder);
+
 
             int counter = Math.Min(_maxItemsVisible, _queuedItems.Count);
 

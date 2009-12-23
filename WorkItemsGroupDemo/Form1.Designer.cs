@@ -64,8 +64,14 @@ namespace WorkItemsGroupDemo
             this.comboWIPriority2 = new System.Windows.Forms.ComboBox();
             this.comboWIPriority3 = new System.Windows.Forms.ComboBox();
             this.btnMode = new System.Windows.Forms.Button();
+            this.queueUsageControl6 = new UsageControl.QueueUsageControl();
+            this.queueUsageControl2 = new UsageControl.QueueUsageControl();
+            this.queueUsageControl1 = new UsageControl.QueueUsageControl();
+            this.queueUsageControl3 = new UsageControl.QueueUsageControl();
+            this.usageHistorySTP = new UsageControl.UsageHistoryControl();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.usageThreadsInPool = new UsageControl.UsageControl();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.label6 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
@@ -95,12 +101,6 @@ namespace WorkItemsGroupDemo
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.queueUsageControl6 = new UsageControl.QueueUsageControl();
-            this.queueUsageControl2 = new UsageControl.QueueUsageControl();
-            this.queueUsageControl1 = new UsageControl.QueueUsageControl();
-            this.queueUsageControl3 = new UsageControl.QueueUsageControl();
-            this.usageThreadsInPool = new UsageControl.UsageControl();
-            this.usageHistorySTP = new UsageControl.UsageHistoryControl();
             ((System.ComponentModel.ISupportInitialize)(this.spinCon6)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.spinCon1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.spinCon3)).BeginInit();
@@ -643,6 +643,78 @@ namespace WorkItemsGroupDemo
             this.btnMode.UseVisualStyleBackColor = true;
             this.btnMode.Click += new System.EventHandler(this.btnMode_Click);
             // 
+            // queueUsageControl6
+            // 
+            this.queueUsageControl6.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
+            this.queueUsageControl6.BackColor = System.Drawing.Color.Transparent;
+            this.queueUsageControl6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.queueUsageControl6.Location = new System.Drawing.Point(39, 19);
+            this.queueUsageControl6.Margin = new System.Windows.Forms.Padding(6);
+            this.queueUsageControl6.Name = "queueUsageControl6";
+            this.queueUsageControl6.Size = new System.Drawing.Size(72, 346);
+            this.queueUsageControl6.TabIndex = 30;
+            this.queueUsageControl6.TabStop = false;
+            this.toolTip1.SetToolTip(this.queueUsageControl6, "Smart Thread Pool Queue.  The head of the queue is at the bottom. Executed work i" +
+                    "tems are shown blinking.");
+            // 
+            // queueUsageControl2
+            // 
+            this.queueUsageControl2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.queueUsageControl2.BackColor = System.Drawing.Color.Transparent;
+            this.queueUsageControl2.CausesValidation = false;
+            this.queueUsageControl2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.queueUsageControl2.Location = new System.Drawing.Point(102, 44);
+            this.queueUsageControl2.Margin = new System.Windows.Forms.Padding(6);
+            this.queueUsageControl2.Name = "queueUsageControl2";
+            this.queueUsageControl2.Size = new System.Drawing.Size(72, 321);
+            this.queueUsageControl2.TabIndex = 26;
+            this.toolTip1.SetToolTip(this.queueUsageControl2, "Work Items Group #2 Queue. Each Work Items Group has unique color for its work it" +
+                    "ems.");
+            // 
+            // queueUsageControl1
+            // 
+            this.queueUsageControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.queueUsageControl1.BackColor = System.Drawing.Color.Transparent;
+            this.queueUsageControl1.CausesValidation = false;
+            this.queueUsageControl1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.queueUsageControl1.Location = new System.Drawing.Point(17, 44);
+            this.queueUsageControl1.Margin = new System.Windows.Forms.Padding(6);
+            this.queueUsageControl1.Name = "queueUsageControl1";
+            this.queueUsageControl1.Size = new System.Drawing.Size(72, 321);
+            this.queueUsageControl1.TabIndex = 25;
+            this.toolTip1.SetToolTip(this.queueUsageControl1, "Work Items Group #1 Queue. Each Work Items Group has unique color for its work it" +
+                    "ems.");
+            // 
+            // queueUsageControl3
+            // 
+            this.queueUsageControl3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.queueUsageControl3.BackColor = System.Drawing.Color.Transparent;
+            this.queueUsageControl3.CausesValidation = false;
+            this.queueUsageControl3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.queueUsageControl3.Location = new System.Drawing.Point(186, 44);
+            this.queueUsageControl3.Margin = new System.Windows.Forms.Padding(6);
+            this.queueUsageControl3.Name = "queueUsageControl3";
+            this.queueUsageControl3.Size = new System.Drawing.Size(72, 321);
+            this.queueUsageControl3.TabIndex = 27;
+            this.toolTip1.SetToolTip(this.queueUsageControl3, "Work Items Group #3 Queue. Each Work Items Group has unique color for its work it" +
+                    "ems.");
+            // 
+            // usageHistorySTP
+            // 
+            this.usageHistorySTP.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.usageHistorySTP.BackColor = System.Drawing.Color.Black;
+            this.usageHistorySTP.Location = new System.Drawing.Point(8, 16);
+            this.usageHistorySTP.Maximum = 100;
+            this.usageHistorySTP.Name = "usageHistorySTP";
+            this.usageHistorySTP.Size = new System.Drawing.Size(501, 104);
+            this.usageHistorySTP.TabIndex = 0;
+            this.toolTip1.SetToolTip(this.usageHistorySTP, "Smart Thread Pool usage. Green means used threads. Red means threads in pool.");
+            // 
             // groupBox4
             // 
             this.groupBox4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
@@ -664,6 +736,20 @@ namespace WorkItemsGroupDemo
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "STP Usage";
+            // 
+            // usageThreadsInPool
+            // 
+            this.usageThreadsInPool.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.usageThreadsInPool.BackColor = System.Drawing.Color.Black;
+            this.usageThreadsInPool.Location = new System.Drawing.Point(25, 16);
+            this.usageThreadsInPool.Maximum = 20;
+            this.usageThreadsInPool.Name = "usageThreadsInPool";
+            this.usageThreadsInPool.Size = new System.Drawing.Size(41, 104);
+            this.usageThreadsInPool.TabIndex = 0;
+            this.usageThreadsInPool.Value1 = 0;
+            this.usageThreadsInPool.Value2 = 0;
             // 
             // groupBox2
             // 
@@ -755,6 +841,7 @@ namespace WorkItemsGroupDemo
             this.groupWIGQueues.Controls.Add(this.lblStatus2);
             this.groupWIGQueues.Controls.Add(this.lblStatus3);
             this.groupWIGQueues.Dock = System.Windows.Forms.DockStyle.Left;
+            this.groupWIGQueues.Enabled = false;
             this.groupWIGQueues.Location = new System.Drawing.Point(178, 3);
             this.groupWIGQueues.Name = "groupWIGQueues";
             this.groupWIGQueues.Size = new System.Drawing.Size(275, 391);
@@ -1019,92 +1106,6 @@ namespace WorkItemsGroupDemo
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 105F));
             this.tableLayoutPanel1.Size = new System.Drawing.Size(615, 557);
             this.tableLayoutPanel1.TabIndex = 95;
-            // 
-            // queueUsageControl6
-            // 
-            this.queueUsageControl6.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
-            this.queueUsageControl6.BackColor = System.Drawing.Color.Transparent;
-            this.queueUsageControl6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.queueUsageControl6.Location = new System.Drawing.Point(39, 19);
-            this.queueUsageControl6.Margin = new System.Windows.Forms.Padding(6);
-            this.queueUsageControl6.Name = "queueUsageControl6";
-            this.queueUsageControl6.Size = new System.Drawing.Size(72, 346);
-            this.queueUsageControl6.TabIndex = 30;
-            this.queueUsageControl6.TabStop = false;
-            this.toolTip1.SetToolTip(this.queueUsageControl6, "Smart Thread Pool Queue.  The head of the queue is at the bottom. Executed work i" +
-                    "tems are shown blinking.");
-            // 
-            // queueUsageControl2
-            // 
-            this.queueUsageControl2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
-            this.queueUsageControl2.BackColor = System.Drawing.Color.Transparent;
-            this.queueUsageControl2.CausesValidation = false;
-            this.queueUsageControl2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.queueUsageControl2.Location = new System.Drawing.Point(102, 44);
-            this.queueUsageControl2.Margin = new System.Windows.Forms.Padding(6);
-            this.queueUsageControl2.Name = "queueUsageControl2";
-            this.queueUsageControl2.Size = new System.Drawing.Size(72, 321);
-            this.queueUsageControl2.TabIndex = 26;
-            this.toolTip1.SetToolTip(this.queueUsageControl2, "Work Items Group #2 Queue. Each Work Items Group has unique color for its work it" +
-                    "ems.");
-            // 
-            // queueUsageControl1
-            // 
-            this.queueUsageControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
-            this.queueUsageControl1.BackColor = System.Drawing.Color.Transparent;
-            this.queueUsageControl1.CausesValidation = false;
-            this.queueUsageControl1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.queueUsageControl1.Location = new System.Drawing.Point(17, 44);
-            this.queueUsageControl1.Margin = new System.Windows.Forms.Padding(6);
-            this.queueUsageControl1.Name = "queueUsageControl1";
-            this.queueUsageControl1.Size = new System.Drawing.Size(72, 321);
-            this.queueUsageControl1.TabIndex = 25;
-            this.toolTip1.SetToolTip(this.queueUsageControl1, "Work Items Group #1 Queue. Each Work Items Group has unique color for its work it" +
-                    "ems.");
-            // 
-            // queueUsageControl3
-            // 
-            this.queueUsageControl3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)));
-            this.queueUsageControl3.BackColor = System.Drawing.Color.Transparent;
-            this.queueUsageControl3.CausesValidation = false;
-            this.queueUsageControl3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.queueUsageControl3.Location = new System.Drawing.Point(186, 44);
-            this.queueUsageControl3.Margin = new System.Windows.Forms.Padding(6);
-            this.queueUsageControl3.Name = "queueUsageControl3";
-            this.queueUsageControl3.Size = new System.Drawing.Size(72, 321);
-            this.queueUsageControl3.TabIndex = 27;
-            this.toolTip1.SetToolTip(this.queueUsageControl3, "Work Items Group #3 Queue. Each Work Items Group has unique color for its work it" +
-                    "ems.");
-            // 
-            // usageThreadsInPool
-            // 
-            this.usageThreadsInPool.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.usageThreadsInPool.BackColor = System.Drawing.Color.Black;
-            this.usageThreadsInPool.Location = new System.Drawing.Point(25, 16);
-            this.usageThreadsInPool.Maximum = 20;
-            this.usageThreadsInPool.Name = "usageThreadsInPool";
-            this.usageThreadsInPool.Size = new System.Drawing.Size(41, 104);
-            this.usageThreadsInPool.TabIndex = 0;
-            this.usageThreadsInPool.Value1 = 0;
-            this.usageThreadsInPool.Value2 = 0;
-            // 
-            // usageHistorySTP
-            // 
-            this.usageHistorySTP.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.usageHistorySTP.BackColor = System.Drawing.Color.Black;
-            this.usageHistorySTP.Location = new System.Drawing.Point(8, 16);
-            this.usageHistorySTP.Maximum = 100;
-            this.usageHistorySTP.Name = "usageHistorySTP";
-            this.usageHistorySTP.Size = new System.Drawing.Size(501, 104);
-            this.usageHistorySTP.TabIndex = 0;
-            this.toolTip1.SetToolTip(this.usageHistorySTP, "Smart Thread Pool usage. Green means used threads. Red means threads in pool.");
             // 
             // Form1
             // 
