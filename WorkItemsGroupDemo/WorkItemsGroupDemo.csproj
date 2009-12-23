@@ -77,7 +77,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SmartThreadPool\SmartThreadPool.csproj">
-      <Project>{8684FC56-A679-4E2E-8F96-E172FB062EB6}</Project>
+      <Project>{74D4C33F-7CC8-4B2A-A7DF-D8B6E63B6EBD}</Project>
       <Name>SmartThreadPool</Name>
     </ProjectReference>
     <ProjectReference Include="..\UsageControl\UsageControl.csproj">
