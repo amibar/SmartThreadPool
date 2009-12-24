@@ -20,16 +20,16 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\Mono\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;_MONO</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>bin\Mono\Release\</OutputPath>
     <DefineConstants>TRACE;_MONO</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -76,9 +76,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SmartThreadPool\SmartThreadPool.csproj">
-      <Project>{74D4C33F-7CC8-4B2A-A7DF-D8B6E63B6EBD}</Project>
-      <Name>SmartThreadPool</Name>
+    <ProjectReference Include="..\SmartThreadPool\SmartThreadPoolMono.csproj">
+      <Project>{3462F30B-0156-409C-B256-6046D6F1764B}</Project>
+      <Name>SmartThreadPoolMono</Name>
     </ProjectReference>
     <ProjectReference Include="..\UsageControl\UsageControl.csproj">
       <Project>{C11A4561-CCB5-4C96-8DF2-B804031D89D8}</Project>
