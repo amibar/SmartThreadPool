@@ -138,9 +138,8 @@ namespace SmartThreadPoolTests
             IWorkItemResult wir = stp.QueueWorkItem(
                 state => {
                     waitToStart.Set();
-                    Thread.Sleep(100);
+                    waitToComplete.WaitOne();
                     cancelled = SmartThreadPool.IsWorkItemCanceled;
-                    waitToComplete.Set();
                     return null;
                 }
                 );
@@ -149,9 +148,50 @@ namespace SmartThreadPoolTests
 
             wir.Cancel(false);
 
-            waitToComplete.WaitOne();
+            waitToComplete.Set();
+
+            stp.WaitForIdle();
 
             Assert.IsTrue(cancelled);
+
+            stp.Shutdown();
+        }      
+        
+        /// <summary>
+        /// 1. Create STP
+        /// 2. Queue work item that takes some time
+        /// 3. Wait for it to start
+        /// 4. Cancel the work item (soft)
+        /// 5. Don't call to SmartThreadPool.IsWorkItemCanceled
+        /// 6. Wait for the STP to get idle
+        /// 7. Work item's GetResult should throw WorkItemCancelException
+        /// </summary>        
+        [Test]
+        [ExpectedException(typeof(WorkItemCancelException))]
+        public void CancelInProgressWorkItemSoftWithIgnoreSample()
+        {
+            ManualResetEvent waitToStart = new ManualResetEvent(false);
+            ManualResetEvent waitToComplete = new ManualResetEvent(false);
+
+            SmartThreadPool stp = new SmartThreadPool();
+            IWorkItemResult wir = stp.QueueWorkItem(
+                state => {
+                    waitToStart.Set();
+                    Thread.Sleep(100);
+                    waitToComplete.WaitOne();
+                    return null;
+                }
+                );
+
+            waitToStart.WaitOne();
+
+            wir.Cancel(false);
+
+            waitToComplete.Set();
+
+            stp.WaitForIdle();
+
+            wir.GetResult();
 
             stp.Shutdown();
         }   
