@@ -201,12 +201,12 @@ namespace SmartThreadPoolTests
         /// 2. Queue work item that takes some time
         /// 3. Wait for it to start
         /// 4. Cancel the work item (soft)
-        /// 5. Call to AbortOnWorkItemOnCancel
+        /// 5. Call to AbortOnWorkItemCancel
         /// 5. Wait for the STP to get idle
-        /// 6. Make sure nothing ran in the work item after the AbortOnWorkItemOnCancel
+        /// 6. Make sure nothing ran in the work item after the AbortOnWorkItemCancel
         /// </summary>        
         [Test]
-        public void CancelInProgressWorkItemSoftWithAbortOnWorkItemOnCancel()
+        public void CancelInProgressWorkItemSoftWithAbortOnWorkItemCancel()
         {
             bool abortFailed = false;
             ManualResetEvent waitToStart = new ManualResetEvent(false);
@@ -217,7 +217,7 @@ namespace SmartThreadPoolTests
                 state => {
                     waitToStart.Set();
                     waitToCancel.WaitOne();
-                    SmartThreadPool.AbortOnWorkItemOnCancel();
+                    SmartThreadPool.AbortOnWorkItemCancel();
                     abortFailed = true;
                     return null;
                 });

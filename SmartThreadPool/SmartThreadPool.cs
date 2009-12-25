@@ -1347,7 +1347,7 @@ namespace Amib.Threading
         /// Checks if the work item has been cancelled, and if yes then abort the thread.
         /// Can be used with Cancel and timeout
         /// </summary>
-        public static void AbortOnWorkItemOnCancel()
+        public static void AbortOnWorkItemCancel()
         {
             if (IsWorkItemCanceled)
             {
