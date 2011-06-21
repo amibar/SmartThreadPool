@@ -5,7 +5,7 @@
     <ProjectGuid>{3462F30B-0156-409C-B256-6046D6F1764B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <NoStandardLibraries>false</NoStandardLibraries>
-    <AssemblyName>SmartThreadPoolMono</AssemblyName>
+    <AssemblyName>SmartThreadPool</AssemblyName>
     <RootNamespace>Amib.Threading</RootNamespace>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -17,16 +17,18 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>.\bin\Debug\</OutputPath>
+    <OutputPath>.\bin\Debug\Mono</OutputPath>
     <DefineConstants>TRACE;DEBUG;_MONO</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>.\bin\Release\</OutputPath>
+    <OutputPath>bin\Release\Mono\</OutputPath>
     <DefineConstants>TRACE;_MONO</DefineConstants>
+    <DocumentationFile>bin\Release\Mono\SmartThreadPool.XML</DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
