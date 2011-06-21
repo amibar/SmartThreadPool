@@ -13,6 +13,7 @@ namespace Amib.Threading
         private int _maxWorkerThreads = SmartThreadPool.DefaultMaxWorkerThreads;
         private ThreadPriority _threadPriority = SmartThreadPool.DefaultThreadPriority;
         private string _performanceCounterInstanceName = SmartThreadPool.DefaultPerformanceCounterInstanceName;
+        private bool _areThreadsBackground = SmartThreadPool.DefaultAreThreadsBackground;
         private bool _enableLocalPerformanceCounters;
 
 	    public STPStartInfo()
@@ -33,6 +34,7 @@ namespace Amib.Threading
             _threadPriority = stpStartInfo.ThreadPriority;
             _performanceCounterInstanceName = stpStartInfo.PerformanceCounterInstanceName;
             _enableLocalPerformanceCounters = stpStartInfo._enableLocalPerformanceCounters;
+            _areThreadsBackground = stpStartInfo.AreThreadsBackground;
         }
 
 	  
@@ -122,6 +124,19 @@ namespace Amib.Threading
 				_enableLocalPerformanceCounters = value; 
 			}
 	    }
+
+        /// <summary>
+        /// Get/Set backgroundness of thread in thread pool.
+        /// </summary>
+	    public virtual bool AreThreadsBackground
+ 	    {
+ 	        get { return _areThreadsBackground; }
+ 	        set
+ 	        {
+ 	            ThrowIfReadOnly ();
+ 	            _areThreadsBackground = value;
+ 	        }
+ 	    }
 
 	    /// <summary>
         /// Get a readonly version of this STPStartInfo.

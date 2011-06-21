@@ -164,6 +164,11 @@ namespace Amib.Threading
         /// It is relevant only to QueueWorkItem of Action<...>/Func<...>
         /// </summary>
         public const bool DefaultFillStateWithArgs = false;
+
+        /// <summary>
+        /// The default thread backgroundness. (true)
+        /// </summary>
+        public const bool DefaultAreThreadsBackground = true;
         
 		#endregion
 
@@ -608,7 +613,7 @@ namespace Amib.Threading
 
 					// Configure the new thread and start it
 					workerThread.Name = "STP " + Name + " Thread #" + _threadCounter;
-					workerThread.IsBackground = true;
+                    workerThread.IsBackground = _stpStartInfo.AreThreadsBackground;
 #if !(_SILVERLIGHT)
 					workerThread.Priority = _stpStartInfo.ThreadPriority;
 #endif
