@@ -177,14 +177,8 @@ namespace Amib.Threading.Internal
 
 			WaiterEntry waiterEntry;
 			WorkItem workItem = null;
-
-            try
-            {
-                while (!Monitor.TryEnter(this)) { }
-                //Stopwatch stopwatch = Stopwatch.StartNew();
-                //Monitor.Enter(this);
-                //stopwatch.Stop();
-
+		    lock (this)
+		    {
                 ValidateNotDisposed();
 
                 // If there are waiting work items then take one and return.
@@ -201,11 +195,7 @@ namespace Amib.Threading.Internal
 
                 // Put the waiter with the other waiters
                 PushWaiter(waiterEntry);
-            }
-            finally
-            {
-                Monitor.Exit(this);
-            }
+		    }
 
 		    // Prepare array of wait handle for the WaitHandle.WaitAny()
             WaitHandle [] waitHandles = new WaitHandle[] { 
