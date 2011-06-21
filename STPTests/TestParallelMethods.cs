@@ -101,6 +101,7 @@ namespace SmartThreadPoolTests
                 sc1 => { if (sc.Counter == 2) { sc1.Increment(); }} 
                 );
 
+            stp.WaitForIdle ();
             Assert.AreEqual(3, sc.Counter);
 
 	        stp.Shutdown();
