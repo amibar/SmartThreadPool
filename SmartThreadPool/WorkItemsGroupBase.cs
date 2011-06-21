@@ -278,82 +278,110 @@ namespace Amib.Threading.Internal
 
         public IWorkItemResult QueueWorkItem(Action action)
         {
-            PreQueueWorkItem();
-            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+            return QueueWorkItem (action, SmartThreadPool.DefaultWorkItemPriority);
+        }
+
+        public IWorkItemResult QueueWorkItem (Action action, WorkItemPriority priority)
+        {
+            PreQueueWorkItem ();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem (
                 this,
                 WIGStartInfo,
                 delegate
                 {
-                    action.Invoke();
+                    action.Invoke ();
                     return null;
-                });
-            Enqueue(workItem);
-            return workItem.GetWorkItemResult();
+                }, priority);
+            Enqueue (workItem);
+            return workItem.GetWorkItemResult ();
         }
 
         public IWorkItemResult QueueWorkItem<T>(Action<T> action, T arg)
         {
-            PreQueueWorkItem();
-            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+            return QueueWorkItem<T> (action, arg, SmartThreadPool.DefaultWorkItemPriority);
+        }
+
+        public IWorkItemResult QueueWorkItem<T> (Action<T> action, T arg, WorkItemPriority priority)
+        {
+            PreQueueWorkItem ();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem (
                 this,
                 WIGStartInfo,
                 state =>
-                    {
-                        action.Invoke(arg);
-                        return null;
-                    },
-                WIGStartInfo.FillStateWithArgs ? new object[] { arg } : null);
-            Enqueue(workItem);
-            return workItem.GetWorkItemResult();
+                {
+                    action.Invoke (arg);
+                    return null;
+                },
+                WIGStartInfo.FillStateWithArgs ? new object[] { arg } : null, priority);
+            Enqueue (workItem);
+            return workItem.GetWorkItemResult ();
         }
 
         public IWorkItemResult QueueWorkItem<T1, T2>(Action<T1, T2> action, T1 arg1, T2 arg2)
         {
-            PreQueueWorkItem();
-            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+            return QueueWorkItem<T1, T2> (action, arg1, arg2, SmartThreadPool.DefaultWorkItemPriority);
+        }
+
+        public IWorkItemResult QueueWorkItem<T1, T2> (Action<T1, T2> action, T1 arg1, T2 arg2, WorkItemPriority priority)
+        {
+            PreQueueWorkItem ();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem (
                 this,
                 WIGStartInfo,
                 state =>
                 {
-                    action.Invoke(arg1, arg2);
+                    action.Invoke (arg1, arg2);
                     return null;
                 },
-                WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2 } : null);
-            Enqueue(workItem);
-            return workItem.GetWorkItemResult();
+                WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2 } : null, priority);
+            Enqueue (workItem);
+            return workItem.GetWorkItemResult ();
         }
 
         public IWorkItemResult QueueWorkItem<T1, T2, T3>(Action<T1, T2, T3> action, T1 arg1, T2 arg2, T3 arg3)
         {
-            PreQueueWorkItem();
-            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+            return QueueWorkItem<T1, T2, T3> (action, arg1, arg2, arg3, SmartThreadPool.DefaultWorkItemPriority);
+            ;
+        }
+
+        public IWorkItemResult QueueWorkItem<T1, T2, T3> (Action<T1, T2, T3> action, T1 arg1, T2 arg2, T3 arg3, WorkItemPriority priority)
+        {
+            PreQueueWorkItem ();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem (
                 this,
                 WIGStartInfo,
                 state =>
                 {
-                    action.Invoke(arg1, arg2, arg3);
+                    action.Invoke (arg1, arg2, arg3);
                     return null;
                 },
-                WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2, arg3 } : null);
-            Enqueue(workItem);
-            return workItem.GetWorkItemResult();
+                WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2, arg3 } : null, priority);
+            Enqueue (workItem);
+            return workItem.GetWorkItemResult ();
         }
 
         public IWorkItemResult QueueWorkItem<T1, T2, T3, T4>(
             Action<T1, T2, T3, T4> action, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
         {
-            PreQueueWorkItem();
-            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+            return QueueWorkItem<T1, T2, T3, T4> (action, arg1, arg2, arg3, arg4,
+                                                  SmartThreadPool.DefaultWorkItemPriority);
+        }
+
+        public IWorkItemResult QueueWorkItem<T1, T2, T3, T4> (
+            Action<T1, T2, T3, T4> action, T1 arg1, T2 arg2, T3 arg3, T4 arg4, WorkItemPriority priority)
+        {
+            PreQueueWorkItem ();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem (
                            this,
                            WIGStartInfo,
                            state =>
                            {
-                               action.Invoke(arg1, arg2, arg3, arg4);
+                               action.Invoke (arg1, arg2, arg3, arg4);
                                return null;
                            },
-                           WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2, arg3, arg4 } : null);
-            Enqueue(workItem);
-            return workItem.GetWorkItemResult();
+                           WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2, arg3, arg4 } : null, priority);
+            Enqueue (workItem);
+            return workItem.GetWorkItemResult ();
         }
 
         #endregion
