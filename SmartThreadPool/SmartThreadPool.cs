@@ -161,6 +161,11 @@ namespace Amib.Threading
 
         /// <summary>
         /// The default fill state with params. (false)
+
+        /// <summary>
+        /// The default thread pool name. (SmartThreadPool)
+        /// </summary>
+        public const string DefaultThreadPoolName = "SmartThreadPool";
         /// It is relevant only to QueueWorkItem of Action<...>/Func<...>
         /// </summary>
         public const bool DefaultFillStateWithArgs = false;
@@ -395,7 +400,7 @@ namespace Amib.Threading
 
 		private void Initialize()
 		{
-		    Name = "SmartThreadPool";
+            Name = _stpStartInfo.ThreadPoolName;
 			ValidateSTPStartInfo();
 
             // _stpStartInfoRW stores a read/write copy of the STPStartInfo.
