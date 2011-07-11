@@ -1628,7 +1628,7 @@ namespace Amib.Threading
         public void Pipe<T>(T pipeState, IEnumerable<Action<T>> actions)
         {
             WIGStartInfo wigStartInfo = new WIGStartInfo { StartSuspended = true };
-            IWorkItemsGroup workItemsGroup = CreateWorkItemsGroup(int.MaxValue, wigStartInfo);
+            IWorkItemsGroup workItemsGroup = CreateWorkItemsGroup(1, wigStartInfo);
             foreach (Action<T> action in actions)
             {
                 Action<T> act = action;
