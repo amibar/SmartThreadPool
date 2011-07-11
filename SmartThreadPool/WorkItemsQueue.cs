@@ -163,25 +163,24 @@ namespace Amib.Threading.Internal
 			int millisecondsTimeout, 
 			WaitHandle cancelEvent)
 		{
-			// This method cause the caller to wait for a work item.
-			// If there is at least one waiting work item then the 
-			// method returns immidiately with it.
-			// 
-			// If there are no waiting work items then the caller 
-			// is queued between other waiters for a work item to arrive.
-			// 
-			// If a work item didn't come within millisecondsTimeout or 
-			// the user canceled the wait by signaling the cancelEvent 
-			// then the method returns null to indicate that the caller 
-			// didn't get a work item.
+		    // This method cause the caller to wait for a work item.
+		    // If there is at least one waiting work item then the 
+		    // method returns immidiately with it.
+		    // 
+		    // If there are no waiting work items then the caller 
+		    // is queued between other waiters for a work item to arrive.
+		    // 
+		    // If a work item didn't come within millisecondsTimeout or 
+		    // the user canceled the wait by signaling the cancelEvent 
+		    // then the method returns null to indicate that the caller 
+		    // didn't get a work item.
 
-			WaiterEntry waiterEntry;
-			WorkItem workItem = null;
+		    WaiterEntry waiterEntry;
+		    WorkItem workItem = null;
 
-            try
+		    lock (this) 
             {
-                while (!Monitor.TryEnter(this)) { }
-                //Stopwatch stopwatch = Stopwatch.StartNew();
+	            //Stopwatch stopwatch = Stopwatch.StartNew();
                 //Monitor.Enter(this);
                 //stopwatch.Stop();
 
@@ -201,10 +200,6 @@ namespace Amib.Threading.Internal
 
                 // Put the waiter with the other waiters
                 PushWaiter(waiterEntry);
-            }
-            finally
-            {
-                Monitor.Exit(this);
             }
 
 		    // Prepare array of wait handle for the WaitHandle.WaitAny()
