@@ -13,7 +13,9 @@ namespace Amib.Threading
         private int _maxWorkerThreads = SmartThreadPool.DefaultMaxWorkerThreads;
         private ThreadPriority _threadPriority = SmartThreadPool.DefaultThreadPriority;
         private string _performanceCounterInstanceName = SmartThreadPool.DefaultPerformanceCounterInstanceName;
+        private bool _areThreadsBackground = SmartThreadPool.DefaultAreThreadsBackground;
         private bool _enableLocalPerformanceCounters;
+        private string _threadPoolName = SmartThreadPool.DefaultThreadPoolName;
 
 	    public STPStartInfo()
         {
@@ -33,6 +35,8 @@ namespace Amib.Threading
             _threadPriority = stpStartInfo.ThreadPriority;
             _performanceCounterInstanceName = stpStartInfo.PerformanceCounterInstanceName;
             _enableLocalPerformanceCounters = stpStartInfo._enableLocalPerformanceCounters;
+            _threadPoolName = stpStartInfo._threadPoolName;
+            _areThreadsBackground = stpStartInfo.AreThreadsBackground;
         }
 
 	  
@@ -93,6 +97,18 @@ namespace Amib.Threading
             }
 	    }
 
+        /// <summary>
+        /// Get/Set the thread pool name. Threads will get names depending on this.
+        /// </summary>
+        public virtual string ThreadPoolName {
+            get { return _threadPoolName; }
+            set
+            {
+                ThrowIfReadOnly ();
+                _threadPoolName = value;
+            }
+        }
+
 	    /// <summary>
 	    /// Get/Set the performance counter instance name of this SmartThreadPool
 	    /// The default is null which indicate not to use performance counters at all.
@@ -122,6 +138,19 @@ namespace Amib.Threading
 				_enableLocalPerformanceCounters = value; 
 			}
 	    }
+
+        /// <summary>
+        /// Get/Set backgroundness of thread in thread pool.
+        /// </summary>
+	    public virtual bool AreThreadsBackground
+ 	    {
+ 	        get { return _areThreadsBackground; }
+ 	        set
+ 	        {
+ 	            ThrowIfReadOnly ();
+ 	            _areThreadsBackground = value;
+ 	        }
+ 	    }
 
 	    /// <summary>
         /// Get a readonly version of this STPStartInfo.

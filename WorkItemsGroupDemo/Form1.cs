@@ -294,7 +294,7 @@ namespace WorkItemsGroupDemo
             spinIdleTimeout.Enabled = !start;
         }
 
-        private object DoNothing(object state)
+        private void DoNothing(WorkItemState state)
         {
             WorkItemState workItemState = (WorkItemState)state;
             _workingStates.Add(workItemState.QueueUsageEntry, workItemState.QueueUsageEntry);
@@ -310,7 +310,7 @@ namespace WorkItemsGroupDemo
             } while (_paused);
             _workingStates.Remove(workItemState.QueueUsageEntry);
             
-            return null;
+            //return null;
         }
 
 

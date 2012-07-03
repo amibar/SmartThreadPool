@@ -271,7 +271,19 @@ namespace Amib.Threading
         /// Queue a work item.
         /// </summary>
         /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
-        IWorkItemResult QueueWorkItem<T>(Action<T> action, T arg);
+        IWorkItemResult QueueWorkItem (Action action, WorkItemPriority priority);
+
+        /// <summary>
+        /// Queue a work item.
+        /// </summary>
+        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
+        IWorkItemResult QueueWorkItem<T> (Action<T> action, T arg, WorkItemPriority priority);
+
+        /// <summary>
+        /// Queue a work item.
+        /// </summary>
+        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
+        IWorkItemResult QueueWorkItem<T> (Action<T> action, T arg);
 
         /// <summary>
         /// Queue a work item.
@@ -283,13 +295,31 @@ namespace Amib.Threading
         /// Queue a work item.
         /// </summary>
         /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
+        IWorkItemResult QueueWorkItem<T1, T2> (Action<T1, T2> action, T1 arg1, T2 arg2, WorkItemPriority priority);
+
+        /// <summary>
+        /// Queue a work item.
+        /// </summary>
+        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
         IWorkItemResult QueueWorkItem<T1, T2, T3>(Action<T1, T2, T3> action, T1 arg1, T2 arg2, T3 arg3);
 
         /// <summary>
         /// Queue a work item.
         /// </summary>
         /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
+        IWorkItemResult QueueWorkItem<T1, T2, T3> (Action<T1, T2, T3> action, T1 arg1, T2 arg2, T3 arg3, WorkItemPriority priority);
+
+        /// <summary>
+        /// Queue a work item.
+        /// </summary>
+        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
         IWorkItemResult QueueWorkItem<T1, T2, T3, T4>(Action<T1, T2, T3, T4> action, T1 arg1, T2 arg2, T3 arg3, T4 arg4);
+
+        /// <summary>
+        /// Queue a work item.
+        /// </summary>
+        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
+        IWorkItemResult QueueWorkItem<T1, T2, T3, T4> (Action<T1, T2, T3, T4> action, T1 arg1, T2 arg2, T3 arg3, T4 arg4, WorkItemPriority priority);
 
         #endregion
 

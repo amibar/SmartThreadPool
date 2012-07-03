@@ -161,9 +161,19 @@ namespace Amib.Threading
 
         /// <summary>
         /// The default fill state with params. (false)
+
+        /// <summary>
+        /// The default thread pool name. (SmartThreadPool)
+        /// </summary>
+        public const string DefaultThreadPoolName = "SmartThreadPool";
         /// It is relevant only to QueueWorkItem of Action<...>/Func<...>
         /// </summary>
         public const bool DefaultFillStateWithArgs = false;
+
+        /// <summary>
+        /// The default thread backgroundness. (true)
+        /// </summary>
+        public const bool DefaultAreThreadsBackground = true;
         
 		#endregion
 
@@ -390,7 +400,7 @@ namespace Amib.Threading
 
 		private void Initialize()
 		{
-		    Name = "SmartThreadPool";
+            Name = _stpStartInfo.ThreadPoolName;
 			ValidateSTPStartInfo();
 
             // _stpStartInfoRW stores a read/write copy of the STPStartInfo.
@@ -608,7 +618,7 @@ namespace Amib.Threading
 
 					// Configure the new thread and start it
 					workerThread.Name = "STP " + Name + " Thread #" + _threadCounter;
-					workerThread.IsBackground = true;
+                    workerThread.IsBackground = _stpStartInfo.AreThreadsBackground;
 #if !(_SILVERLIGHT)
 					workerThread.Priority = _stpStartInfo.ThreadPriority;
 #endif

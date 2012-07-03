@@ -61,7 +61,7 @@ namespace SmartThreadPoolTests
             wii.WorkItemPriority = WorkItemPriority.AboveNormal;
             WorkItemInfoComparer wiic = new WorkItemInfoComparer(wii, state);
 
-            IWorkItemResult wir = wig.QueueWorkItem(wiic.CompareWorkItemInfo, state, WorkItemPriority.AboveNormal);
+            IWorkItemResult wir = wig.QueueWorkItem((WorkItemCallback) wiic.CompareWorkItemInfo, state, WorkItemPriority.AboveNormal);
 
             bool success = (bool)wir.Result;
 
