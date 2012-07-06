@@ -524,7 +524,7 @@ namespace Amib.Threading
 			workItem.WorkItemIsQueued();
 
 			// If all the threads are busy then try to create a new one
-			if ((InUseThreads + WaitingCallbacks) > _workerThreads.Count) 
+			if (_currentWorkItemsCount > _workerThreads.Count) 
 			{
 				StartThreads(1);
 			}
