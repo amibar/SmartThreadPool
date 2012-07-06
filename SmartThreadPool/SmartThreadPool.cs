@@ -7,7 +7,7 @@
 //		- Work items return result.
 //		- Support waiting synchronization for multiple work items.
 //		- Work items can be cancelled.
-//		- Passage of the caller thread’s context to the thread in the pool.
+//		- Passage of the caller threadâ€™s context to the thread in the pool.
 //		- Minimal usage of WIN32 handles.
 //		- Minor bug fixes.
 // 26 Dec 2004 - Changes:
@@ -160,12 +160,12 @@ namespace Amib.Threading
 		public const ThreadPriority DefaultThreadPriority = ThreadPriority.Normal;
 
         /// <summary>
-        /// The default fill state with params. (false)
-
-        /// <summary>
         /// The default thread pool name. (SmartThreadPool)
         /// </summary>
         public const string DefaultThreadPoolName = "SmartThreadPool";
+
+        /// <summary>
+        /// The default fill state with params. (false)
         /// It is relevant only to QueueWorkItem of Action<...>/Func<...>
         /// </summary>
         public const bool DefaultFillStateWithArgs = false;
@@ -174,7 +174,16 @@ namespace Amib.Threading
         /// The default thread backgroundness. (true)
         /// </summary>
         public const bool DefaultAreThreadsBackground = true;
-        
+
+#if !(_SILVERLIGHT)       
+        /// <summary>
+        /// The default apartment state of a thread in the thread pool. 
+        /// The default is ApartmentState.Unknown which means the STP will not 
+        /// set the apartment of the thread. It will use the .NET default.
+        /// </summary>
+        public const ApartmentState DefaultApartmentState = ApartmentState.Unknown;
+#endif
+
 		#endregion
 
         #region Member Variables
@@ -619,8 +628,16 @@ namespace Amib.Threading
 					// Configure the new thread and start it
 					workerThread.Name = "STP " + Name + " Thread #" + _threadCounter;
                     workerThread.IsBackground = _stpStartInfo.AreThreadsBackground;
+
+#if !(_SILVERLIGHT) && !(_WINDOWS_CE)
+                    if (_stpStartInfo.ApartmentState != ApartmentState.Unknown)
+                    {
+                        workerThread.SetApartmentState(_stpStartInfo.ApartmentState);
+                    }
+#endif
+
 #if !(_SILVERLIGHT)
-					workerThread.Priority = _stpStartInfo.ThreadPriority;
+                    workerThread.Priority = _stpStartInfo.ThreadPriority;
 #endif
 					workerThread.Start();
 					++_threadCounter;

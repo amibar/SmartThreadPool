@@ -17,7 +17,7 @@ namespace Amib.Threading
         private bool _enableLocalPerformanceCounters;
         private string _threadPoolName = SmartThreadPool.DefaultThreadPoolName;
 
-	    public STPStartInfo()
+        public STPStartInfo()
         {
             _performanceCounterInstanceName = SmartThreadPool.DefaultPerformanceCounterInstanceName;
             _threadPriority = SmartThreadPool.DefaultThreadPriority;
@@ -37,8 +37,10 @@ namespace Amib.Threading
             _enableLocalPerformanceCounters = stpStartInfo._enableLocalPerformanceCounters;
             _threadPoolName = stpStartInfo._threadPoolName;
             _areThreadsBackground = stpStartInfo.AreThreadsBackground;
+#if !(_SILVERLIGHT)
+            _apartmentState = stpStartInfo._apartmentState;
+#endif
         }
-
 	  
 	    /// <summary>
 	    /// Get/Set the idle timeout in milliseconds.
@@ -160,5 +162,23 @@ namespace Amib.Threading
         {
             return new STPStartInfo(this) { _readOnly = true };
         }
+
+#if !(_SILVERLIGHT)
+
+        private ApartmentState _apartmentState = SmartThreadPool.DefaultApartmentState;
+
+        /// <summary>
+        /// Get/Set the apartment state of threads in the thread pool
+        /// </summary>
+        public ApartmentState ApartmentState
+        {
+            get { return _apartmentState; }
+            set
+            {
+                ThrowIfReadOnly();
+                _apartmentState = value;
+            }
+        }
+#endif
     }
 }

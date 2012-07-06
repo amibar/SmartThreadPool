@@ -109,6 +109,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="TestThreadApartmentState.cs" />
     <Compile Include="TestParallelMethods.cs" />
     <Compile Include="TestFalseFillStateWithParams.cs" />
     <Compile Include="TestFillStateWithParams.cs" />
