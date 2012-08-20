@@ -2,7 +2,9 @@
 
 // Smart Thread Pool
 // 7 Aug 2004 - Initial release
+//
 // 14 Sep 2004 - Bug fixes 
+//
 // 15 Oct 2004 - Added new features
 //		- Work items return result.
 //		- Support waiting synchronization for multiple work items.
@@ -10,6 +12,7 @@
 //		- Passage of the caller thread’s context to the thread in the pool.
 //		- Minimal usage of WIN32 handles.
 //		- Minor bug fixes.
+//
 // 26 Dec 2004 - Changes:
 //		- Removed static constructors.
 //      - Added finalizers.
@@ -24,10 +27,13 @@
 //      - Changed exception handling so if a work item throws an exception it 
 //        is rethrown at GetResult(), rather then firing an UnhandledException event.
 //        Note that PostExecute exception are always ignored.
+//
 // 25 Mar 2005 - Changes:
 //		- Fixed lost of work items bug
+//
 // 3 Jul 2005: Changes.
 //      - Fixed bug where Enqueue() throws an exception because PopWaiter() returned null, hardly reconstructed. 
+//
 // 16 Aug 2005: Changes.
 //		- Fixed bug where the InUseThreads becomes negative when canceling work items. 
 //
@@ -74,6 +80,15 @@
 //
 // 21 December 2009 - Changes:
 //      - Added work item timeout (passive)
+//
+// 20 August 2012 - Changes:
+//      - Added set name to threads
+//      - Fixed the WorkItemsQueue.Dequeue. 
+//        Replaced while (!Monitor.TryEnter(this)); with lock(this) { ... }
+//      - Fixed SmartThreadPool.Pipe
+//      - Added IsBackground option to threads
+//      - Added ApartmentState to threads
+//      - Fixed thread creation when queuing many work items at the same time.
 
 #endregion
 
