@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Amib.Threading.Internal
@@ -33,7 +34,9 @@ namespace Amib.Threading.Internal
         private bool _isWorkItemsQueueActive = true;
 
 
-#if (_WINDOWS_CE)
+#if (WINDOWS_PHONE) 
+        private static readonly Dictionary<int, WaiterEntry> _waiterEntries = new Dictionary<int, WaiterEntry>();
+#elif (_WINDOWS_CE)
         private static LocalDataStoreSlot _waiterEntrySlot = Thread.AllocateDataSlot();
 #else
 
@@ -47,7 +50,27 @@ namespace Amib.Threading.Internal
         /// </summary>
         private static WaiterEntry CurrentWaiterEntry
         {
-#if (_WINDOWS_CE)
+#if (WINDOWS_PHONE) 
+            get
+            {
+                lock (_waiterEntries)
+                {
+                    WaiterEntry waiterEntry;
+                    if (_waiterEntries.TryGetValue(Thread.CurrentThread.ManagedThreadId, out waiterEntry))
+                    {
+                        return waiterEntry;
+                    }
+                }
+                return null;
+            }
+            set
+            {
+                lock (_waiterEntries)
+                {
+                    _waiterEntries[Thread.CurrentThread.ManagedThreadId] = value;
+                }
+            }
+#elif (_WINDOWS_CE)
             get
             {
                 return Thread.GetData(_waiterEntrySlot) as WaiterEntry;

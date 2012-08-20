@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace Amib.Threading.Internal
 {
-#if _WINDOWS
+#if _WINDOWS ||  WINDOWS_PHONE
     internal static class STPEventWaitHandle
     {
         public const int WaitTimeout = Timeout.Infinite;

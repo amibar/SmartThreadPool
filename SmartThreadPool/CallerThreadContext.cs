@@ -1,5 +1,5 @@
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
 
 using System;
 using System.Diagnostics;
@@ -11,7 +11,7 @@ using System.Runtime.Remoting.Messaging;
 
 namespace Amib.Threading.Internal
 {
-	#region CallerThreadContext class
+#region CallerThreadContext class
 
 	/// <summary>
 	/// This class stores the caller call context in order to restore
@@ -19,7 +19,7 @@ namespace Amib.Threading.Internal
 	/// </summary>
 	internal class CallerThreadContext 
 	{
-		#region Prepare reflection information
+#region Prepare reflection information
 
 		// Cached type information.
 		private static readonly MethodInfo getLogicalCallContextMethodInfo =
@@ -42,14 +42,14 @@ namespace Amib.Threading.Internal
 		    return "HttpContext";
 		}
 
-		#endregion
+        #endregion
 
-		#region Private fields
+#region Private fields
 
 		private HttpContext _httpContext;
 		private LogicalCallContext _callContext;
 
-		#endregion
+        #endregion
 
 		/// <summary>
 		/// Constructor
@@ -133,6 +133,6 @@ namespace Amib.Threading.Internal
 		}
 	}
 
-	#endregion
+    #endregion
 }
 #endif

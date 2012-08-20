@@ -1,0 +1,17 @@
+﻿<UserControl x:Class="STPWPDemo.SpinTextBlock"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    d:DesignHeight="63" d:DesignWidth="354">
+    
+    <Grid x:Name="LayoutRoot">
+        <TextBlock Name="TextBlock" Margin="40,0,40,0"/>
+        <TextBlock Name="Dec" Text="--" TextAlignment="Center" VerticalAlignment="Top" HorizontalAlignment="Left" Width="40" MouseLeftButtonUp="Dec_MouseLeftButtonUp" Height="63" />
+        <TextBlock Name="Inc" Text="++" TextAlignment="Center" VerticalAlignment="Top" HorizontalAlignment="Right" Width="40" MouseLeftButtonUp="Inc_MouseLeftButtonUp" Height="63" />
+    </Grid>
+</UserControl>

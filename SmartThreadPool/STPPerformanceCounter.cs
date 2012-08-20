@@ -23,7 +23,7 @@ namespace Amib.Threading.Internal
         void SampleWorkItemsWaitTime(TimeSpan workItemWaitTime);
         void SampleWorkItemsProcessTime(TimeSpan workItemProcessTime);
     }
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
 
     internal enum STPPerformanceCounterType
 	{
@@ -354,7 +354,7 @@ namespace Amib.Threading.Internal
 			GetCounter(STPPerformanceCounterType.AvgWorkItemProcessTimeBase).Increment();
 		}
     }
-    #endif
+#endif
 
     internal class NullSTPInstancePerformanceCounters : ISTPInstancePerformanceCounters, ISTPPerformanceCountersReader
 	{

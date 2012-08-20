@@ -87,11 +87,11 @@ namespace Amib.Threading.Internal
 			if (concurrency <= 0)
 			{
 				throw new ArgumentOutOfRangeException(
-                    "concurrency", 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
+                    "concurrency",
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
                     concurrency,
 #endif
-                    "concurrency must be greater than zero");
+ "concurrency must be greater than zero");
 			}
 			_stp = stp;
 			_concurrency = concurrency;

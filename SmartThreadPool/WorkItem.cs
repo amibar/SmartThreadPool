@@ -61,13 +61,13 @@ namespace Amib.Threading.Internal
 		/// </summary>
 		private object _state;
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
         /// <summary>
         /// Stores the caller's context
         /// </summary>
         private readonly CallerThreadContext _callerContext;
 #endif
-		/// <summary>
+        /// <summary>
 		/// Holds the result of the mehtod
 		/// </summary>
 		private object _result;
@@ -209,7 +209,7 @@ namespace Amib.Threading.Internal
 			_workItemsGroup = workItemsGroup;
 			_workItemInfo = workItemInfo;
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
 			if (_workItemInfo.UseCallerCallContext || _workItemInfo.UseCallerHttpContext)
 			{
 				_callerContext = CallerThreadContext.Capture(_workItemInfo.UseCallerCallContext, _workItemInfo.UseCallerHttpContext);
@@ -360,7 +360,7 @@ namespace Amib.Threading.Internal
         private void ExecuteWorkItem()
         {
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
             CallerThreadContext ctc = null;
             if (null != _callerContext)
             {
@@ -400,18 +400,19 @@ namespace Amib.Threading.Internal
             // We must treat the ThreadAbortException or else it will be stored in the exception variable
             catch (ThreadAbortException tae)
             {
+                tae.GetHashCode();
                 // Check if the work item was cancelled
                 // If we got a ThreadAbortException and the STP is not shutting down, it means the 
                 // work items was cancelled.
                 if (!SmartThreadPool.CurrentThreadEntry.AssociatedSmartThreadPool.IsShuttingdown)
                 {
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
                     Thread.ResetAbort();
 #endif
                 }
             }
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
             if (null != _callerContext)
             {
                 CallerThreadContext.Apply(ctc);

@@ -11,7 +11,9 @@ namespace Amib.Threading
         private int _idleTimeout = SmartThreadPool.DefaultIdleTimeout;
         private int _minWorkerThreads = SmartThreadPool.DefaultMinWorkerThreads;
         private int _maxWorkerThreads = SmartThreadPool.DefaultMaxWorkerThreads;
+#if !(WINDOWS_PHONE)
         private ThreadPriority _threadPriority = SmartThreadPool.DefaultThreadPriority;
+#endif
         private string _performanceCounterInstanceName = SmartThreadPool.DefaultPerformanceCounterInstanceName;
         private bool _areThreadsBackground = SmartThreadPool.DefaultAreThreadsBackground;
         private bool _enableLocalPerformanceCounters;
@@ -20,7 +22,9 @@ namespace Amib.Threading
         public STPStartInfo()
         {
             _performanceCounterInstanceName = SmartThreadPool.DefaultPerformanceCounterInstanceName;
+#if !(WINDOWS_PHONE)
             _threadPriority = SmartThreadPool.DefaultThreadPriority;
+#endif
             _maxWorkerThreads = SmartThreadPool.DefaultMaxWorkerThreads;
             _idleTimeout = SmartThreadPool.DefaultIdleTimeout;
             _minWorkerThreads = SmartThreadPool.DefaultMinWorkerThreads;
@@ -32,12 +36,14 @@ namespace Amib.Threading
             _idleTimeout = stpStartInfo.IdleTimeout;
             _minWorkerThreads = stpStartInfo.MinWorkerThreads;
             _maxWorkerThreads = stpStartInfo.MaxWorkerThreads;
+#if !(WINDOWS_PHONE)
             _threadPriority = stpStartInfo.ThreadPriority;
+#endif
             _performanceCounterInstanceName = stpStartInfo.PerformanceCounterInstanceName;
             _enableLocalPerformanceCounters = stpStartInfo._enableLocalPerformanceCounters;
             _threadPoolName = stpStartInfo._threadPoolName;
             _areThreadsBackground = stpStartInfo.AreThreadsBackground;
-#if !(_SILVERLIGHT)
+#if !(_SILVERLIGHT) && !(WINDOWS_PHONE)
             _apartmentState = stpStartInfo._apartmentState;
 #endif
         }
@@ -84,7 +90,7 @@ namespace Amib.Threading
             }
 	    }
 
-
+#if !(WINDOWS_PHONE)
 	    /// <summary>
 	    /// Get/Set the scheduling priority of the threads in the pool.
 	    /// The Os handles the scheduling.
@@ -98,7 +104,7 @@ namespace Amib.Threading
                 _threadPriority = value; 
             }
 	    }
-
+#endif
         /// <summary>
         /// Get/Set the thread pool name. Threads will get names depending on this.
         /// </summary>
@@ -163,7 +169,7 @@ namespace Amib.Threading
             return new STPStartInfo(this) { _readOnly = true };
         }
 
-#if !(_SILVERLIGHT)
+#if !(_SILVERLIGHT) && !(WINDOWS_PHONE)
 
         private ApartmentState _apartmentState = SmartThreadPool.DefaultApartmentState;
 

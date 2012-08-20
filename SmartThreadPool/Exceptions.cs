@@ -68,7 +68,7 @@ namespace Amib.Threading
     }
 
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
     /// <summary>
     /// Represents an exception in case IWorkItemResult.GetResult has been canceled
     /// </summary>

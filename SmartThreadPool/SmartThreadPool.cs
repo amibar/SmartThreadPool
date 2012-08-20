@@ -154,11 +154,13 @@ namespace Amib.Threading
 		/// </summary>
 		public static readonly string DefaultPerformanceCounterInstanceName;
 
+#if !(WINDOWS_PHONE)
+
 		/// <summary>
         /// The default thread priority (ThreadPriority.Normal)
 		/// </summary>
 		public const ThreadPriority DefaultThreadPriority = ThreadPriority.Normal;
-
+#endif
         /// <summary>
         /// The default thread pool name. (SmartThreadPool)
         /// </summary>
@@ -175,7 +177,7 @@ namespace Amib.Threading
         /// </summary>
         public const bool DefaultAreThreadsBackground = true;
 
-#if !(_SILVERLIGHT)       
+#if !(_SILVERLIGHT) && !(WINDOWS_PHONE)
         /// <summary>
         /// The default apartment state of a thread in the thread pool. 
         /// The default is ApartmentState.Unknown which means the STP will not 
@@ -284,7 +286,9 @@ namespace Amib.Threading
         private ISTPInstancePerformanceCounters _localPCs = NullSTPInstancePerformanceCounters.Instance;
 
 
-#if (_WINDOWS_CE)
+#if (WINDOWS_PHONE) 
+        private static readonly Dictionary<int, ThreadEntry> _threadEntries = new Dictionary<int, ThreadEntry>();
+#elif (_WINDOWS_CE)
         private static LocalDataStoreSlot _threadEntrySlot = Thread.AllocateDataSlot();
 #else
         [ThreadStatic]
@@ -314,9 +318,30 @@ namespace Amib.Threading
         /// </summary>
         internal static ThreadEntry CurrentThreadEntry
         {
-#if (_WINDOWS_CE)
+#if (WINDOWS_PHONE)
             get
             {
+                lock(_threadEntries)
+                {
+                    ThreadEntry threadEntry;
+                    if (_threadEntries.TryGetValue(Thread.CurrentThread.ManagedThreadId, out threadEntry))
+                    {
+                        return threadEntry;
+                    }
+                }
+                return null;
+            }
+            set
+            {
+                lock(_threadEntries)
+                {
+                    _threadEntries[Thread.CurrentThread.ManagedThreadId] = value;
+                }
+            }
+#elif (_WINDOWS_CE)
+            get
+            {
+                //Thread.CurrentThread.ManagedThreadId
                 return Thread.GetData(_threadEntrySlot) as ThreadEntry;
             }
             set
@@ -417,7 +442,7 @@ namespace Amib.Threading
 
             _isSuspended = _stpStartInfo.StartSuspended;
 
-#if (_WINDOWS_CE) || (_SILVERLIGHT) || (_MONO)
+#if (_WINDOWS_CE) || (_SILVERLIGHT) || (_MONO) || (WINDOWS_PHONE)
 			if (null != _stpStartInfo.PerformanceCounterInstanceName)
 			{
                 throw new NotSupportedException("Performance counters are not implemented for Compact Framework/Silverlight/Mono, instead use StpStartInfo.EnableLocalPerformanceCounters");
@@ -629,17 +654,17 @@ namespace Amib.Threading
 					workerThread.Name = "STP " + Name + " Thread #" + _threadCounter;
                     workerThread.IsBackground = _stpStartInfo.AreThreadsBackground;
 
-#if !(_SILVERLIGHT) && !(_WINDOWS_CE)
+#if !(_SILVERLIGHT) && !(_WINDOWS_CE) && !(WINDOWS_PHONE)
                     if (_stpStartInfo.ApartmentState != ApartmentState.Unknown)
                     {
                         workerThread.SetApartmentState(_stpStartInfo.ApartmentState);
                     }
 #endif
 
-#if !(_SILVERLIGHT)
+#if !(_SILVERLIGHT) && !(WINDOWS_PHONE)
                     workerThread.Priority = _stpStartInfo.ThreadPriority;
 #endif
-					workerThread.Start();
+                    workerThread.Start();
 					++_threadCounter;
 
                     // Add it to the dictionary and update its creation time.
@@ -806,10 +831,10 @@ namespace Amib.Threading
 			{
                 tae.GetHashCode();
                 // Handle the abort exception gracfully.
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
 				Thread.ResetAbort();
 #endif
-			}
+            }
 			catch(Exception e)
 			{
 				Debug.Assert(null != e);
