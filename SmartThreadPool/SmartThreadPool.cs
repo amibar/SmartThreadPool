@@ -182,7 +182,7 @@ namespace Amib.Threading
 
         /// <summary>
         /// The default fill state with params. (false)
-        /// It is relevant only to QueueWorkItem of Action<...>/Func<...>
+        /// It is relevant only to QueueWorkItem of Action&lt;...&gt;/Func&lt;...&gt;
         /// </summary>
         public const bool DefaultFillStateWithArgs = false;
 
@@ -270,11 +270,6 @@ namespace Amib.Threading
 		/// Indicate that the SmartThreadPool has been disposed
 		/// </summary>
 		private bool _isDisposed;
-
-		/// <summary>
-		/// On idle event
-		/// </summary>
-		//private event WorkItemsGroupIdleHandler _onIdle;
 
 		/// <summary>
 		/// Holds all the WorkItemsGroup instaces that have at least one 

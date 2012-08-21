@@ -328,35 +328,35 @@ namespace Amib.Threading
         /// <summary>
         /// Queue a work item.
         /// </summary>
-        /// <returns>Returns a IWorkItemResult<TResult> object. 
+        /// <returns>Returns a IWorkItemResult&lt;TResult&gt; object. 
         /// its GetResult() returns a TResult object</returns>
         IWorkItemResult<TResult> QueueWorkItem<TResult>(Func<TResult> func);
 
         /// <summary>
         /// Queue a work item.
         /// </summary>
-        /// <returns>Returns a IWorkItemResult<TResult> object. 
+        /// <returns>Returns a IWorkItemResult&lt;TResult&gt; object. 
         /// its GetResult() returns a TResult object</returns>
         IWorkItemResult<TResult> QueueWorkItem<T, TResult>(Func<T, TResult> func, T arg);
 
         /// <summary>
         /// Queue a work item.
         /// </summary>
-        /// <returns>Returns a IWorkItemResult<TResult> object. 
+        /// <returns>Returns a IWorkItemResult&lt;TResult&gt; object. 
         /// its GetResult() returns a TResult object</returns>
         IWorkItemResult<TResult> QueueWorkItem<T1, T2, TResult>(Func<T1, T2, TResult> func, T1 arg1, T2 arg2);
 
         /// <summary>
         /// Queue a work item.
         /// </summary>
-        /// <returns>Returns a IWorkItemResult<TResult> object. 
+        /// <returns>Returns a IWorkItemResult&lt;TResult&gt; object. 
         /// its GetResult() returns a TResult object</returns>
         IWorkItemResult<TResult> QueueWorkItem<T1, T2, T3, TResult>(Func<T1, T2, T3, TResult> func, T1 arg1, T2 arg2, T3 arg3);
 
         /// <summary>
         /// Queue a work item.
         /// </summary>
-        /// <returns>Returns a IWorkItemResult<TResult> object. 
+        /// <returns>Returns a IWorkItemResult&lt;TResult&gt; object. 
         /// its GetResult() returns a TResult object</returns>
         IWorkItemResult<TResult> QueueWorkItem<T1, T2, T3, T4, TResult>(Func<T1, T2, T3, T4, TResult> func, T1 arg1, T2 arg2, T3 arg3, T4 arg4);
 
@@ -396,7 +396,7 @@ namespace Amib.Threading
 	#region IWorkItemResult interface
 
     /// <summary>
-    /// The common interface of IWorkItemResult and IWorkItemResult<T>
+    /// The common interface of IWorkItemResult and IWorkItemResult&lt;T&gt;
     /// </summary>
     public interface IWaitableResult
     {
@@ -422,8 +422,8 @@ namespace Amib.Threading
     }
 
 	/// <summary>
-	/// IWorkItemResult<TResult> interface.
-    /// Created when a Func<T> work item is queued.
+    /// IWorkItemResult&lt;TResult&gt; interface.
+    /// Created when a Func&lt;TResult&gt; work item is queued.
 	/// </summary>
     public interface IWorkItemResult<TResult> : IWaitableResult
 	{
