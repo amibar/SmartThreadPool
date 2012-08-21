@@ -111,6 +111,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="TestThreadIsBackground.cs" />
     <Compile Include="TestThreadApartmentState.cs" />
     <Compile Include="TestParallelMethods.cs" />
     <Compile Include="TestFalseFillStateWithParams.cs" />

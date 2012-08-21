@@ -89,7 +89,6 @@
 //      - Added IsBackground option to threads
 //      - Added ApartmentState to threads
 //      - Fixed thread creation when queuing many work items at the same time.
-
 #endregion
 
 using System;

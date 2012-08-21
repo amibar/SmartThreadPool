@@ -5,7 +5,7 @@ using Amib.Threading;
 namespace SmartThreadPoolTests
 {
 	/// <summary>
-	/// Summary description for TestThreadPriority.
+    /// Summary description for TestThreadApartment.
 	/// </summary>
 	[TestFixture]
     [Category("TestThreadApartment")]
@@ -26,7 +26,7 @@ namespace SmartThreadPoolTests
 	    private static void CheckApartmentState(ApartmentState requestApartmentState)
 	    {
 	        STPStartInfo stpStartInfo = new STPStartInfo();
-	        stpStartInfo.ApartmentState = requestApartmentState;
+            stpStartInfo.ApartmentState = requestApartmentState;
 
 	        SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
 
