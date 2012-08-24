@@ -79,6 +79,47 @@ namespace SmartThreadPoolTests
 
         /// <summary>
         /// 1. Create STP
+        /// 2. Queue work item that takes some time
+        /// 3. Wait for it to start
+        /// 4. Cancel the work item (soft)
+        /// 5. Work item's GetResult should throw WorkItemCancelException
+        /// </summary>        
+        [Test]
+        [ExpectedException(typeof(WorkItemCancelException))]
+        public void CancelCancelledWorkItemAbort()
+        {
+            ManualResetEvent waitToStart = new ManualResetEvent(false);
+
+            SmartThreadPool stp = new SmartThreadPool();
+            IWorkItemResult wir = stp.QueueWorkItem(
+                 state => { waitToStart.Set(); while (true) { Thread.Sleep(1000); } return null; }
+                );
+
+            waitToStart.WaitOne();
+
+            wir.Cancel(false);
+
+            Assert.IsTrue(wir.IsCanceled);
+
+            bool completed = stp.WaitForIdle(1000);
+
+            Assert.IsFalse(completed);
+
+            wir.Cancel(true);
+
+            try
+            {
+                wir.GetResult();
+            }
+            finally
+            {
+                stp.Shutdown();
+            }
+        }
+
+
+        /// <summary>
+        /// 1. Create STP
         /// 2. Queue work item that:
         ///     a. Sleep for 0.1 seconds
         ///     b. Increment the counter
@@ -191,6 +232,7 @@ namespace SmartThreadPoolTests
 
             stp.WaitForIdle();
 
+            // Throws WorkItemCancelException
             wir.GetResult();
 
             stp.Shutdown();
@@ -428,459 +470,5 @@ namespace SmartThreadPoolTests
 
             stp.Shutdown();
         }
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-        private int _counter;
-
-        /// <summary>
-		/// Example of how to queue a work item and then cancel it while it is in the queue.
-		/// </summary>
-		[Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
-		public void WorkItemCanceling() 
-		{ 
-			// Create a SmartThreadPool with only one thread.
-			// It just to show how to use the work item canceling feature
-			SmartThreadPool smartThreadPool = new SmartThreadPool(10*1000, 1);
-
-		    // Queue a work item that will occupy the thread in the pool
-			IWorkItemResult wir1 = 
-				smartThreadPool.QueueWorkItem(new WorkItemCallback(this.DoSomeWork), null);
-
-			// Queue another work item that will wait for the first to complete
-			IWorkItemResult wir2 = 
-				smartThreadPool.QueueWorkItem(new WorkItemCallback(this.DoSomeWork), null);
-
-			// Wait a while for the thread pool to start executing the first work item
-			Thread.Sleep(100);
-
-            try
-            {
-                // The first work item cannot be canceled since it is currently executing
-                if (!wir1.Cancel())
-                {
-                    // Cancel the second work item while it still in the queue
-                    if (wir2.Cancel())
-                    {
-                        // Retreiving result of a canceled work item throws WorkItemCancelException exception
-                        wir2.GetResult();
-                    }
-                }
-            }
-            finally
-            {
-                smartThreadPool.Shutdown();
-            }
-		} 
-
-		/// <summary>
-		/// </summary>
-		[Test]
-		public void WorkItemCancelingAndInUseWorkerThreads() 
-		{ 
-			SmartThreadPool smartThreadPool = new SmartThreadPool(10*1000, 10);
-
-			IWorkItemResult [] wirs = new IWorkItemResult[100];
-			for(int i = 0; i < 100; ++i)
-			{
-				wirs[i] = smartThreadPool.QueueWorkItem(new WorkItemCallback(this.DoSomeWork), null);
-			}
-
-			// Wait a while for the thread pool to start executing the first work item
-			Thread.Sleep(100);
-
-			for(int i = 0; i < 100; ++i)
-			{
-				wirs[i].Cancel();
-			}
-
-			smartThreadPool.WaitForIdle(2000);
-
-			int inUseThreads = smartThreadPool.InUseThreads;
-
-			smartThreadPool.Shutdown();
-
-			Assert.AreEqual(0, inUseThreads);
-		}
-
-		private object DoSomeWork(object state)
-		{
-            Thread.Sleep(1000);
-            return 1;
-		}
-
-        /// <summary>
-        /// Check within the work item if it was cancelled
-        /// </summary>
-        [Test]
-        public void SampleIfWorkItemCancelled()
-        {
-            _counter = 0;
-            STPStartInfo stpStartInfo = new STPStartInfo();
-            stpStartInfo.StartSuspended = true;
-
-            // Create a SmartThreadPool with only one thread.
-            SmartThreadPool smartThreadPool = new SmartThreadPool(stpStartInfo);
-
-            IWorkItemResult[] wirs = new IWorkItemResult[100];
-            for (int i = 0; i < 100; ++i)
-            {
-                wirs[i] = smartThreadPool.QueueWorkItem(new WorkItemCallback(this.DoCheckForCancelledWorkItem), null);
-            }
-
-            for (int i = 0; i < 50; ++i)
-            {
-                wirs[i].Cancel();
-            }
-
-            smartThreadPool.Start();
-
-            smartThreadPool.WaitForIdle();
-
-            smartThreadPool.Shutdown();
-
-            Assert.AreEqual(50, _counter);
-        }
-
-
-        /// <summary>
-        /// 1. Create STP
-        /// 2. Queue work item into the STP
-        /// 4. Cancel the work item
-        /// 5. Work item doesn't check for cancel 
-        /// 6. Work item quits
-        /// 7. Make sure the work item result is ok, and not an exception
-        /// </summary>
-        [Test]
-        public void TestWorkItemCancelledWorkItemOK()
-        {
-            // Create a SmartThreadPool with only one thread.
-            SmartThreadPool smartThreadPool = new SmartThreadPool();
-
-            AutoResetEvent start = new AutoResetEvent(false);
-
-            // Queue the work item
-            IWorkItemResult wir = smartThreadPool.QueueWorkItem(new WorkItemCallback(this.DoWaitForCancel), start);
-
-            // Wait for it to start executing
-            bool success = start.WaitOne(3000, false);
-
-            // Make sure it was started
-            Assert.IsTrue(success);
-
-            // Cancel the work item
-            wir.Cancel();
-
-            // Let it complete
-            start.Set();
-
-            // Wait for the work item to complete
-            smartThreadPool.WaitForIdle();
-
-            // Check the work item's result
-            // The work item started running after it was start its execution.
-            // Since the work item didn't sample the cancel, it was not aware that it 
-            // was canceled. Therefore the result should be what the work item returned
-            // and not the cancel exeception
-            int result = (int)wir.GetResult(0, false);
-
-            smartThreadPool.Shutdown();
-
-            Assert.AreEqual(1, result);
-        }
-
-
-        /// <summary>
-        /// 1. Create STP
-        /// 2. Create WIG
-        /// 3. Queue work item into the WIG
-        /// 4. Cancel the work items in the WIG
-        /// 5. Work item doesn't check for cancel 
-        /// 6. Work item quits
-        /// 7. Make sure the work item result is ok, and not an exception
-        /// </summary>
-        [Test]
-        public void TestWIGCancelledWorkItemOK()
-        {
-            // Create a SmartThreadPool with only one thread.
-            SmartThreadPool smartThreadPool = new SmartThreadPool();
-
-            IWorkItemsGroup wig = smartThreadPool.CreateWorkItemsGroup(1);
-
-            AutoResetEvent start = new AutoResetEvent(false);
-
-            // Queue the work item
-            IWorkItemResult wir = wig.QueueWorkItem(new WorkItemCallback(this.DoWaitForCancel), start);
-
-            // Wait for it to start executing
-            bool success = start.WaitOne(3000, false);
-
-            // Make sure it was started
-            Assert.IsTrue(success);
-
-            // Cancel the work item
-            wig.Cancel();
-
-            // Let it complete
-            start.Set();
-
-            // Wait for the work item to complete
-            smartThreadPool.WaitForIdle();
-
-            // Check the work item's result
-            // The work item started running after it was start its execution.
-            // Since the work item didn't sample the cancel, it was not aware that it 
-            // was canceled. Therefore the result should be what the work item returned
-            // and not the cancel exeception
-            int result = (int)wir.GetResult(0, false);
-
-            smartThreadPool.Shutdown();
-
-            Assert.AreEqual(1, result);
-        }
-
-
-        /// <summary>
-        /// 1. Create STP
-        /// 2. Queue work item into the STP
-        /// 3. Cancel the work items in the STP
-        /// 4. Work item doesn't check for cancel 
-        /// 5. Work item quits
-        /// 6. Make sure the work item result is ok, and not an exception
-        /// </summary>        
-        [Test]
-        public void TestSTPCancelledWorkItemOK()
-        {
-            // Create a SmartThreadPool with only one thread.
-            SmartThreadPool smartThreadPool = new SmartThreadPool();
-
-            AutoResetEvent start = new AutoResetEvent(false);
-
-            // Queue the work item
-            IWorkItemResult wir = smartThreadPool.QueueWorkItem(new WorkItemCallback(this.DoWaitForCancel), start);
-
-            // Wait for it to start executing
-            bool success = start.WaitOne(3000, false);
-
-            // Make sure it was started
-            Assert.IsTrue(success);
-
-            // Cancel the work item
-            smartThreadPool.Cancel();
-
-            // Let it complete
-            start.Set();
-
-            // Wait for the work item to complete
-            smartThreadPool.WaitForIdle();
-
-            // Check the work item's result
-            // The work item started running after it was start its execution.
-            // Since the work item didn't sample the cancel, it was not aware that it 
-            // was canceled. Therefore the result should be what the work item returned
-            // and not the cancel exeception
-            int result = (int)wir.GetResult(0, false);
-
-            smartThreadPool.Shutdown();
-
-            Assert.AreEqual(1, result);
-        }
-
-
-        /// <summary>
-        /// 1. Create STP
-        /// 2. Queue work item
-        /// 3. Cancel the work item
-        /// 4. Work item checks the cancel and quits
-        /// 5. Make sure the work item result throws exception
-        /// </summary>
-        [Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
-        public void TestWorkItemCanceledWorkItemCancelException()
-        {
-            // Create a SmartThreadPool with only one thread.
-            SmartThreadPool smartThreadPool = new SmartThreadPool();
-
-            AutoResetEvent start = new AutoResetEvent(false);
-
-            // Queue the work item
-            IWorkItemResult wir = smartThreadPool.QueueWorkItem(new WorkItemCallback(this.DoCheckForCancel), start);
-
-            // Wait for it to start executing
-            bool success = start.WaitOne(3000, false);
-
-            // Make sure it was started
-            Assert.IsTrue(success);
-
-            // Cancel the work item
-            wir.Cancel();
-
-            // Let it complete
-            start.Set();
-
-            // Wait for the work item to complete
-            smartThreadPool.WaitForIdle();
-
-            try
-            {
-                // Check the work item's result
-                // The work item started running after it was start its execution.
-                // The work item samples the cancel, therefore it is aware that it 
-                // was canceled. Using the GetResult should throw the cancel exeception
-                wir.GetResult(0, false);
-            }
-            finally
-            {
-                smartThreadPool.Shutdown();
-            }
-        }
-
-        /// <summary>
-        /// 1. Create STP
-        /// 2. Create WIG
-        /// 3. Queue work item into the WIG
-        /// 4. Cancel the work items in the WIG
-        /// 5. Work item checks the cancel and quits
-        /// 6. Make sure the work item result throws exception
-        /// </summary>
-        [Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
-        public void TestWIGCancelledWorkItemCancelException()
-        {
-            // Create a SmartThreadPool with only one thread.
-            SmartThreadPool smartThreadPool = new SmartThreadPool();
-
-            IWorkItemsGroup wig = smartThreadPool.CreateWorkItemsGroup(1);
-
-            AutoResetEvent start = new AutoResetEvent(false);
-
-            // Queue the work item
-            IWorkItemResult wir = wig.QueueWorkItem(new WorkItemCallback(this.DoCheckForCancel), start);
-
-            // Wait for it to start executing
-            bool success = start.WaitOne(3000, false);
-
-            // Make sure it was started
-            Assert.IsTrue(success);
-
-            // Cancel the work item
-            wig.Cancel();
-
-            // Let it complete
-            start.Set();
-
-            // Wait for the work item to complete
-            smartThreadPool.WaitForIdle();
-
-            try
-            {
-                // Check the work item's result
-                // The work item started running after it was start its execution.
-                // The work item samples the cancel, therefore it is aware that it 
-                // was canceled. Using the GetResult should throw the cancel exeception
-                wir.GetResult(0, false);
-            }
-            finally
-            {
-                smartThreadPool.Shutdown();
-            }
-        }
-
-        /// <summary>
-        /// 1. Create STP
-        /// 3. Queue work item into the STP
-        /// 4. Cancel the work items in the STP
-        /// 5. Work item checks the cancel and quits
-        /// 6. Make sure the work item result throws exception
-        /// </summary>
-        [Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
-        public void TestSTPCancelledWorkItemCancelException()
-        {
-            // Create a SmartThreadPool with only one thread.
-            SmartThreadPool smartThreadPool = new SmartThreadPool();
-
-            AutoResetEvent start = new AutoResetEvent(false);
-
-            // Queue the work item
-            IWorkItemResult wir = smartThreadPool.QueueWorkItem(new WorkItemCallback(this.DoCheckForCancel), start);
-
-            // Wait for it to start executing
-            bool success = start.WaitOne(3000, false);
-
-            // Make sure it was started
-            Assert.IsTrue(success);
-
-            // Cancel the work item
-            smartThreadPool.Cancel();
-
-            // Let it complete
-            start.Set();
-
-            // Wait for the work item to complete
-            smartThreadPool.WaitForIdle();
-
-            try
-            {
-                // Check the work item's result
-                // The work item started running after it was start its execution.
-                // The work item samples the cancel, therefore it is aware that it 
-                // was canceled. Using the GetResult should throw the cancel exeception
-                wir.GetResult(0, false);
-
-            }
-            finally
-            {
-                smartThreadPool.Shutdown();
-            }
-        }
-
-        private object DoCheckForCancelledWorkItem(object state)
-        {
-            if (!SmartThreadPool.IsWorkItemCanceled)
-            {
-                Interlocked.Increment(ref _counter);
-            }
-
-            return null;
-        }
-
-        private object DoWaitForCancel(object state)
-        {
-            AutoResetEvent start = state as AutoResetEvent;
-
-            // Signal the test that the work item started
-            start.Set();
-
-            // Let the test run (or else the next line may reset the signaled event)
-            Thread.Sleep(10);
-
-            // Wait for the test to cancel the work item
-            start.WaitOne();
-
-            return 1;
-        }
-
-        private object DoCheckForCancel(object state)
-        {
-            AutoResetEvent start = state as AutoResetEvent;
-
-            // Signal the test that the work item started
-            start.Set();
-
-            // Let the test run (or else the next line may reset the signaled event)
-            Thread.Sleep(10);
-
-            // Wait for the test to cancel the work item
-            start.WaitOne();
-
-            // Sample if the work item was cancelled
-            bool cancelled = SmartThreadPool.IsWorkItemCanceled;
-
-            return 1;
-        }
- */
-  	}
-  
+  	}  
 }
