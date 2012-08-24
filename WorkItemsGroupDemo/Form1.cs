@@ -95,9 +95,13 @@ namespace WorkItemsGroupDemo
             }
 
             _smartThreadPool = new SmartThreadPool(stpStartInfo);
-            _wig1 = _smartThreadPool.CreateWorkItemsGroup((int)spinCon1.Value);
-            _wig2 = _smartThreadPool.CreateWorkItemsGroup((int)spinCon2.Value);
-            _wig3 = _smartThreadPool.CreateWorkItemsGroup((int)spinCon3.Value);
+            WIGStartInfo wigStartInfo = new WIGStartInfo()
+            {
+                FillStateWithArgs = true,
+            };
+            _wig1 = _smartThreadPool.CreateWorkItemsGroup((int)spinCon1.Value, wigStartInfo);
+            _wig2 = _smartThreadPool.CreateWorkItemsGroup((int)spinCon2.Value, wigStartInfo);
+            _wig3 = _smartThreadPool.CreateWorkItemsGroup((int)spinCon3.Value, wigStartInfo);
 
             spinCon1.Tag = _wig1;
             spinCon2.Tag = _wig2;
@@ -210,25 +214,25 @@ namespace WorkItemsGroupDemo
             // 
             this._pcActiveThreads.CategoryName = "SmartThreadPool";
             this._pcActiveThreads.CounterName = "Active threads";
-            this._pcActiveThreads.InstanceName = "Test SmartThreadPool";
+            this._pcActiveThreads.InstanceName = "WIG Test SmartThreadPool";
             // 
             // pcInUseThreads
             // 
             this._pcInUseThreads.CategoryName = "SmartThreadPool";
             this._pcInUseThreads.CounterName = "In use threads";
-            this._pcInUseThreads.InstanceName = "Test SmartThreadPool";
+            this._pcInUseThreads.InstanceName = "WIG Test SmartThreadPool";
             // 
             // pcQueuedWorkItems
             // 
             this._pcQueuedWorkItems.CategoryName = "SmartThreadPool";
             this._pcQueuedWorkItems.CounterName = "Work Items in queue";
-            this._pcQueuedWorkItems.InstanceName = "Test SmartThreadPool";
+            this._pcQueuedWorkItems.InstanceName = "WIG Test SmartThreadPool";
             // 
             // pcCompletedWorkItems
             // 
             this._pcCompletedWorkItems.CategoryName = "SmartThreadPool";
             this._pcCompletedWorkItems.CounterName = "Work Items processed";
-            this._pcCompletedWorkItems.InstanceName = "Test SmartThreadPool";
+            this._pcCompletedWorkItems.InstanceName = "WIG Test SmartThreadPool";
 
             _getActiveThreads = () => (long)_pcActiveThreads.NextValue();
             _getInUseThreads = () => (long)_pcInUseThreads.NextValue();
@@ -339,7 +343,6 @@ namespace WorkItemsGroupDemo
             }
 
             object[] statesSTP = _smartThreadPool.GetStates();
-
             List<QueueUsageControl.QueueUsageEntry> list = new List<QueueUsageControl.QueueUsageEntry>();
 
             foreach (QueueUsageControl.QueueUsageEntry entry in statesWorking)
@@ -351,11 +354,11 @@ namespace WorkItemsGroupDemo
                 }
             }
 
-            foreach (WorkItemState state in statesSTP)
+            foreach (object[] state in statesSTP)
             {
                 if (null != state)
                 {
-                    list.Add(state.QueueUsageEntry);
+                    list.Add(((WorkItemState)state[0]).QueueUsageEntry);
                 }
             }
 
@@ -372,11 +375,11 @@ namespace WorkItemsGroupDemo
 
             List<QueueUsageControl.QueueUsageEntry> list = new List<QueueUsageControl.QueueUsageEntry>();
 
-            foreach (WorkItemState state in states)
+            foreach (object [] state in states)
             {
                 if (null != state)
                 {
-                    list.Add(state.QueueUsageEntry);
+                    list.Add(((WorkItemState)state[0]).QueueUsageEntry);
                 }
             }
 
