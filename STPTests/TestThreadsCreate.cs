@@ -63,6 +63,48 @@ namespace SmartThreadPoolTests
             int counter = ThreadContextState.Current.Counter;
             _termSuccess = (1111 == counter);
         }
+
+
+        // Can't run this test, StackOverflowException crashes the application and can't be catched and ignored
+        //[Test]
+        public void NotTestThreadsMaxStackSize()
+        {
+            STPStartInfo stpStartInfo = new STPStartInfo()
+            {
+                MaxStackSize = 64 * 1024,
+            };
+
+            SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
+            stp.Start();
+
+            IWorkItemResult<bool> wir = stp.QueueWorkItem(() => AllocateBufferOnStack(10 * 1024));
+
+            bool result = wir.GetResult();
+            Assert.IsTrue(result);
+
+            wir = stp.QueueWorkItem(() => AllocateBufferOnStack(1000 * 1024));
+
+            result = wir.GetResult();
+            Assert.IsFalse(result);
+        }
+       
+        private static unsafe bool AllocateBufferOnStack(int size)
+        {
+            try
+            {
+                byte* p = stackalloc byte[size];
+            }
+            catch (StackOverflowException ex)
+            {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 
     internal class ThreadContextState

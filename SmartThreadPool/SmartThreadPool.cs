@@ -89,6 +89,11 @@
 //      - Added IsBackground option to threads
 //      - Added ApartmentState to threads
 //      - Fixed thread creation when queuing many work items at the same time.
+//
+// 24 August 2012 - Changes:
+//      - Enabled cancel abort after cancel. See: http://smartthreadpool.codeplex.com/discussions/345937 by alecswan
+//      - Added option to set MaxStackSize of threads 
+
 #endregion
 
 using System;
@@ -179,6 +184,11 @@ namespace Amib.Threading
         /// The default thread pool name. (SmartThreadPool)
         /// </summary>
         public const string DefaultThreadPoolName = "SmartThreadPool";
+
+        /// <summary>
+        /// The default Max Stack Size. (SmartThreadPool)
+        /// </summary>
+        public static readonly int? DefaultMaxStackSize = null;
 
         /// <summary>
         /// The default fill state with params. (false)
@@ -656,9 +666,16 @@ namespace Amib.Threading
 						return;
 					}
 
-					// Create a new thread
-					Thread workerThread = new Thread(ProcessQueuedItems);
+                    // Create a new thread
 
+#if (_SILVERLIGHT) || (WINDOWS_PHONE)
+					Thread workerThread = new Thread(ProcessQueuedItems);
+#else
+                    Thread workerThread =
+                        _stpStartInfo.MaxStackSize.HasValue
+                        ? new Thread(ProcessQueuedItems, _stpStartInfo.MaxStackSize.Value)
+                        : new Thread(ProcessQueuedItems);
+#endif
 					// Configure the new thread and start it
 					workerThread.Name = "STP " + Name + " Thread #" + _threadCounter;
                     workerThread.IsBackground = _stpStartInfo.AreThreadsBackground;

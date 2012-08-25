@@ -18,6 +18,7 @@ namespace Amib.Threading
         private bool _areThreadsBackground = SmartThreadPool.DefaultAreThreadsBackground;
         private bool _enableLocalPerformanceCounters;
         private string _threadPoolName = SmartThreadPool.DefaultThreadPoolName;
+        private int? _maxStackSize = SmartThreadPool.DefaultMaxStackSize;
 
         public STPStartInfo()
         {
@@ -184,7 +185,28 @@ namespace Amib.Threading
                 ThrowIfReadOnly();
                 _apartmentState = value;
             }
+        } 
+
+#if !(_SILVERLIGHT) && !(WINDOWS_PHONE)
+        
+        /// <summary>
+        /// Get/Set the max stack size of threads in the thread pool
+        /// </summary>
+        public int? MaxStackSize
+        {
+            get { return _maxStackSize; }
+            set
+            {
+                ThrowIfReadOnly();
+                if (value.HasValue && value.Value < 0)
+                {
+                    throw new ArgumentOutOfRangeException("value", "Value must be greater than 0.");
+                }
+                _maxStackSize = value;
+            }
         }
+#endif
+
 #endif
     }
 }
