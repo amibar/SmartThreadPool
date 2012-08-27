@@ -220,7 +220,7 @@ smartThreadPool.QueueWorkItem(System.IO.File.Copy,
 
 <p>I decided to add a new thread every time a new work item is queued and all the threads in the pool are busy. The formula for adding a new thread can be summarized to:</p>
 
-<pre lang="text">(InUseThreads + WaitingCallbacks) &gt; WorkerThreads</pre>
+<pre lang="text">_currentWorkItemsCount &gt; WorkerThreads</pre>
 
 <p>where <code>WorkerThreads</code> is the current number of threads in the pool, <code>InUseThreads</code> is the number of threads in the pool that are currently working on a work item, and <code>WaitingCallbacks</code> is the number of waiting work items. (Thanks to <strong>jrshute</strong> for the comment.)</p>
 
@@ -236,7 +236,7 @@ smartThreadPool.QueueWorkItem(System.IO.File.Copy,
 
     // If all the threads are busy then try 
     // to create a new one 
-    if ((InUseThreads + WaitingCallbacks) &gt; _workerThreads.Count) 
+    if (_currentWorkItemsCount &gt; _workerThreads.Count) 
     { 
         StartThreads(1); 
     } 
@@ -526,9 +526,9 @@ public delegate TResult Func&lt;T1, T2, T3, T4&gt;(T1 arg1,
     
     /// Returns the user-defined object
     /// that was provided in the QueueWorkItem.
-    /// If the work item callback is Action&lt;...&gt;
-    /// or Func&lt;...&gt; the State value
-    /// depends on the WIGStartInfo.FillStateWithArgs.
+    /// If the work item callback is Action<span class="code-SummaryComment">&lt;...&gt;
+</span>    /// or Func<span class="code-SummaryComment">&lt;...&gt; the State value
+</span>    /// depends on the WIGStartInfo.FillStateWithArgs.
     object State { get; }
     
     /// Cancel the work item execution.
@@ -539,8 +539,8 @@ public delegate TResult Func&lt;T1, T2, T3, T4&gt;(T1 arg1,
     /// the result of the work item is cancelled.
     ///    (See the work item canceling section for more information)
     /// Param: abortExecution - When true send an AbortException
-    /// to the executing thread.&lt;/param&gt;
-    /// Returns true if the work item
+    /// to the executing thread.<span class="code-SummaryComment">&lt;/param&gt;
+</span>    /// Returns true if the work item
     /// was not completed, otherwise false.
     bool Cancel(bool abortExecution);
     
@@ -949,7 +949,7 @@ void Print(Printer printer, Document document) {...}
 
 <li><a name="Feature16"><strong>Threads have priority</strong></a>.</li>
 
-<p><code>STPStartInfo</code> contains a property that defines the priority in which the threads are started in the <code>SmartThreadPool</code>. Use it if you know what you are doing. Playing with threads priority may end up with dead locks, live lock, and days locked :-(.</p>
+<p><code>STPStartInfo</code> contains a property that defines the priority in which the threads are started in the <code>SmartThreadPool</code>. Use it if you know what you are doing. Playing with threads priority may end up with dead locks, live lock, and days locked <img align="top" alt="Frown | :-(" src="http://www.codeproject.com/script/Forums/Images/smiley_frown.gif" /> .</p>
 
 <li><a name="Feature17"><strong><code>MaxThreads</code>/<code>MinThreads</code>/<code>Concurrency</code> can be changed at run time</strong></a>.</li>
 
