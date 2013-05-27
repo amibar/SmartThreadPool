@@ -39,6 +39,8 @@ namespace Amib.Threading.Internal
 
         public abstract int Concurrency { get; set; }
         public abstract int WaitingCallbacks { get; }
+        public abstract int InUseThreads { get; }
+
         public abstract object[] GetStates();
         public abstract WIGStartInfo WIGStartInfo { get; }
         public abstract void Start();
