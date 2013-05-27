@@ -1395,18 +1395,6 @@ namespace Amib.Threading
 			} 
 		}
 
-		/// <summary>
-		/// Get the number of busy (not idle) threads in the thread pool.
-		/// </summary>
-		public int InUseThreads 
-		{ 
-			get 
-			{ 
-				ValidateNotDisposed();
-				return _inUseWorkerThreads; 
-			} 
-		}
-
         /// <summary>
         /// Returns true if the current running work item has been cancelled.
         /// Must be used within the work item's callback method.
@@ -1507,6 +1495,18 @@ namespace Amib.Threading
 	        get { return MaxThreads; }
 	        set { MaxThreads = value; }
 	    }
+
+        /// <summary>
+        /// Get the number of busy (not idle) threads in the thread pool.
+        /// </summary>
+        public override int InUseThreads
+        {
+            get
+            {
+                ValidateNotDisposed();
+                return _inUseWorkerThreads;
+            }
+        }
 
 	    /// <summary>
 	    /// Get the number of work items in the queue.

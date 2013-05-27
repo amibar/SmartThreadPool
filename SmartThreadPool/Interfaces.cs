@@ -85,6 +85,11 @@ namespace Amib.Threading
         int WaitingCallbacks { get; }
 
         /// <summary>
+        /// Get the number of currently executing work items
+        /// </summary>
+        int InUseThreads { get; }
+
+        /// <summary>
         /// Get an array with all the state objects of the currently running items.
         /// The array represents a snap shot and impact performance.
         /// </summary>

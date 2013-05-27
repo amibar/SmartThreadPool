@@ -126,6 +126,14 @@ namespace Amib.Threading.Internal
             }
         }
 
+        public override int InUseThreads
+        {
+            get
+            {
+                return _workItemsExecutingInStp;
+            }
+        }
+
         public override int WaitingCallbacks
         {
             get { return _workItemsQueue.Count; }
