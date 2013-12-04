@@ -131,6 +131,7 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="TestMaxQueueLength.cs" />
     <Compile Include="TestThreadIsBackground.cs" />
     <Compile Include="TestThreadApartmentState.cs" />
     <Compile Include="TestParallelMethods.cs" />

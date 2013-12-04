@@ -80,6 +80,7 @@
     <Compile Include="InternalInterfaces.cs" />
     <Compile Include="PriorityQueue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueueRejectedException.cs" />
     <Compile Include="SLExt.cs" />
     <Compile Include="SmartThreadPool.cs" />
     <Compile Include="SmartThreadPool.ThreadEntry.cs" />

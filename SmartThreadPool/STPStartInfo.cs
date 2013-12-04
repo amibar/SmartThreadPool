@@ -19,6 +19,7 @@ namespace Amib.Threading
         private bool _enableLocalPerformanceCounters;
         private string _threadPoolName = SmartThreadPool.DefaultThreadPoolName;
         private int? _maxStackSize = SmartThreadPool.DefaultMaxStackSize;
+	    private int? _maxQueueLength = SmartThreadPool.DefaultMaxQueueLength;
 
         public STPStartInfo()
         {
@@ -44,6 +45,7 @@ namespace Amib.Threading
             _enableLocalPerformanceCounters = stpStartInfo._enableLocalPerformanceCounters;
             _threadPoolName = stpStartInfo._threadPoolName;
             _areThreadsBackground = stpStartInfo.AreThreadsBackground;
+	        _maxQueueLength = stpStartInfo.MaxQueueLength;
 #if !(_SILVERLIGHT) && !(WINDOWS_PHONE)
             _apartmentState = stpStartInfo._apartmentState;
 #endif
@@ -160,6 +162,26 @@ namespace Amib.Threading
  	            _areThreadsBackground = value;
  	        }
  	    }
+
+        /// <summary>
+        /// The maximum number of items allowed in the queue. Items attempting to be queued
+        /// when the queue is at its maximum will throw a QueueRejectedException.
+        /// 
+        /// Value must be > 0. A <code>null</code> value will leave the queue unbounded (i.e.
+        /// bounded only by available resources).
+        /// 
+        /// Ignored when <code>Enqueue()</code>ing on a Thread Pool from within a
+        /// <code>WorkItemsGroup</code>.
+        /// </summary>
+	    public virtual int? MaxQueueLength
+	    {
+	        get { return _maxQueueLength; }
+	        set
+	        {
+	            ThrowIfReadOnly();
+                _maxQueueLength = value;
+	        }
+	    }
 
 	    /// <summary>
         /// Get a readonly version of this STPStartInfo.

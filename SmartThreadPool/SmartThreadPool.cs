@@ -186,9 +186,14 @@ namespace Amib.Threading
         public const string DefaultThreadPoolName = "SmartThreadPool";
 
         /// <summary>
-        /// The default Max Stack Size. (SmartThreadPool)
+        /// The default Max Stack Size. (null)
         /// </summary>
         public static readonly int? DefaultMaxStackSize = null;
+
+        /// <summary>
+        /// The default Max Queue Length (null).
+        /// </summary>
+	    public static readonly int? DefaultMaxQueueLength = null;
 
         /// <summary>
         /// The default fill state with params. (false)
@@ -524,6 +529,13 @@ namespace Amib.Threading
 					"MinWorkerThreads, maxWorkerThreads", 
 					"MaxWorkerThreads must be greater or equal to MinWorkerThreads");
 			}
+
+		    if (_stpStartInfo.MaxQueueLength <= 0)
+		    {
+                throw new ArgumentOutOfRangeException(
+                    "MaxQueueLength",
+                    "MaxQueueLength must be >= 0 or null (for unbounded)");
+		    }
 		}
 
 		private static void ValidateCallback(Delegate callback)
@@ -1330,7 +1342,18 @@ namespace Amib.Threading
             }
         }
 
-        
+	    private void ValidateQueueIsWithinLimits()
+	    {
+	        if (_stpStartInfo.MaxQueueLength == null)
+	        {
+	            return;
+	        }
+
+	        if (_workItemsQueue.Count >= _stpStartInfo.MaxQueueLength)
+	        {
+	            throw new QueueRejectedException("Queue is at its maximum (" + _stpStartInfo.MaxQueueLength + ")");
+	        }
+	    }
 
 		#endregion
 
@@ -1620,7 +1643,14 @@ namespace Amib.Threading
 
 	    internal override void PreQueueWorkItem()
         {
-            ValidateNotDisposed();   
+            ValidateNotDisposed();
+
+            // Note: This gets called before actually determining whether or not the item would even be queued
+            // (vs. simply given to an available waiter). However, if the queue is at its max, it's probably safe
+            // to assume that all of the waiters are busy.
+            //
+            // This also gives no preference to items of higher priority.
+	        ValidateQueueIsWithinLimits();
         }
 
         #endregion
