@@ -1349,7 +1349,13 @@ namespace Amib.Threading
 	            return;
 	        }
 
-	        if (_workItemsQueue.Count >= _stpStartInfo.MaxQueueLength)
+            // Instead of just looking at the current queue length here, account for the
+            // fact that the pool is going to scale up its threads if it's not yet at its
+            // maximum and there are queued items. This means that the queue length limit
+            // may be briefly exceeded while the pool is scaling up.
+
+	        var availableThreads = _stpStartInfo.MaxWorkerThreads - _inUseWorkerThreads;
+	        if (_workItemsQueue.Count >= _stpStartInfo.MaxQueueLength + availableThreads)
 	        {
 	            throw new QueueRejectedException("Queue is at its maximum (" + _stpStartInfo.MaxQueueLength + ")");
 	        }
@@ -1645,11 +1651,7 @@ namespace Amib.Threading
         {
             ValidateNotDisposed();
 
-            // Note: This gets called before actually determining whether or not the item would even be queued
-            // (vs. simply given to an available waiter). However, if the queue is at its max, it's probably safe
-            // to assume that all of the waiters are busy.
-            //
-            // This also gives no preference to items of higher priority.
+            // This gives no preference to items of higher priority.
 	        ValidateQueueIsWithinLimits();
         }
 
