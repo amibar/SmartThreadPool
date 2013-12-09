@@ -1367,8 +1367,7 @@ namespace Amib.Threading
             // maximum and there are queued items. This means that the queue length limit
             // may be briefly exceeded while the pool is scaling up.
 
-	        var availableThreads = _stpStartInfo.MaxWorkerThreads - _inUseWorkerThreads;
-	        if (_workItemsQueue.Count >= _stpStartInfo.MaxQueueLength + availableThreads)
+            if (_currentWorkItemsCount >= _stpStartInfo.MaxQueueLength + MaxThreads)
 	        {
 	            throw new QueueRejectedException("Queue is at its maximum (" + _stpStartInfo.MaxQueueLength + ")");
 	        }
