@@ -40,9 +40,6 @@ namespace STPTests
             try
             {
                 pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
-
-                Thread.Sleep(100); // A pause to get around any locks and make sure the waiter picked up the task.
-
                 pool.QueueWorkItem(SleepForOneSecond); // No waiters available, pool at max threads. Queued.
             }
             catch (QueueRejectedException e)
@@ -82,8 +79,6 @@ namespace STPTests
                 pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
                 pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
                 pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
-
-                Thread.Sleep(100); // A pause to get around any locks and make sure the waiters picked everything up.
 
                 pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
                 pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
