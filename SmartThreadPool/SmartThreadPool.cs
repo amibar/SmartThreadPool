@@ -1344,7 +1344,11 @@ namespace Amib.Threading
 
 	    private void ValidateQueueIsWithinLimits()
 	    {
-	        if (_stpStartInfo.MaxQueueLength == null)
+            // Keep a local copy; if a client changes the length while this is executing,
+            // we'll want to use the same value throughout.
+	        var maxQueueLength = _stpStartInfo.MaxQueueLength;
+
+	        if (maxQueueLength == null)
 	        {
 	            return;
 	        }
@@ -1353,10 +1357,9 @@ namespace Amib.Threading
             // fact that the pool is going to scale up its threads if it's not yet at its
             // maximum and there are queued items. This means that the queue length limit
             // may be briefly exceeded while the pool is scaling up.
-
-            if (_currentWorkItemsCount >= _stpStartInfo.MaxQueueLength + MaxThreads)
+            if (_currentWorkItemsCount >= maxQueueLength + MaxThreads)
 	        {
-	            throw new QueueRejectedException("Queue is at its maximum (" + _stpStartInfo.MaxQueueLength + ")");
+	            throw new QueueRejectedException("Queue is at its maximum (" + maxQueueLength + ")");
 	        }
 	    }
 
@@ -1410,6 +1413,21 @@ namespace Amib.Threading
                 StartOptimalNumberOfThreads();
             } 
 		}
+
+	    public int? MaxQueueLength
+	    {
+	        get
+	        {
+	            ValidateNotDisposed();
+	            return _stpStartInfo.MaxQueueLength;
+	        }
+
+	        set
+	        {
+	            _stpStartInfo.MaxQueueLength = value;
+	        }
+	    }
+
 		/// <summary>
 		/// Get the number of threads in the thread pool.
 		/// Should be between the lower and the upper limits.
