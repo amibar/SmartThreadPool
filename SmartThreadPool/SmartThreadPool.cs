@@ -530,7 +530,7 @@ namespace Amib.Threading
 					"MaxWorkerThreads must be greater or equal to MinWorkerThreads");
 			}
 
-		    if (_stpStartInfo.MaxQueueLength <= 0)
+		    if (_stpStartInfo.MaxQueueLength < 0)
 		    {
                 throw new ArgumentOutOfRangeException(
                     "MaxQueueLength",
