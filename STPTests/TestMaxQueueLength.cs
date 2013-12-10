@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Threading;
 using Amib.Threading;
 using NUnit.Framework;
@@ -153,6 +152,135 @@ namespace STPTests
             var pool = new SmartThreadPool(info);
             pool.Start();
             Assert.True(0 == pool.STPStartInfo.MaxQueueLength);
+        }
+
+        [Test]
+        [ExpectedException(typeof(QueueRejectedException))]
+        public void SetMaxQueueLength_FromNonZeroValueToZero_DisablesQueueing()
+        {
+            var info = new STPStartInfo
+            {
+                MinWorkerThreads = 1,
+                MaxWorkerThreads = 1,
+                MaxQueueLength = 1,
+            };
+
+            var pool = new SmartThreadPool(info);
+            pool.Start();
+
+            try
+            {
+                pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
+                pool.QueueWorkItem(SleepForOneSecond); // Queued.
+            }
+            catch (QueueRejectedException e)
+            {
+                throw new Exception("Caught QueueRejectedException too early: ", e);
+            }
+
+            try
+            {
+                pool.QueueWorkItem(SleepForOneSecond);
+            }
+            catch (QueueRejectedException)
+            {
+                // Expected
+                Assert.True(true);
+            }
+
+            pool.MaxQueueLength = 0;
+            Thread.Sleep(2100); // Let the work items complete.
+
+            try
+            {
+                pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
+            }
+            catch (QueueRejectedException e)
+            {
+                throw new Exception("Caught QueueRejectedException too early: ", e);
+            }
+
+            pool.QueueWorkItem(SleepForOneSecond); // Rejected (max queue length is zero).
+        }
+
+        [Test]
+        [ExpectedException(typeof(QueueRejectedException))]
+        public void SetMaxQueueLength_FromNullToZero_DisablesQueueing()
+        {
+            var info = new STPStartInfo
+            {
+                MinWorkerThreads = 1,
+                MaxWorkerThreads = 1,
+            };
+
+            var pool = new SmartThreadPool(info);
+            pool.Start();
+
+            try
+            {
+                pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
+                pool.QueueWorkItem(SleepForOneSecond); // Queued.
+            }
+            catch (QueueRejectedException e)
+            {
+                throw new Exception("Caught QueueRejectedException too early: ", e);
+            }
+
+            pool.MaxQueueLength = 0;
+            Thread.Sleep(2100); // Let the work items complete.
+
+            try
+            {
+                pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
+            }
+            catch (QueueRejectedException e)
+            {
+                throw new Exception("Caught QueueRejectedException too early: ", e);
+            }
+
+            pool.QueueWorkItem(SleepForOneSecond); // Rejected (max queue length is zero).
+        }
+
+        [Test]
+        public void SetMaxQueueLength_IncreasedFromZero_AllowsLargerQueue()
+        {
+            var info = new STPStartInfo
+            {
+                MinWorkerThreads = 1,
+                MaxWorkerThreads = 1,
+                MaxQueueLength = 0,
+            };
+
+            var pool = new SmartThreadPool(info);
+            pool.Start();
+
+            try
+            {
+                pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
+            }
+            catch (QueueRejectedException e)
+            {
+                throw new Exception("Caught QueueRejectedException too early: ", e);
+            }
+
+            try
+            {
+                pool.QueueWorkItem(SleepForOneSecond);
+            }
+            catch (QueueRejectedException)
+            {
+                // Expected
+                Assert.True(true);
+            }
+
+            pool.MaxQueueLength = 1;
+
+            // Don't wait for worker item to complete, the queue should have immediately increased its allowance.
+
+            var workItem = pool.QueueWorkItem<object>(ReturnNull);
+
+            // If rejected, an exception would have been thrown instead.
+            Assert.IsTrue(workItem.GetResult() == null);
         }
     }
 }
