@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Threading;
 using Amib.Threading;
 using NUnit.Framework;
@@ -95,6 +96,32 @@ namespace STPTests
             pool.QueueWorkItem(SleepForOneSecond);
         }
 
+        [Test, RequiresThread]
+        [ExpectedException(typeof (QueueRejectedException))]
+        public void QueueWorkItem_WhenQueueMaxLengthZero_RejectsInsteadOfQueueing()
+        {
+            var info = new STPStartInfo
+            {
+                MaxQueueLength = 0,
+                MinWorkerThreads = 2,
+                MaxWorkerThreads = 2,
+            };
+            var pool = new SmartThreadPool(info);
+            pool.Start();
+
+            try
+            {
+                pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
+                pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
+            }
+            catch (QueueRejectedException e)
+            {
+                throw new Exception("Caught QueueRejectedException too early: ", e);
+            }
+
+            pool.QueueWorkItem(SleepForOneSecond);
+        }
+
         private object ReturnNull()
         {
             return null;
@@ -117,14 +144,15 @@ namespace STPTests
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentOutOfRangeException))]
-        public void StpStartInfo_WithZeroMaxQueueLength_FailsValidation()
+        public void StpStartInfo_WithZeroMaxQueueLength_IsAllowed()
         {
             var info = new STPStartInfo
             {
                 MaxQueueLength = 0,
             };
-            new SmartThreadPool(info);
+            var pool = new SmartThreadPool(info);
+            pool.Start();
+            Assert.True(0 == pool.STPStartInfo.MaxQueueLength);
         }
     }
 }
