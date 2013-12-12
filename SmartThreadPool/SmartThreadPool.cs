@@ -250,7 +250,7 @@ namespace Amib.Threading
 		/// Total number of work items that are stored in the work items queue 
 		/// plus the work items that the threads in the pool are working on.
 		/// </summary>
-		private int _currentWorkItemsCount;
+		private volatile int _currentWorkItemsCount;
 
 		/// <summary>
 		/// Signaled when the thread pool is idle, i.e. no thread is busy
@@ -1453,6 +1453,19 @@ namespace Amib.Threading
 				return _workerThreads.Count; 
 			} 
 		}
+
+        /// <summary>
+        /// Get the number of work items that haven't finished execution (i.e.
+        /// items being worked on by threads + items in the queue).
+        /// </summary>
+	    public int CurrentWorkItemsCount
+	    {
+	        get
+	        {
+	            ValidateNotDisposed();
+	            return _currentWorkItemsCount;
+	        }
+	    }
 
         /// <summary>
         /// Returns true if the current running work item has been cancelled.
