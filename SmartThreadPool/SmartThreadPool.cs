@@ -186,9 +186,14 @@ namespace Amib.Threading
         public const string DefaultThreadPoolName = "SmartThreadPool";
 
         /// <summary>
-        /// The default Max Stack Size. (SmartThreadPool)
+        /// The default Max Stack Size. (null)
         /// </summary>
         public static readonly int? DefaultMaxStackSize = null;
+
+        /// <summary>
+        /// The default Max Queue Length (null).
+        /// </summary>
+	    public static readonly int? DefaultMaxQueueLength = null;
 
         /// <summary>
         /// The default fill state with params. (false)
@@ -245,7 +250,7 @@ namespace Amib.Threading
 		/// Total number of work items that are stored in the work items queue 
 		/// plus the work items that the threads in the pool are working on.
 		/// </summary>
-		private int _currentWorkItemsCount;
+		private volatile int _currentWorkItemsCount;
 
 		/// <summary>
 		/// Signaled when the thread pool is idle, i.e. no thread is busy
@@ -524,6 +529,13 @@ namespace Amib.Threading
 					"MinWorkerThreads, maxWorkerThreads", 
 					"MaxWorkerThreads must be greater or equal to MinWorkerThreads");
 			}
+
+		    if (_stpStartInfo.MaxQueueLength < 0)
+		    {
+                throw new ArgumentOutOfRangeException(
+                    "MaxQueueLength",
+                    "MaxQueueLength must be >= 0 or null (for unbounded)");
+		    }
 		}
 
 		private static void ValidateCallback(Delegate callback)
@@ -1330,7 +1342,26 @@ namespace Amib.Threading
             }
         }
 
-        
+	    private void ValidateQueueIsWithinLimits()
+	    {
+            // Keep a local copy; if a client changes the length while this is executing,
+            // we'll want to use the same value throughout.
+	        var maxQueueLength = _stpStartInfo.MaxQueueLength;
+
+	        if (maxQueueLength == null)
+	        {
+	            return;
+	        }
+
+            // Instead of just looking at the current queue length here, account for the
+            // fact that the pool is going to scale up its threads if it's not yet at its
+            // maximum and there are queued items. This means that the queue length limit
+            // may be briefly exceeded while the pool is scaling up.
+            if (_currentWorkItemsCount >= maxQueueLength + MaxThreads)
+	        {
+	            throw new QueueRejectedException("Queue is at its maximum (" + maxQueueLength + ")");
+	        }
+	    }
 
 		#endregion
 
@@ -1382,6 +1413,21 @@ namespace Amib.Threading
                 StartOptimalNumberOfThreads();
             } 
 		}
+
+	    public int? MaxQueueLength
+	    {
+	        get
+	        {
+	            ValidateNotDisposed();
+	            return _stpStartInfo.MaxQueueLength;
+	        }
+
+	        set
+	        {
+	            _stpStartInfo.MaxQueueLength = value;
+	        }
+	    }
+
 		/// <summary>
 		/// Get the number of threads in the thread pool.
 		/// Should be between the lower and the upper limits.
@@ -1406,6 +1452,19 @@ namespace Amib.Threading
 				return _inUseWorkerThreads; 
 			} 
 		}
+
+        /// <summary>
+        /// Get the number of work items that haven't finished execution (i.e.
+        /// items being worked on by threads + items in the queue).
+        /// </summary>
+	    public int CurrentWorkItemsCount
+	    {
+	        get
+	        {
+	            ValidateNotDisposed();
+	            return _currentWorkItemsCount;
+	        }
+	    }
 
         /// <summary>
         /// Returns true if the current running work item has been cancelled.
@@ -1620,7 +1679,10 @@ namespace Amib.Threading
 
 	    internal override void PreQueueWorkItem()
         {
-            ValidateNotDisposed();   
+            ValidateNotDisposed();
+
+            // This gives no preference to items of higher priority.
+	        ValidateQueueIsWithinLimits();
         }
 
         #endregion
