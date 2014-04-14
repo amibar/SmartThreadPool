@@ -75,13 +75,31 @@ namespace SmartThreadPoolTests
 
 			Assert.IsTrue(success);
 			Assert.IsTrue(e is DivideByZeroException);
-		} 
-
-		private object DoDiv(object state)
-		{ 
-			DivArgs divArgs = (DivArgs)state;
-			return (divArgs.x / divArgs.y);
 		}
 
+        private object DoDiv(object state)
+        {
+            DivArgs divArgs = (DivArgs)state;
+            return (divArgs.x / divArgs.y);
+        }
+
+        [Test]
+		public void ExceptionType()
+		{ 
+			SmartThreadPool smartThreadPool = new SmartThreadPool();
+
+	        var workItemResult = smartThreadPool.QueueWorkItem(new Func<int>(ExceptionMethod));
+
+            smartThreadPool.WaitForIdle();
+
+            Assert.IsInstanceOf<NotImplementedException>(workItemResult.Exception);
+
+            smartThreadPool.Shutdown();
+        }
+
+	    public int ExceptionMethod()
+        {
+            throw new NotImplementedException();
+        }
 	}
 }

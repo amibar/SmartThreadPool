@@ -103,7 +103,7 @@ namespace Amib.Threading.Internal
 
         public object Exception
         {
-            get { return (TResult)_workItemResult.Exception; }
+            get { return _workItemResult.Exception; }
         }
 
         #region IInternalWorkItemResult Members
