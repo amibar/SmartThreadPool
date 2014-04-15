@@ -47,6 +47,7 @@ namespace Amib.Threading
 #if !(_SILVERLIGHT) && !(WINDOWS_PHONE)
             _apartmentState = stpStartInfo._apartmentState;
 #endif
+	        _maxStackSize = stpStartInfo._maxStackSize;
         }
 	  
 	    /// <summary>
