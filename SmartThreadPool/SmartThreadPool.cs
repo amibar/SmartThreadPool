@@ -407,6 +407,19 @@ namespace Amib.Threading
 		/// <summary>
 		/// Constructor
 		/// </summary>
+		/// <param name="startSuspended">Set it to True to start thread pool in suspended mode; Explicit call to Start() will be needed to start the Thread pool.</param>
+		public SmartThreadPool(bool startSuspended)
+		{
+			_stpStartInfo = new STPStartInfo
+            		{
+                		StartSuspended = startSuspended,
+            		};
+			Initialize();
+		}
+		
+		/// <summary>
+		/// Constructor
+		/// </summary>
 		/// <param name="idleTimeout">Idle timeout in milliseconds</param>
 		/// <param name="maxWorkerThreads">Upper limit of threads in the pool</param>
 		public SmartThreadPool(
