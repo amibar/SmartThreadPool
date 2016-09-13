@@ -1,4 +1,3 @@
-using System;
 using Amib.Threading;
 using NUnit.Framework;
 

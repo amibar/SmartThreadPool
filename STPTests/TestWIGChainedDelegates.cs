@@ -26,20 +26,23 @@ namespace WorkItemsGroupTests
 		}
 
 		[Test]
-		[ExpectedException(typeof(NotSupportedException))]
 		public void ChainedDelegatesCallback()
 		{
-			SmartThreadPool smartThreadPool = new SmartThreadPool();
-			IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue);
+		    Assert.Throws<NotSupportedException>(() =>
+		    {
 
-			WorkItemCallback workItemCallback = new WorkItemCallback(DoWork);
-			workItemCallback += new WorkItemCallback(DoWork);
+		        SmartThreadPool smartThreadPool = new SmartThreadPool();
+		        IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue);
 
-			workItemsGroup.QueueWorkItem(workItemCallback);
+		        WorkItemCallback workItemCallback = new WorkItemCallback(DoWork);
+		        workItemCallback += new WorkItemCallback(DoWork);
 
-			workItemsGroup.WaitForIdle();
+		        workItemsGroup.QueueWorkItem(workItemCallback);
 
-			smartThreadPool.Shutdown();
+		        workItemsGroup.WaitForIdle();
+
+		        smartThreadPool.Shutdown();
+		    });
 		}
 
 		[Test]
@@ -59,25 +62,28 @@ namespace WorkItemsGroupTests
 		}
 
 		[Test]
-		[ExpectedException(typeof(NotSupportedException))]
 		public void ChainedDelegatesPostExecute()
 		{
-			SmartThreadPool smartThreadPool = new SmartThreadPool();
-			IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue);
+		    Assert.Throws<NotSupportedException>(() =>
+		    {
 
-			PostExecuteWorkItemCallback postExecuteWorkItemCallback = 
-				new PostExecuteWorkItemCallback(DoPostExecute);
-			postExecuteWorkItemCallback += 
-				new PostExecuteWorkItemCallback(DoPostExecute);
+		        SmartThreadPool smartThreadPool = new SmartThreadPool();
+		        IWorkItemsGroup workItemsGroup = smartThreadPool.CreateWorkItemsGroup(int.MaxValue);
 
-			workItemsGroup.QueueWorkItem(
-				new WorkItemCallback(DoWork),
-				null,
-				postExecuteWorkItemCallback);
+		        PostExecuteWorkItemCallback postExecuteWorkItemCallback =
+		            new PostExecuteWorkItemCallback(DoPostExecute);
+		        postExecuteWorkItemCallback +=
+		            new PostExecuteWorkItemCallback(DoPostExecute);
 
-			workItemsGroup.WaitForIdle();
+		        workItemsGroup.QueueWorkItem(
+		            new WorkItemCallback(DoWork),
+		            null,
+		            postExecuteWorkItemCallback);
 
-			smartThreadPool.Shutdown();
+		        workItemsGroup.WaitForIdle();
+
+		        smartThreadPool.Shutdown();
+		    });
 		}
 
 

@@ -25,100 +25,107 @@ namespace STPTests
         }
 
         [Test]
-        [ExpectedException(typeof(QueueRejectedException))]
         public void QueueWorkItem_WhenMaxIsSet_ThrowsExceptionWhenHit()
         {
-            var info = new STPStartInfo
+            Assert.Throws<QueueRejectedException>(() =>
             {
-                MaxQueueLength = 1,
-                MinWorkerThreads = 1,
-                MaxWorkerThreads = 1,
-            };
-            var pool = new SmartThreadPool(info);
-            pool.Start();
 
-            try
-            {
-                pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
-                pool.QueueWorkItem(SleepForOneSecond); // No waiters available, pool at max threads. Queued.
-            }
-            catch (QueueRejectedException e)
-            {
-                throw new Exception("Caught QueueRejectedException too early: ", e);
-            }
+                var info = new STPStartInfo
+                {
+                    MaxQueueLength = 1,
+                    MinWorkerThreads = 1,
+                    MaxWorkerThreads = 1,
+                };
+                var pool = new SmartThreadPool(info);
+                pool.Start();
 
-            // No waiters available, queue is at max (1). Throws.
-            pool.QueueWorkItem(SleepForOneSecond);
+                try
+                {
+                    pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // No waiters available, pool at max threads. Queued.
+                }
+                catch (QueueRejectedException e)
+                {
+                    throw new Exception("Caught QueueRejectedException too early: ", e);
+                }
+
+                // No waiters available, queue is at max (1). Throws.
+                pool.QueueWorkItem(SleepForOneSecond);
+            });
         }
 
         [Test, RequiresThread]
-        [ExpectedException(typeof (QueueRejectedException))]
         public void QueueWorkItem_WhenBiggerMaxIsSet_ThrowsExceptionWhenHit()
         {
-            var info = new STPStartInfo
+            Assert.Throws<QueueRejectedException>(() =>
             {
-                MaxQueueLength = 5,
-                MinWorkerThreads = 5,
-                MaxWorkerThreads = 10,
-            };
-            var pool = new SmartThreadPool(info);
-            pool.Start();
+                var info = new STPStartInfo
+                {
+                    MaxQueueLength = 5,
+                    MinWorkerThreads = 5,
+                    MaxWorkerThreads = 10,
+                };
+                var pool = new SmartThreadPool(info);
+                pool.Start();
 
-            try
-            {
-                // Pool starts with 5 available waiters.
+                try
+                {
+                    // Pool starts with 5 available waiters.
 
-                pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
-                pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
-                pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
-                pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
-                pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
 
-                pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
-                pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
-                pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
-                pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
-                pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // New thread created, takes work item. Not queued.
 
-                pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
-                pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
-                pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
-                pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
-                pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
-            }
-            catch (QueueRejectedException e)
-            {
-                throw new Exception("Caught QueueRejectedException too early: ", e);
-            }
+                    pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // No waiters available. Queued.
+                }
+                catch (QueueRejectedException e)
+                {
+                    throw new Exception("Caught QueueRejectedException too early: ", e);
+                }
 
-            // All threads are busy, and queue is at its max. Throws.
-            pool.QueueWorkItem(SleepForOneSecond);
+                // All threads are busy, and queue is at its max. Throws.
+                pool.QueueWorkItem(SleepForOneSecond);
+            });
         }
 
         [Test, RequiresThread]
-        [ExpectedException(typeof (QueueRejectedException))]
         public void QueueWorkItem_WhenQueueMaxLengthZero_RejectsInsteadOfQueueing()
         {
-            var info = new STPStartInfo
+            Assert.Throws<QueueRejectedException>(() =>
             {
-                MaxQueueLength = 0,
-                MinWorkerThreads = 2,
-                MaxWorkerThreads = 2,
-            };
-            var pool = new SmartThreadPool(info);
-            pool.Start();
+                var info = new STPStartInfo
+                {
+                    MaxQueueLength = 0,
+                    MinWorkerThreads = 2,
+                    MaxWorkerThreads = 2,
+                };
+                var pool = new SmartThreadPool(info);
+                pool.Start();
 
-            try
-            {
-                pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
-                pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
-            }
-            catch (QueueRejectedException e)
-            {
-                throw new Exception("Caught QueueRejectedException too early: ", e);
-            }
+                try
+                {
+                    pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
+                    pool.QueueWorkItem(SleepForOneSecond); // Taken by waiter immediately. Not queued.
+                }
+                catch (QueueRejectedException e)
+                {
+                    throw new Exception("Caught QueueRejectedException too early: ", e);
+                }
 
-            pool.QueueWorkItem(SleepForOneSecond);
+                pool.QueueWorkItem(SleepForOneSecond);
+            });
         }
 
         private object ReturnNull()
@@ -132,14 +139,17 @@ namespace STPTests
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void StpStartInfo_WithNegativeMaxQueueLength_FailsValidation()
         {
-            var info = new STPStartInfo
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
             {
-                MaxQueueLength = -1,
-            };
-            new SmartThreadPool(info);
+
+                var info = new STPStartInfo
+                {
+                    MaxQueueLength = -1,
+                };
+                new SmartThreadPool(info);
+            });
         }
 
         [Test]
@@ -155,90 +165,96 @@ namespace STPTests
         }
 
         [Test]
-        [ExpectedException(typeof(QueueRejectedException))]
         public void SetMaxQueueLength_FromNonZeroValueToZero_DisablesQueueing()
         {
-            var info = new STPStartInfo
+            Assert.Throws<QueueRejectedException>(() =>
             {
-                MinWorkerThreads = 1,
-                MaxWorkerThreads = 1,
-                MaxQueueLength = 1,
-            };
 
-            var pool = new SmartThreadPool(info);
-            pool.Start();
+                var info = new STPStartInfo
+                {
+                    MinWorkerThreads = 1,
+                    MaxWorkerThreads = 1,
+                    MaxQueueLength = 1,
+                };
 
-            try
-            {
-                pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
-                pool.QueueWorkItem(SleepForOneSecond); // Queued.
-            }
-            catch (QueueRejectedException e)
-            {
-                throw new Exception("Caught QueueRejectedException too early: ", e);
-            }
+                var pool = new SmartThreadPool(info);
+                pool.Start();
 
-            try
-            {
-                pool.QueueWorkItem(SleepForOneSecond);
-            }
-            catch (QueueRejectedException)
-            {
-                // Expected
-                Assert.True(true);
-            }
+                try
+                {
+                    pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
+                    pool.QueueWorkItem(SleepForOneSecond); // Queued.
+                }
+                catch (QueueRejectedException e)
+                {
+                    throw new Exception("Caught QueueRejectedException too early: ", e);
+                }
 
-            pool.MaxQueueLength = 0;
-            Thread.Sleep(2100); // Let the work items complete.
+                try
+                {
+                    pool.QueueWorkItem(SleepForOneSecond);
+                }
+                catch (QueueRejectedException)
+                {
+                    // Expected
+                    Assert.True(true);
+                }
 
-            try
-            {
-                pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
-            }
-            catch (QueueRejectedException e)
-            {
-                throw new Exception("Caught QueueRejectedException too early: ", e);
-            }
+                pool.MaxQueueLength = 0;
+                Thread.Sleep(2100); // Let the work items complete.
 
-            pool.QueueWorkItem(SleepForOneSecond); // Rejected (max queue length is zero).
+                try
+                {
+                    pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
+                }
+                catch (QueueRejectedException e)
+                {
+                    throw new Exception("Caught QueueRejectedException too early: ", e);
+                }
+
+                pool.QueueWorkItem(SleepForOneSecond); // Rejected (max queue length is zero).
+            });
         }
 
         [Test]
-        [ExpectedException(typeof(QueueRejectedException))]
         public void SetMaxQueueLength_FromNullToZero_DisablesQueueing()
         {
-            var info = new STPStartInfo
+            Assert.Throws<QueueRejectedException>(() =>
             {
-                MinWorkerThreads = 1,
-                MaxWorkerThreads = 1,
-            };
 
-            var pool = new SmartThreadPool(info);
-            pool.Start();
+                var info = new STPStartInfo
+                {
+                    MinWorkerThreads = 1,
+                    MaxWorkerThreads = 1,
+                };
 
-            try
-            {
-                pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
-                pool.QueueWorkItem(SleepForOneSecond); // Queued.
-            }
-            catch (QueueRejectedException e)
-            {
-                throw new Exception("Caught QueueRejectedException too early: ", e);
-            }
+                var pool = new SmartThreadPool(info);
+                pool.Start();
 
-            pool.MaxQueueLength = 0;
-            Thread.Sleep(2100); // Let the work items complete.
+                try
+                {
+                    pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
+                    pool.QueueWorkItem(SleepForOneSecond); // Queued.
+                }
+                catch (QueueRejectedException e)
+                {
+                    throw new Exception("Caught QueueRejectedException too early: ", e);
+                }
 
-            try
-            {
-                pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
-            }
-            catch (QueueRejectedException e)
-            {
-                throw new Exception("Caught QueueRejectedException too early: ", e);
-            }
+                pool.MaxQueueLength = 0;
+                Thread.Sleep(2100); // Let the work items complete.
 
-            pool.QueueWorkItem(SleepForOneSecond); // Rejected (max queue length is zero).
+                try
+                {
+                    pool.QueueWorkItem(SleepForOneSecond); // Picked up by waiter.
+                }
+                catch (QueueRejectedException e)
+                {
+                    throw new Exception("Caught QueueRejectedException too early: ", e);
+                }
+
+                pool.QueueWorkItem(SleepForOneSecond); // Rejected (max queue length is zero).
+            });
         }
 
         [Test]

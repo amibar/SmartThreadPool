@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 
 using NUnit.Framework;
@@ -235,7 +234,7 @@ namespace SmartThreadPoolTests
 
             for (int i = 0; i < wirs.Length; ++i)
             {
-                wirs[i] = smartThreadPool.QueueWorkItem(new Func<int, int, int>(Math.Min), i, i + 1);
+                wirs[i] = smartThreadPool.QueueWorkItem(new Func<int, int, int>(System.Math.Min), i, i + 1);
             }
 
             SmartThreadPool.WaitAll(wirs);
@@ -272,7 +271,7 @@ namespace SmartThreadPoolTests
 
             for (int i = 0; i < wirs.Length; ++i)
             {
-                wirs[i] = smartThreadPool.QueueWorkItem(new Func<int, int, int>(Math.Max), i, i - 1);
+                wirs[i] = smartThreadPool.QueueWorkItem(new Func<int, int, int>(System.Math.Max), i, i - 1);
             }
 
             int index = SmartThreadPool.WaitAny(wirs);

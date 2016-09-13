@@ -20,28 +20,30 @@ namespace SmartThreadPoolTests
         /// 4. Work item's GetResult should throw WorkItemCancelException
         /// </summary>        
         [Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
         public void CancelInQueueWorkItem()
-        {
-            STPStartInfo stpStartInfo = new STPStartInfo();
-            stpStartInfo.StartSuspended = true;
+	    {
+	        Assert.Throws<WorkItemCancelException>(() =>
+	        {
+	            STPStartInfo stpStartInfo = new STPStartInfo();
+	            stpStartInfo.StartSuspended = true;
 
-            SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
-            IWorkItemResult wir = stp.QueueWorkItem(arg => null);
+	            SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
+	            IWorkItemResult wir = stp.QueueWorkItem(arg => null);
 
-            wir.Cancel();
+	            wir.Cancel();
 
-            Assert.IsTrue(wir.IsCanceled);
+	            Assert.IsTrue(wir.IsCanceled);
 
-            try
-            {
-                wir.GetResult();
-            }
-            finally
-            {
-                stp.Shutdown();
-            }
-        }
+	            try
+	            {
+	                wir.GetResult();
+	            }
+	            finally
+	            {
+	                stp.Shutdown();
+	            }
+	        });
+	    }
 
         /// <summary>
         /// 1. Create STP
@@ -51,30 +53,39 @@ namespace SmartThreadPoolTests
         /// 5. Work item's GetResult should throw WorkItemCancelException
         /// </summary>        
         [Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
+        //[ExpectedException(typeof(WorkItemCancelException))]
         public void CancelInProgressWorkItemSoft()
         {
-            ManualResetEvent waitToStart = new ManualResetEvent(false);
-
-            SmartThreadPool stp = new SmartThreadPool();
-            IWorkItemResult wir = stp.QueueWorkItem(
-                 state => { waitToStart.Set();  Thread.Sleep(100); return null; }
-                );
-
-            waitToStart.WaitOne();
-
-            wir.Cancel(false);
-
-            Assert.IsTrue(wir.IsCanceled);
-
-            try
+            Assert.Throws<WorkItemCancelException>(() =>
             {
-                wir.GetResult();
-            }
-            finally
-            {
-                stp.Shutdown();
-            }
+
+                ManualResetEvent waitToStart = new ManualResetEvent(false);
+
+                SmartThreadPool stp = new SmartThreadPool();
+                IWorkItemResult wir = stp.QueueWorkItem(
+                    state =>
+                    {
+                        waitToStart.Set();
+                        Thread.Sleep(100);
+                        return null;
+                    }
+                    );
+
+                waitToStart.WaitOne();
+
+                wir.Cancel(false);
+
+                Assert.IsTrue(wir.IsCanceled);
+
+                try
+                {
+                    wir.GetResult();
+                }
+                finally
+                {
+                    stp.Shutdown();
+                }
+            });
         }
 
         /// <summary>
@@ -85,36 +96,48 @@ namespace SmartThreadPoolTests
         /// 5. Work item's GetResult should throw WorkItemCancelException
         /// </summary>        
         [Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
+        //[ExpectedException(typeof(WorkItemCancelException))]
         public void CancelCancelledWorkItemAbort()
         {
-            ManualResetEvent waitToStart = new ManualResetEvent(false);
-
-            SmartThreadPool stp = new SmartThreadPool();
-            IWorkItemResult wir = stp.QueueWorkItem(
-                 state => { waitToStart.Set(); while (true) { Thread.Sleep(1000); } return null; }
-                );
-
-            waitToStart.WaitOne();
-
-            wir.Cancel(false);
-
-            Assert.IsTrue(wir.IsCanceled);
-
-            bool completed = stp.WaitForIdle(1000);
-
-            Assert.IsFalse(completed);
-
-            wir.Cancel(true);
-
-            try
+            Assert.Throws<WorkItemCancelException>(() =>
             {
-                wir.GetResult();
-            }
-            finally
-            {
-                stp.Shutdown();
-            }
+
+                ManualResetEvent waitToStart = new ManualResetEvent(false);
+
+                SmartThreadPool stp = new SmartThreadPool();
+                IWorkItemResult wir = stp.QueueWorkItem(
+                    state =>
+                    {
+                        waitToStart.Set();
+                        while (true)
+                        {
+                            Thread.Sleep(1000);
+                        }
+                        return null;
+                    }
+                    );
+
+                waitToStart.WaitOne();
+
+                wir.Cancel(false);
+
+                Assert.IsTrue(wir.IsCanceled);
+
+                bool completed = stp.WaitForIdle(1000);
+
+                Assert.IsFalse(completed);
+
+                wir.Cancel(true);
+
+                try
+                {
+                    wir.GetResult();
+                }
+                finally
+                {
+                    stp.Shutdown();
+                }
+            });
         }
 
 
@@ -130,33 +153,42 @@ namespace SmartThreadPoolTests
         /// 7. Work item's GetResult should throw WorkItemCancelException
         /// </summary>        
         [Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
         public void CancelInProgressWorkItemAbort()
         {
-            ManualResetEvent waitToStart = new ManualResetEvent(false);
-            int counter = 0;
-
-            SmartThreadPool stp = new SmartThreadPool();
-            IWorkItemResult wir = stp.QueueWorkItem(
-                state => { waitToStart.Set() ; Thread.Sleep(100); ++counter; return null; }
-                );
-
-            waitToStart.WaitOne();
-
-            wir.Cancel(true);
-
-            Assert.IsTrue(wir.IsCanceled);
-
-            Assert.AreEqual(counter, 0);
-
-            try
+            Assert.Throws<WorkItemCancelException>(() =>
             {
-                wir.GetResult();
-            }
-            finally
-            {
-                stp.Shutdown();
-            }
+
+                ManualResetEvent waitToStart = new ManualResetEvent(false);
+                int counter = 0;
+
+                SmartThreadPool stp = new SmartThreadPool();
+                IWorkItemResult wir = stp.QueueWorkItem(
+                    state =>
+                    {
+                        waitToStart.Set();
+                        Thread.Sleep(100);
+                        ++counter;
+                        return null;
+                    }
+                    );
+
+                waitToStart.WaitOne();
+
+                wir.Cancel(true);
+
+                Assert.IsTrue(wir.IsCanceled);
+
+                Assert.AreEqual(counter, 0);
+
+                try
+                {
+                    wir.GetResult();
+                }
+                finally
+                {
+                    stp.Shutdown();
+                }
+            });
         }
 
         /// <summary>
@@ -208,34 +240,37 @@ namespace SmartThreadPoolTests
         /// 7. Work item's GetResult should throw WorkItemCancelException
         /// </summary>        
         [Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
         public void CancelInProgressWorkItemSoftWithIgnoreSample()
         {
-            ManualResetEvent waitToStart = new ManualResetEvent(false);
-            ManualResetEvent waitToComplete = new ManualResetEvent(false);
+            Assert.Throws<WorkItemCancelException>(() =>
+            {
+                ManualResetEvent waitToStart = new ManualResetEvent(false);
+                ManualResetEvent waitToComplete = new ManualResetEvent(false);
 
-            SmartThreadPool stp = new SmartThreadPool();
-            IWorkItemResult wir = stp.QueueWorkItem(
-                state => {
-                    waitToStart.Set();
-                    Thread.Sleep(100);
-                    waitToComplete.WaitOne();
-                    return null;
-                }
-                );
+                SmartThreadPool stp = new SmartThreadPool();
+                IWorkItemResult wir = stp.QueueWorkItem(
+                    state =>
+                    {
+                        waitToStart.Set();
+                        Thread.Sleep(100);
+                        waitToComplete.WaitOne();
+                        return null;
+                    }
+                    );
 
-            waitToStart.WaitOne();
+                waitToStart.WaitOne();
 
-            wir.Cancel(false);
+                wir.Cancel(false);
 
-            waitToComplete.Set();
+                waitToComplete.Set();
 
-            stp.WaitForIdle();
+                stp.WaitForIdle();
 
-            // Throws WorkItemCancelException
-            wir.GetResult();
+                // Throws WorkItemCancelException
+                wir.GetResult();
 
-            stp.Shutdown();
+                stp.Shutdown();
+            });
         }   
         
         /// <summary>
@@ -289,41 +324,43 @@ namespace SmartThreadPoolTests
         /// 8. Work item's GetResult should throw WorkItemCancelException
         /// </summary>        
         [Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
         public void CancelCanceledWorkItem()
         {
-            STPStartInfo stpStartInfo = new STPStartInfo();
-            stpStartInfo.StartSuspended = true;
-
-            SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
-            IWorkItemResult wir = stp.QueueWorkItem(state => null);
-
-            int counter = 0;
-
-            wir.Cancel();
-
-            try
+            Assert.Throws<WorkItemCancelException>(() =>
             {
-                wir.GetResult();
-            }
-            catch (WorkItemCancelException ce)
-            {
-                ce.GetHashCode();
-                ++counter;
-            }
+                STPStartInfo stpStartInfo = new STPStartInfo();
+                stpStartInfo.StartSuspended = true;
 
-            Assert.AreEqual(counter, 1);
+                SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
+                IWorkItemResult wir = stp.QueueWorkItem(state => null);
 
-            wir.Cancel();
+                int counter = 0;
 
-            try
-            {
-                wir.GetResult();
-            }
-            finally
-            {
-                stp.Shutdown();
-            }
+                wir.Cancel();
+
+                try
+                {
+                    wir.GetResult();
+                }
+                catch (WorkItemCancelException ce)
+                {
+                    ce.GetHashCode();
+                    ++counter;
+                }
+
+                Assert.AreEqual(counter, 1);
+
+                wir.Cancel();
+
+                try
+                {
+                    wir.GetResult();
+                }
+                finally
+                {
+                    stp.Shutdown();
+                }
+            });
         }
 
         /// <summary>

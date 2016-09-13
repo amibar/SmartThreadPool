@@ -17,42 +17,44 @@ namespace SmartThreadPoolTests
         /// 4. Work item's GetResult should throw WorkItemCancelException
         /// </summary>        
         [Test]
-        [ExpectedException(typeof(WorkItemCancelException))]
         public void CancelInQueueWorkItem()
         {
-            STPStartInfo stpStartInfo = new STPStartInfo();
-            stpStartInfo.StartSuspended = true;
+            Assert.Throws<WorkItemCancelException>(() =>
+            {
+                STPStartInfo stpStartInfo = new STPStartInfo();
+                stpStartInfo.StartSuspended = true;
 
-            bool hasRun = false;
+                bool hasRun = false;
 
-            SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
-            IWorkItemResult wir = stp.QueueWorkItem(
-                new WorkItemInfo() { Timeout = 500 }, 
-                state =>
+                SmartThreadPool stp = new SmartThreadPool(stpStartInfo);
+                IWorkItemResult wir = stp.QueueWorkItem(
+                    new WorkItemInfo() {Timeout = 500},
+                    state =>
                     {
                         hasRun = true;
                         return null;
                     });
 
-            Assert.IsFalse(wir.IsCanceled);
+                Assert.IsFalse(wir.IsCanceled);
 
-            Thread.Sleep(2000);
+                Thread.Sleep(2000);
 
-            Assert.IsTrue(wir.IsCanceled);
+                Assert.IsTrue(wir.IsCanceled);
 
-            stp.Start();
-            stp.WaitForIdle();
+                stp.Start();
+                stp.WaitForIdle();
 
-            Assert.IsFalse(hasRun);
+                Assert.IsFalse(hasRun);
 
-            try
-            {
-                wir.GetResult();
-            }
-            finally
-            {
-                stp.Shutdown();
-            }
+                try
+                {
+                    wir.GetResult();
+                }
+                finally
+                {
+                    stp.Shutdown();
+                }
+            });
         }
 
         /// <summary>
