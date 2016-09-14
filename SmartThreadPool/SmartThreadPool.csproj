@@ -58,7 +58,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="QueueRejectedException.cs" />
     <Compile Include="WorkItem.WorkItemResult.cs" />
     <Compile Include="CallerThreadContext.cs" />
     <Compile Include="CanceledWorkItemsGroup.cs" />

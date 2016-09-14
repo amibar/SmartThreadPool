@@ -2,6 +2,8 @@ using System;
 using System.Threading;
 using System.Diagnostics;
 
+using Amib.Threading;
+
 namespace Amib.Threading.Internal
 {
     /// <summary>
