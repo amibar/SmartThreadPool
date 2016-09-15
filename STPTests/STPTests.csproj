@@ -245,14 +245,13 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SmartThreadPool\SmartThreadPool.csproj">
-      <Project>{74D4C33F-7CC8-4B2A-A7DF-D8B6E63B6EBD}</Project>
-      <Name>SmartThreadPool</Name>
-      <Private>True</Private>
-    </ProjectReference>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\SmartThreadPool\SmartThreadPool20.csproj">
+      <Project>{74d4c33f-7cc8-4b2a-a7df-d8b6e63b6ebd}</Project>
+      <Name>SmartThreadPool20</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="..\SmartThreadPool\sign.proj" Condition="'$(Configuration)|$(Platform)' == 'Publish|AnyCPU'" />

@@ -19,7 +19,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\Windows\</OutputPath>
+    <OutputPath>bin\Debug\Windows\net20\</OutputPath>
     <DefineConstants>TRACE;DEBUG;_WINDOWS</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
@@ -28,14 +28,14 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\Windows\</OutputPath>
+    <OutputPath>bin\Release\Windows\net20\</OutputPath>
     <DefineConstants>TRACE;_WINDOWS</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
     <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Publish|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\publish\dist\bin\Windows\</OutputPath>
+    <OutputPath>..\publish\dist\bin\Windows\net20\</OutputPath>
     <DefineConstants>TRACE;_WINDOWS,_PUBLISH</DefineConstants>
     <Optimize>true</Optimize>
     <NoWarn>1591</NoWarn>
