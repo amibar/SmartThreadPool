@@ -93,6 +93,10 @@
 // 24 August 2012 - Changes:
 //      - Enabled cancel abort after cancel. See: http://smartthreadpool.codeplex.com/discussions/345937 by alecswan
 //      - Added option to set MaxStackSize of threads 
+//
+// 16 September 2016 - Changes:
+//      - Separated the STP project to .NET 2.0, .NET 4.0, and .NET 4.5
+//      - Added option to set MaxQueueLength (Thanks to Rob Hruska)
 
 #endregion
 
