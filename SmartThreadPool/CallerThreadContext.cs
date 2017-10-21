@@ -1,5 +1,5 @@
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
+#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE) && !(NETCOREAPP2_0)
 
 using System;
 using System.Diagnostics;

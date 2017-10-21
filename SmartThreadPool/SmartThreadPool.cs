@@ -303,6 +303,7 @@ namespace Amib.Threading
         /// </summary>
         private CanceledWorkItemsGroup _canceledSmartThreadPool = new CanceledWorkItemsGroup();
 
+#if !(NETCOREAPP2_0)
         /// <summary>
         /// Windows STP performance counters
         /// </summary>
@@ -312,9 +313,9 @@ namespace Amib.Threading
         /// Local STP performance counters
         /// </summary>
         private ISTPInstancePerformanceCounters _localPCs = NullSTPInstancePerformanceCounters.Instance;
+#endif
 
-
-#if (WINDOWS_PHONE) 
+#if (WINDOWS_PHONE)
         private static readonly Dictionary<int, ThreadEntry> _threadEntries = new Dictionary<int, ThreadEntry>();
 #elif (_WINDOWS_CE)
         private static LocalDataStoreSlot _threadEntrySlot = Thread.AllocateDataSlot();
@@ -488,7 +489,7 @@ namespace Amib.Threading
 			{
                 throw new NotSupportedException("Performance counters are not implemented for Compact Framework/Silverlight/Mono, instead use StpStartInfo.EnableLocalPerformanceCounters");
             }
-#else
+#elif !(NETCOREAPP2_0)
             if (null != _stpStartInfo.PerformanceCounterInstanceName)
             {
                 try
@@ -503,10 +504,12 @@ namespace Amib.Threading
             }
 #endif
 
+#if !(NETCOREAPP2_0)
             if (_stpStartInfo.EnableLocalPerformanceCounters)
             {
                 _localPCs = new LocalSTPInstancePerformanceCounters();
             }
+#endif
 
 		    // If the STP is not started suspended then start the threads.
             if (!_isSuspended)
@@ -605,8 +608,10 @@ namespace Amib.Threading
 
 		private void IncrementWorkItemsCount()
 		{
+#if !(NETCOREAPP2_0)
 			_windowsPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
             _localPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
+#endif
 
 			int count = Interlocked.Increment(ref _currentWorkItemsCount);
 			//Trace.WriteLine("WorkItemsCount = " + _currentWorkItemsCount.ToString());
@@ -629,13 +634,14 @@ namespace Amib.Threading
 
             Interlocked.Increment(ref _workItemsProcessed);
 
+#if !(NETCOREAPP2_0)
             if (!_shutdown)
             {
 			    // The counter counts even if the work item was cancelled
 			    _windowsPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
                 _localPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
             }
-
+#endif
 		}
 
 		internal void RegisterWorkItemsGroup(IWorkItemsGroup workItemsGroup)
@@ -663,8 +669,10 @@ namespace Amib.Threading
 			if (_workerThreads.Contains(Thread.CurrentThread))
 			{
 				_workerThreads.Remove(Thread.CurrentThread);
-				_windowsPCs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
+#if !(NETCOREAPP2_0)
+                _windowsPCs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
                 _localPCs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
+#endif
 			}
 		}
 
@@ -724,9 +732,10 @@ namespace Amib.Threading
 
                     // Add it to the dictionary and update its creation time.
                     _workerThreads[workerThread] = new ThreadEntry(this);
-
+#if !(NETCOREAPP2_0)
 					_windowsPCs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
                     _localPCs.SampleThreads(_workerThreads.Count, _inUseWorkerThreads);
+#endif
 				}
 			}
 		}
@@ -838,9 +847,10 @@ namespace Amib.Threading
 						// Execute the callback.  Make sure to accurately
 						// record how many callbacks are currently executing.
 						int inUseWorkerThreads = Interlocked.Increment(ref _inUseWorkerThreads);
+#if !(NETCOREAPP2_0)
 						_windowsPCs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
                         _localPCs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
-
+#endif
 						// Mark that the _inUseWorkerThreads incremented, so in the finally{}
 						// statement we will decrement it correctly.
 						bInUseWorkerThreadsWasIncremented = true;
@@ -868,8 +878,10 @@ namespace Amib.Threading
 						if (bInUseWorkerThreadsWasIncremented)
 						{
 							int inUseWorkerThreads = Interlocked.Decrement(ref _inUseWorkerThreads);
+#if !(NETCOREAPP2_0)
 							_windowsPCs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
                             _localPCs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
+#endif
 						}
 
 						// Notify that the work item has been completed.
@@ -903,16 +915,20 @@ namespace Amib.Threading
 
 		private void ExecuteWorkItem(WorkItem workItem)
 		{
+#if !(NETCOREAPP2_0)
 			_windowsPCs.SampleWorkItemsWaitTime(workItem.WaitingTime);
             _localPCs.SampleWorkItemsWaitTime(workItem.WaitingTime);
+#endif
 			try
 			{
 				workItem.Execute();
 			}
 			finally
 			{
+#if !(NETCOREAPP2_0)
 				_windowsPCs.SampleWorkItemsProcessTime(workItem.ProcessTime);
                 _localPCs.SampleWorkItemsProcessTime(workItem.ProcessTime);
+#endif
 			}
 		}
 
@@ -981,6 +997,7 @@ namespace Amib.Threading
 		{
 			ValidateNotDisposed();
 
+#if !(NETCOREAPP2_0)
 			ISTPInstancePerformanceCounters pcs = _windowsPCs;
 
 			if (NullSTPInstancePerformanceCounters.Instance != _windowsPCs)
@@ -991,6 +1008,7 @@ namespace Amib.Threading
 
                 pcs.Dispose();
 			}
+#endif
 
 			Thread [] threads;
 			lock(_workerThreads.SyncRoot)
@@ -1008,8 +1026,12 @@ namespace Amib.Threading
 			}
 
 			int millisecondsLeft = millisecondsTimeout;
+#if (NETCOREAPP2_0)
+            var stopwatch = Internal.Stopwatch.StartNew();
+#else
             Stopwatch stopwatch = Stopwatch.StartNew();
-            //DateTime start = DateTime.UtcNow;
+#endif
+			//DateTime start = DateTime.UtcNow;
 			bool waitInfinitely = (Timeout.Infinite == millisecondsTimeout);
 			bool timeout = false;
 
@@ -1513,6 +1535,7 @@ namespace Amib.Threading
             get { return _shutdown;  }
 	    }
 
+#if !(NETCOREAPP2_0)
         /// <summary>
         /// Return the local calculated performance counters
         /// Available only if STPStartInfo.EnableLocalPerformanceCounters is true.
@@ -1521,7 +1544,7 @@ namespace Amib.Threading
         {
             get { return (ISTPPerformanceCountersReader)_localPCs; }
         }
-
+#endif
         #endregion
 
         #region IDisposable Members
