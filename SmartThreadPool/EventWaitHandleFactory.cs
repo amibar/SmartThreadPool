@@ -1,10 +1,5 @@
 using System.Threading;
 
-#if (_WINDOWS_CE)
-using System;
-using System.Runtime.InteropServices;
-#endif
-
 namespace Amib.Threading.Internal
 {
     /// <summary>
@@ -25,10 +20,6 @@ namespace Amib.Threading.Internal
         {
             AutoResetEvent waitHandle = new AutoResetEvent(false);
 
-#if (_WINDOWS_CE)
-            ReplaceEventHandle(waitHandle, false, false);
-#endif
-
             return waitHandle;
         }
 
@@ -40,43 +31,7 @@ namespace Amib.Threading.Internal
         {
             ManualResetEvent waitHandle = new ManualResetEvent(initialState);
 
-#if (_WINDOWS_CE)
-            ReplaceEventHandle(waitHandle, true, initialState);
-#endif
-
             return waitHandle;
         }
-
-#if (_WINDOWS_CE)
-
-        /// <summary>
-        /// Replace the event handle
-        /// </summary>
-        /// <param name="waitHandle">The WaitHandle object which its handle needs to be replaced.</param>
-        /// <param name="manualReset">Indicates if the event is a ManualResetEvent (true) or an AutoResetEvent (false)</param>
-        /// <param name="initialState">The initial state of the event</param>
-        private static void ReplaceEventHandle(WaitHandle waitHandle, bool manualReset, bool initialState)
-        {
-            // Store the old handle 
-            IntPtr oldHandle = waitHandle.Handle;
-
-            // Create a new event
-            IntPtr newHandle = CreateEvent(IntPtr.Zero, manualReset, initialState, null);
-
-            // Replace the old event with the new event
-            waitHandle.Handle = newHandle;
-
-            // Close the old event
-            CloseHandle (oldHandle);        
-        }
-
-        [DllImport("coredll.dll", SetLastError = true)]
-        public static extern IntPtr CreateEvent(IntPtr lpEventAttributes, bool bManualReset, bool bInitialState, string lpName);
-
-        //Handle
-        [DllImport("coredll.dll", SetLastError = true)]
-        public static extern bool CloseHandle(IntPtr hObject);
-#endif
-
     }
 }

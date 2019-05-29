@@ -113,7 +113,7 @@ namespace SmartThreadPoolTests
                         {
                             Thread.Sleep(1000);
                         }
-                        return null;
+                        //return null;
                     }
                     );
 

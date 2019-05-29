@@ -1,5 +1,5 @@
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
+#if !(NETSTANDARD2_0)
 
 using System;
 using System.Diagnostics;
@@ -42,14 +42,14 @@ namespace Amib.Threading.Internal
 		    return "HttpContext";
 		}
 
-        #endregion
+#endregion
 
 #region Private fields
 
 		private HttpContext _httpContext;
 		private LogicalCallContext _callContext;
 
-        #endregion
+#endregion
 
 		/// <summary>
 		/// Constructor
@@ -133,6 +133,6 @@ namespace Amib.Threading.Internal
 		}
 	}
 
-    #endregion
+#endregion
 }
 #endif

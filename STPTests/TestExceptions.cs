@@ -2,8 +2,6 @@ using System;
 using Amib.Threading;
 using NUnit.Framework;
 
-using Amib.Threading;
-
 namespace SmartThreadPoolTests
 {
 	/// <summary>
@@ -88,7 +86,7 @@ namespace SmartThreadPoolTests
 		{ 
 			SmartThreadPool smartThreadPool = new SmartThreadPool();
 
-	        var workItemResult = smartThreadPool.QueueWorkItem(new Amib.Threading.Func<int>(ExceptionMethod));
+	        var workItemResult = smartThreadPool.QueueWorkItem(new Func<int>(ExceptionMethod));
 
             smartThreadPool.WaitForIdle();
 

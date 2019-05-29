@@ -23,7 +23,7 @@ namespace Amib.Threading.Internal
         void SampleWorkItemsWaitTime(TimeSpan workItemWaitTime);
         void SampleWorkItemsProcessTime(TimeSpan workItemProcessTime);
     }
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
+#if !(NETSTANDARD2_0)
 
     internal enum STPPerformanceCounterType
 	{

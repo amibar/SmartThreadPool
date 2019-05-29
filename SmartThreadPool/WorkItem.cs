@@ -63,7 +63,7 @@ namespace Amib.Threading.Internal
         /// </summary>
         private object _state;
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
+#if !(NETSTANDARD2_0)
         /// <summary>
         /// Stores the caller's context
         /// </summary>
@@ -211,7 +211,7 @@ namespace Amib.Threading.Internal
             _workItemsGroup = workItemsGroup;
             _workItemInfo = workItemInfo;
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
+#if !(NETSTANDARD2_0)
             if (_workItemInfo.UseCallerCallContext || _workItemInfo.UseCallerHttpContext)
             {
                 _callerContext = CallerThreadContext.Capture(_workItemInfo.UseCallerCallContext, _workItemInfo.UseCallerHttpContext);
@@ -362,7 +362,7 @@ namespace Amib.Threading.Internal
         private void ExecuteWorkItem()
         {
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
+#if !(NETSTANDARD2_0)
             CallerThreadContext ctc = null;
             if (null != _callerContext)
             {
@@ -408,13 +408,11 @@ namespace Amib.Threading.Internal
                 // work items was cancelled.
                 if (!SmartThreadPool.CurrentThreadEntry.AssociatedSmartThreadPool.IsShuttingdown)
                 {
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
                     Thread.ResetAbort();
-#endif
                 }
             }
 
-#if !(_WINDOWS_CE) && !(_SILVERLIGHT) && !(WINDOWS_PHONE)
+#if !(NETSTANDARD2_0)
             if (null != _callerContext)
             {
                 CallerThreadContext.Apply(ctc);
@@ -711,12 +709,6 @@ namespace Amib.Threading.Internal
         /// <returns>Returns true on success or false if the work item is in progress or already completed</returns>
         private bool Cancel(bool abortExecution)
         {
-#if (_WINDOWS_CE)
-            if(abortExecution)
-            {
-                throw new ArgumentOutOfRangeException("abortExecution", "WindowsCE doesn't support this feature");
-            }
-#endif
             bool success = false;
             bool signalComplete = false;
 

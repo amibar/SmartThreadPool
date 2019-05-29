@@ -33,53 +33,14 @@ namespace Amib.Threading.Internal
         /// </summary>
         private bool _isWorkItemsQueueActive = true;
 
-
-#if (WINDOWS_PHONE) 
-        private static readonly Dictionary<int, WaiterEntry> _waiterEntries = new Dictionary<int, WaiterEntry>();
-#elif (_WINDOWS_CE)
-        private static LocalDataStoreSlot _waiterEntrySlot = Thread.AllocateDataSlot();
-#else
-
         [ThreadStatic]
         private static WaiterEntry _waiterEntry;
-#endif
-
 
         /// <summary>
         /// Each thread in the thread pool keeps its own waiter entry.
         /// </summary>
         private static WaiterEntry CurrentWaiterEntry
         {
-#if (WINDOWS_PHONE) 
-            get
-            {
-                lock (_waiterEntries)
-                {
-                    WaiterEntry waiterEntry;
-                    if (_waiterEntries.TryGetValue(Thread.CurrentThread.ManagedThreadId, out waiterEntry))
-                    {
-                        return waiterEntry;
-                    }
-                }
-                return null;
-            }
-            set
-            {
-                lock (_waiterEntries)
-                {
-                    _waiterEntries[Thread.CurrentThread.ManagedThreadId] = value;
-                }
-            }
-#elif (_WINDOWS_CE)
-            get
-            {
-                return Thread.GetData(_waiterEntrySlot) as WaiterEntry;
-            }
-            set
-            {
-                Thread.SetData(_waiterEntrySlot, value);
-            }
-#else
             get
             {
                 return _waiterEntry;
@@ -88,7 +49,6 @@ namespace Amib.Threading.Internal
             {
                 _waiterEntry = value;
             }
-#endif
         }
 
         /// <summary>

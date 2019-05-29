@@ -1,8 +1,7 @@
+using System;
 using Amib.Threading;
 using NUnit.Framework;
 using System.Net;
-using Guid = System.Guid;
-using IntPtr = System.IntPtr;
 
 namespace STPTests
 {

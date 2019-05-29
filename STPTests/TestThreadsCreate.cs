@@ -94,11 +94,11 @@ namespace SmartThreadPoolTests
             {
                 byte* p = stackalloc byte[size];
             }
-            catch (StackOverflowException ex)
+            catch (StackOverflowException)
             {
                 return false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
