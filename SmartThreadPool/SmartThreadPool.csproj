@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net40;net45;net46;netstandard2.0</TargetFrameworks>
     <AssemblyName>SmartThreadPool</AssemblyName>
     <RootNamespace>SmartThreadPool</RootNamespace>
     <DefineConstants>TRACE;</DefineConstants>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.2.5</Version>
+    <Version>2.2.6</Version>
     <Company />
     <Authors>Ami Bar</Authors>
     <Description>Smart Thread Pool, implemented in .NET</Description>
@@ -19,6 +19,14 @@
     <PackageReleaseNotes>Moved to .NET 4.6 and .NET Standard 2.0</PackageReleaseNotes>
     <PackageId>SmartThreadPool.dll</PackageId>
   </PropertyGroup>
+
+ <ItemGroup Condition=" '$(TargetFramework)' == 'net40' ">
+    <Reference Include="System.Web" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="System.Web" />
+  </ItemGroup>
 
  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
     <Reference Include="System.Web" />
