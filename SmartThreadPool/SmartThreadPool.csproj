@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net40;net45;net46;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net40;net45;net46;netstandard2.0;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
     <AssemblyName>SmartThreadPool</AssemblyName>
     <RootNamespace>SmartThreadPool</RootNamespace>
     <DefineConstants>TRACE;</DefineConstants>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.2.6</Version>
+    <Version>2.3.0</Version>
     <Company />
     <Authors>Ami Bar</Authors>
     <Description>Smart Thread Pool, implemented in .NET</Description>
@@ -16,8 +16,10 @@
     <PackageProjectUrl>https://github.com/amibar/SmartThreadPool</PackageProjectUrl>
     <RepositoryUrl>https://github.com/amibar/SmartThreadPool</RepositoryUrl>
     <Configurations>Debug;Release;Publish</Configurations>
-    <PackageReleaseNotes>Moved to .NET 4.6 and .NET Standard 2.0</PackageReleaseNotes>
+    <PackageReleaseNotes>Added .net core 3.0 and 3.1 support</PackageReleaseNotes>
     <PackageId>SmartThreadPool.dll</PackageId>
+    <AssemblyVersion>2.3.0.0</AssemblyVersion>
+    <FileVersion>2.3.0.0</FileVersion>
   </PropertyGroup>
 
  <ItemGroup Condition=" '$(TargetFramework)' == 'net40' ">

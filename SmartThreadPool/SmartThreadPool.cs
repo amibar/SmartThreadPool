@@ -97,7 +97,17 @@
 // 16 September 2016 - Changes:
 //      - Separated the STP project to .NET 2.0, .NET 4.0, and .NET 4.5
 //      - Added option to set MaxQueueLength (Thanks to Rob Hruska)
-
+//
+// 31 May 2019 - Changes:
+//      - Added .Net Standard 2.0 support
+//
+// 24 Feb 2020 - Changes:
+//		- Added .Net Core 3.x support
+//			* Removed the use of Thread.Abort(). The Shutdown method doesn't get forceAbort argument in the .net core versions
+//			* Fixed #if for .net core, .net standard, and .net framework.
+//			* Enabled tests to run on .net core too
+//			* Fixed/Removed tests which depend on Thread.Abort.
+//		- 
 #endregion
 
 using System;
@@ -441,7 +451,7 @@ namespace Amib.Threading
 
             _isSuspended = _stpStartInfo.StartSuspended;
 
-#if (NETSTANDARD2_0)
+#if !(NETFRAMEWORK)
             if (null != _stpStartInfo.PerformanceCounterInstanceName)
 			{
                 throw new NotSupportedException("Performance counters are not implemented for Compact Framework/Silverlight/Mono, instead use StpStartInfo.EnableLocalPerformanceCounters");
@@ -906,26 +916,62 @@ namespace Amib.Threading
 			}
 		}
 
-		/// <summary>
-		/// Force the SmartThreadPool to shutdown
-		/// </summary>
-		public void Shutdown()
-		{
-			Shutdown(true, 0);
-		}
-
         /// <summary>
-        /// Force the SmartThreadPool to shutdown with timeout
+        /// Force the SmartThreadPool to shutdown
+        /// Doesn't use Thread.Abort
         /// </summary>
-        public void Shutdown(bool forceAbort, TimeSpan timeout)
+        public void Shutdown()
+        {
+            ShutdownImpl(false, 0);
+        }
+
+		// Thread.Abort is not supported in .net core
+
+		/// <summary>
+		/// Force the SmartThreadPool to shutdown with timeout
+		/// Doesn't use Thread.Abort
+        /// </summary>
+		public void Shutdown(TimeSpan timeout)
 		{
-			Shutdown(forceAbort, (int)timeout.TotalMilliseconds);
+			ShutdownImpl(false, (int)timeout.TotalMilliseconds);
 		}
 
 		/// <summary>
 		/// Empties the queue of work items and abort the threads in the pool.
+		/// Doesn't use Thread.Abort
+        /// </summary>
+		public void Shutdown(int millisecondsTimeout)
+        {
+            ShutdownImpl(false, millisecondsTimeout);
+		}
+
+#if !(NETCOREAPP)
+
+        /// <summary>
+		/// Force the SmartThreadPool to shutdown with timeout
 		/// </summary>
-		public void Shutdown(bool forceAbort, int millisecondsTimeout)
+		public void Shutdown(bool forceAbort)
+		{
+			ShutdownImpl(forceAbort, 0);
+		}
+
+        /// <summary>
+		/// Force the SmartThreadPool to shutdown with timeout
+		/// </summary>
+		public void Shutdown(bool forceAbort, TimeSpan timeout)
+		{
+            ShutdownImpl(forceAbort, (int)timeout.TotalMilliseconds);
+		}
+
+        /// <summary>
+        /// Empties the queue of work items and abort the threads in the pool.
+        /// </summary>
+        public void Shutdown(bool forceAbort, int millisecondsTimeout)
+        {
+            ShutdownImpl(forceAbort, millisecondsTimeout);
+        }
+#endif
+		private void ShutdownImpl(bool forceAbort, int millisecondsTimeout)
 		{
 			ValidateNotDisposed();
 

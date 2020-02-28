@@ -1,5 +1,4 @@
-
-#if !(NETSTANDARD2_0)
+#if (NETFRAMEWORK)
 
 using System;
 using System.Diagnostics;
@@ -82,7 +81,8 @@ namespace Amib.Threading.Internal
 			bool captureCallContext, 
 			bool captureHttpContext)
 		{
-			Debug.Assert(captureCallContext || captureHttpContext);
+			// Remove this check since if the original call didn't have any context, we don't need to capture it here
+			//Debug.Assert(captureCallContext || captureHttpContext);
 
 			CallerThreadContext callerThreadContext = new CallerThreadContext();
 

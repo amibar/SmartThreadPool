@@ -1,5 +1,5 @@
 using System;
-
+using System.Threading;
 using NUnit.Framework;
 
 using Amib.Threading;
@@ -28,7 +28,7 @@ namespace SmartThreadPoolTests
         {
             ClearResults();
 
-            SmartThreadPool stp = new SmartThreadPool();
+            SmartThreadPool stp = new SmartThreadPool(1000);
 
             stp.OnThreadInitialization += OnInitialization;
             stp.OnThreadTermination += OnTermination;
@@ -36,13 +36,38 @@ namespace SmartThreadPoolTests
             stp.QueueWorkItem(new WorkItemCallback(DoSomeWork), null);
 
             stp.WaitForIdle();
-            stp.Shutdown();
+
+            // .net core Thread.Abort is not supported, so wait for the thread to go idle and self terminate
+            stp.Shutdown(Timeout.Infinite);
 
             Assert.IsTrue(_initSuccess);
             Assert.IsTrue(_workItemSuccess);
             Assert.IsTrue(_termSuccess);
         }
 
+#if (NETFRAMEWORK)
+
+        [Test]
+        public void TestThreadsEventsWithAbort()
+        {
+            ClearResults();
+
+            SmartThreadPool stp = new SmartThreadPool(1000);
+
+            stp.OnThreadInitialization += OnInitialization;
+            stp.OnThreadTermination += OnTermination;
+
+            stp.QueueWorkItem(new WorkItemCallback(DoSomeWork), null);
+
+            stp.WaitForIdle();
+
+            stp.Shutdown(true);
+
+            Assert.IsTrue(_initSuccess);
+            Assert.IsTrue(_workItemSuccess);
+            Assert.IsTrue(_termSuccess);
+        }
+#endif
         public void OnInitialization()
         {
             ThreadContextState.Current.Counter = 1234;
@@ -65,7 +90,7 @@ namespace SmartThreadPoolTests
         }
 
 
-        // Can't run this test, StackOverflowException crashes the application and can't be catched and ignored
+        // Can't run this test, StackOverflowException crashes the application and can't be caught and ignored
         //[Test]
         public void NotTestThreadsMaxStackSize()
         {

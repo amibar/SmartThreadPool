@@ -63,7 +63,7 @@ namespace Amib.Threading.Internal
         /// </summary>
         private object _state;
 
-#if !(NETSTANDARD2_0)
+#if (NETFRAMEWORK)
         /// <summary>
         /// Stores the caller's context
         /// </summary>
@@ -211,7 +211,7 @@ namespace Amib.Threading.Internal
             _workItemsGroup = workItemsGroup;
             _workItemInfo = workItemInfo;
 
-#if !(NETSTANDARD2_0)
+#if (NETFRAMEWORK)
             if (_workItemInfo.UseCallerCallContext || _workItemInfo.UseCallerHttpContext)
             {
                 _callerContext = CallerThreadContext.Capture(_workItemInfo.UseCallerCallContext, _workItemInfo.UseCallerHttpContext);
@@ -362,7 +362,7 @@ namespace Amib.Threading.Internal
         private void ExecuteWorkItem()
         {
 
-#if !(NETSTANDARD2_0)
+#if (NETFRAMEWORK)
             CallerThreadContext ctc = null;
             if (null != _callerContext)
             {
@@ -412,7 +412,7 @@ namespace Amib.Threading.Internal
                 }
             }
 
-#if !(NETSTANDARD2_0)
+#if (NETFRAMEWORK)
             if (null != _callerContext)
             {
                 CallerThreadContext.Apply(ctc);
