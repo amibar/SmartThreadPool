@@ -1,39 +1,38 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net46;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net46;netcoreapp3.1;net5.0</TargetFrameworks>
     <AssemblyName>STPTests</AssemblyName>
     <RootNamespace>STPTests</RootNamespace>
     <DefineConstants>TRACE;</DefineConstants>
     <Configurations>Debug;Release;Publish</Configurations>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='net46'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Publish|net46|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\publish\Keys\STP.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp3.1|AnyCPU'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='netcoreapp3.1'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Publish|netcoreapp3.1|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\publish\Keys\STP.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp3.1|AnyCPU'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='net5.0'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Publish|net5.0|AnyCPU'">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\publish\Keys\STP.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -46,6 +45,10 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)|$(Platform)'=='netcoreapp3.1|AnyCPU'">
+    <Compile Remove="TestCancel.Abort.cs" />
+  </ItemGroup>
+  
+  <ItemGroup Condition="'$(TargetFramework)|$(Platform)'=='net5.0|AnyCPU'">
     <Compile Remove="TestCancel.Abort.cs" />
   </ItemGroup>
 

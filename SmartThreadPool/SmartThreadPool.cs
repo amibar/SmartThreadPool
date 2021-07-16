@@ -107,7 +107,10 @@
 //			* Fixed #if for .net core, .net standard, and .net framework.
 //			* Enabled tests to run on .net core too
 //			* Fixed/Removed tests which depend on Thread.Abort.
-//		- 
+//
+// 16 July 2021 - Changes:
+//		- Added .Net Core 5.0 support
+
 #endregion
 
 using System;
