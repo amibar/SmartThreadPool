@@ -1,54 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net46;netcoreapp3.1;net5.0</TargetFrameworks>
+    <TargetFrameworks>net40;netcoreapp3.1;net6;</TargetFrameworks>
     <AssemblyName>STPTests</AssemblyName>
     <RootNamespace>STPTests</RootNamespace>
-    <DefineConstants>TRACE;</DefineConstants>
-    <Configurations>Debug;Release;Publish</Configurations>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='net46'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Publish|net46|AnyCPU'">
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\publish\Keys\STP.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='netcoreapp3.1'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Publish|netcoreapp3.1|AnyCPU'">
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\publish\Keys\STP.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='net5.0'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Publish|net5.0|AnyCPU'">
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\publish\Keys\STP.snk</AssemblyOriginatorKeyFile>
+    <Configurations>Debug;Release;</Configurations>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
-    <PackageReference Include="NUnit" Version="3.12.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.16.1">
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.2.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)|$(Platform)'=='netcoreapp3.1|AnyCPU'">
+  <ItemGroup Condition="'$(TargetFramework)'=='netcoreapp3.1'">
     <Compile Remove="TestCancel.Abort.cs" />
   </ItemGroup>
-  
-  <ItemGroup Condition="'$(TargetFramework)|$(Platform)'=='net5.0|AnyCPU'">
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net6'">
     <Compile Remove="TestCancel.Abort.cs" />
   </ItemGroup>
 
