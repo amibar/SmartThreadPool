@@ -5,7 +5,7 @@ using System.Net;
 using Guid = System.Guid;
 using IntPtr = System.IntPtr;
 
-namespace STPTests
+namespace SmartThreadPoolTests
 {
     /// <summary>
     /// Summary description for TestWIGFillStateWithArgs.

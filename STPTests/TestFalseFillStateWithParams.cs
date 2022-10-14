@@ -3,7 +3,7 @@ using Amib.Threading;
 using NUnit.Framework;
 using System.Net;
 
-namespace STPTests
+namespace SmartThreadPoolTests
 {
     /// <summary>
     /// Summary description for TestFalseFillStateWithArgs.

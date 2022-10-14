@@ -17,12 +17,23 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)'=='net40'">
+    <Compile Remove="TestAsyncAwaitBase.cs" />
+    <Compile Remove="TestAsyncAwait.cs" />
+    <Compile Remove="TestWIGAsyncAwait.cs" />
+    <None Include="TestAsyncAwaitBase.cs" />
+    <None Include="TestAsyncAwait.cs" />
+    <None Include="TestWIGAsyncAwait.cs" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(TargetFramework)'=='netcoreapp3.1'">
     <Compile Remove="TestCancel.Abort.cs" />
+    <None Include="TestCancel.Abort.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net6'">
     <Compile Remove="TestCancel.Abort.cs" />
+    <None Include="TestCancel.Abort.cs" />
   </ItemGroup>
 
   <ItemGroup>

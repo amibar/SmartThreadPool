@@ -3,7 +3,7 @@ using System.Threading;
 using Amib.Threading;
 using NUnit.Framework;
 
-namespace STPTests
+namespace SmartThreadPoolTests
 {
     [TestFixture]
     [Category("TestMaxQueueLength")]

@@ -2,11 +2,11 @@ using System;
 using System.Threading;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Amib.Threading.Internal
 {
-
-	#region WorkItemsGroup class 
+    #region WorkItemsGroup class 
 
 	/// <summary>
 	/// Summary description for WorkItemsGroup.
@@ -58,6 +58,14 @@ namespace Amib.Threading.Internal
 		/// </summary>
 		private int _workItemsExecutingInStp = 0;
 
+        /// <summary>
+        /// The number of work items this WorkItemsGroup is responsible on.
+        /// A work item is attached to a WorkItemsGroup since it is enqueued until it is completed (or cancelled)
+        /// We need this count in order to know if the WorkItemsGroup is idle. A WorkItemsGroup with all its
+        /// work items awaiting is not idle
+        /// </summary>
+        private int _attachedWorkItemsCount = 0;
+
 		/// <summary>
 		/// WorkItemsGroup start information
 		/// </summary>
@@ -69,17 +77,23 @@ namespace Amib.Threading.Internal
         //private readonly ManualResetEvent _isIdleWaitHandle = new ManualResetEvent(true);
         private readonly ManualResetEvent _isIdleWaitHandle = EventWaitHandleFactory.CreateManualResetEvent(true);
 
+#if _ASYNC_SUPPORTED
+        /// <summary>
+        /// A task completion source to indicate that the WorkItemsGroup is idle, used in WaitForIdleAsync
+        /// </summary>
+        private TaskCompletionSource<bool> _isIdleTCS;
+#endif
 		/// <summary>
 		/// A common object for all the work items that this work items group
 		/// generate so we can mark them to cancel in O(1)
 		/// </summary>
 		private CanceledWorkItemsGroup _canceledWorkItemsGroup = new CanceledWorkItemsGroup();
 
-		#endregion 
+		#endregion
 
 		#region Construction
 
-	    public WorkItemsGroup(
+		public WorkItemsGroup(
 			SmartThreadPool stp, 
 			int concurrency, 
 			WIGStartInfo wigStartInfo)
@@ -179,11 +193,12 @@ namespace Amib.Threading.Internal
 	    {
 	        lock (_lock)
 	        {
-	            _canceledWorkItemsGroup.IsCanceled = true;
+                _attachedWorkItemsCount -= _workItemsQueue.Count;
+                _canceledWorkItemsGroup.IsCanceled = true;
 	            _workItemsQueue.Clear();
 	            _workItemsInStpQueue = 0;
 	            _canceledWorkItemsGroup = new CanceledWorkItemsGroup();
-	        }
+            }
 
 	        if (abortExecution)
 	        {
@@ -200,7 +215,42 @@ namespace Amib.Threading.Internal
             return STPEventWaitHandle.WaitOne(_isIdleWaitHandle, millisecondsTimeout, false);
         }
 
-	    public override event WorkItemsGroupIdleHandler OnIdle
+#if _ASYNC_SUPPORTED
+        public override async Task WaitForIdleAsync()
+        {
+            SmartThreadPool.ValidateWorkItemsGroupWaitForIdle(this);
+
+			// If the STP is already idle then return a completed task
+			if (IsIdle)
+            {
+                return;
+            }
+
+			// Prepare a local tcs
+            TaskCompletionSource<bool> isIdleTCS = null;
+
+            lock (_lock)
+            {
+                // If the _isIdleTCS was not initialized or was already set then create a new one
+                if (_isIdleTCS == null || _isIdleTCS.Task.IsCompleted)
+                {
+                    _isIdleTCS = new TaskCompletionSource<bool>();
+                }
+
+                // Store the local tcs
+                isIdleTCS = _isIdleTCS;
+            }
+
+            // If in the meantime the STP become idle then set the tcs
+            if (IsIdle)
+            {
+                isIdleTCS.TrySetResult(true);
+            }
+
+            await isIdleTCS.Task;
+        }
+#endif
+		public override event WorkItemsGroupIdleHandler OnIdle
 		{
 			add { _onIdle += value; }
 			remove { _onIdle -= value; }
@@ -210,14 +260,28 @@ namespace Amib.Threading.Internal
 
 		#region Private methods
 
-	    private void RegisterToWorkItemCompletion(IWorkItemResult wir)
-		{
-			IInternalWorkItemResult iwir = (IInternalWorkItemResult)wir;
-			iwir.OnWorkItemStarted += OnWorkItemStartedCallback;
-			iwir.OnWorkItemCompleted += OnWorkItemCompletedCallback;
-		}
+        private void OnWorkItemExecutionStatusChanged(WorkItem workItem, WorkItemExecutionStatus status)
+        {
+            if (status.HasFlag(WorkItemExecutionStatus.Executing))
+            {
+                lock (_lock)
+                {
+                    ++_workItemsExecutingInStp;
+                }
+			}
+			else
+            {
+                var workItemCompleted = status == WorkItemExecutionStatus.Completed;
+                if (workItemCompleted)
+                {
+                    workItem.OnWorkItemExecutionStatusChanged = null;
+                }
 
-	    public void OnSTPIsStarting()
+				EnqueueToSTPNextWorkItem(null, true, workItemCompleted);
+            }
+        }
+
+        public void OnSTPIsStarting()
 		{
             if (_isSuspended)
             {
@@ -231,7 +295,7 @@ namespace Amib.Threading.Internal
         {
             for (int i = 0; i < count; ++i)
             {
-                EnqueueToSTPNextWorkItem(null, false);
+                EnqueueToSTPNextWorkItem(null, false, false);
             }
         }
 
@@ -260,39 +324,21 @@ namespace Amib.Threading.Internal
 			}
 		}
 
-		private void OnWorkItemStartedCallback(WorkItem workItem)
-		{
-			lock(_lock)
-			{
-				++_workItemsExecutingInStp;
-			}
-		}
-
-		private void OnWorkItemCompletedCallback(WorkItem workItem)
-		{
-			EnqueueToSTPNextWorkItem(null, true);
-		}
-
         internal override void Enqueue(WorkItem workItem)
         {
-            EnqueueToSTPNextWorkItem(workItem);
+            EnqueueToSTPNextWorkItem(workItem, false, false);
         }
 
-	    private void EnqueueToSTPNextWorkItem(WorkItem workItem)
-		{
-			EnqueueToSTPNextWorkItem(workItem, false);
-		}
-
-		private void EnqueueToSTPNextWorkItem(WorkItem workItem, bool decrementWorkItemsInStpQueue)
+		private void EnqueueToSTPNextWorkItem(WorkItem workItem, bool decrementWorkItemsInStpQueue, bool workItemCompleted)
 		{
 			lock(_lock)
 			{
-				// Got here from OnWorkItemCompletedCallback()
-				if (decrementWorkItemsInStpQueue)
-				{
-					--_workItemsInStpQueue;
+                // Got here from OnWorkItemExecutionStatusChanged(status) when not status.HasFlag(WorkItemExecutionStatus.Executing)
+                if (decrementWorkItemsInStpQueue)
+                {
+                    --_workItemsInStpQueue;
 
-					if(_workItemsInStpQueue < 0)
+                    if (_workItemsInStpQueue < 0)
 					{
 						_workItemsInStpQueue = 0;
 					}
@@ -305,14 +351,25 @@ namespace Amib.Threading.Internal
 					}
 				}
 
-				// If the work item is not null then enqueue it
-				if (null != workItem)
+                if (workItemCompleted)
+                {
+                    --_attachedWorkItemsCount;
+                }
+
+                // If the work item is not null then enqueue it
+                if (null != workItem)
 				{
 					workItem.CanceledWorkItemsGroup = _canceledWorkItemsGroup;
+#if _ASYNC_SUPPORTED
+					// Avoid duplicate event registration after awaiting
+					if (!workItem.IsAsync)
+#endif
+					{
+                        workItem.OnWorkItemExecutionStatusChanged = OnWorkItemExecutionStatusChanged;
+						++_attachedWorkItemsCount;
+                    }
 
-					RegisterToWorkItemCompletion(workItem.GetWorkItemResult());
-					_workItemsQueue.Enqueue(workItem);
-					//_stp.IncrementWorkItemsCount();
+                    _workItemsQueue.Enqueue(workItem);
 
 					if ((1 == _workItemsQueue.Count) && 
 						(0 == _workItemsInStpQueue))
@@ -323,23 +380,23 @@ namespace Amib.Threading.Internal
 					}
 				}
 
-				// If the work items queue of the group is empty than quit
-				if (0 == _workItemsQueue.Count)
+				// If the WorkItemsGroup has no more attached work items then notify idle
+				if (0 == _attachedWorkItemsCount)
 				{
-					if (0 == _workItemsInStpQueue)
-					{
-						_stp.UnregisterWorkItemsGroup(this);
-                        IsIdle = true;
-                        _isIdleWaitHandle.Set();
-                        if (decrementWorkItemsInStpQueue && _onIdle != null && _onIdle.GetInvocationList().Length > 0)
-                        {
-                            _stp.QueueWorkItem(new WorkItemCallback(FireOnIdle));
-                        }
-					}
-					return;
+					_stp.UnregisterWorkItemsGroup(this);
+                    IsIdle = true;
+                    _isIdleWaitHandle.Set();
+#if _ASYNC_SUPPORTED
+                    _isIdleTCS?.TrySetResult(true);
+#endif
+
+                    if (decrementWorkItemsInStpQueue && _onIdle != null && _onIdle.GetInvocationList().Length > 0)
+                    {
+                        _stp.QueueWorkItem(new WorkItemCallback(FireOnIdle));
+                    }
 				}
 
-                if (!_isSuspended)
+                if (!_isSuspended && _workItemsQueue.Count > 0)
 				{
 					if (_workItemsInStpQueue < _concurrency)
 					{
@@ -360,8 +417,8 @@ namespace Amib.Threading.Internal
 			}
 		}
 
-		#endregion
+#endregion
     }
 
-	#endregion
+#endregion
 }

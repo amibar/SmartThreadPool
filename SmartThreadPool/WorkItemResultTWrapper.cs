@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Amib.Threading.Internal
 {
@@ -20,6 +21,13 @@ namespace Amib.Threading.Internal
         {
             return (TResult)_workItemResult.GetResult();
         }
+
+#if _ASYNC_SUPPORTED
+        public async Task<TResult> GetResultAsync()
+        {
+            return (TResult)await _workItemResult.GetResultAsync();
+        }
+#endif
 
         public TResult GetResult(int millisecondsTimeout, bool exitContext)
         {
@@ -106,6 +114,8 @@ namespace Amib.Threading.Internal
             get { return _workItemResult.Exception; }
         }
 
+        #endregion
+
         #region IInternalWorkItemResult Members
 
         public IWorkItemResult GetWorkItemResult()
@@ -119,10 +129,7 @@ namespace Amib.Threading.Internal
         }
 
         #endregion
-
-        #endregion
     }
 
     #endregion
-
 }

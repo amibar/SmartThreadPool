@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Amib.Threading
 {
@@ -122,6 +123,12 @@ namespace Amib.Threading
         /// </summary>
 		void WaitForIdle();
 
+#if _ASYNC_SUPPORTED
+        /// <summary>
+        /// Wait asynchronously for all work item to complete.
+        /// </summary>
+		Task WaitForIdleAsync();
+#endif
         /// <summary>
         /// Wait for all work item to complete, until timeout expired
         /// </summary>
@@ -336,13 +343,67 @@ namespace Amib.Threading
         IWorkItemResult<TResult> QueueWorkItem<T1, T2, T3, T4, TResult>(Func<T1, T2, T3, T4, TResult> func, T1 arg1, T2 arg2, T3 arg3, T4 arg4, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
 
         #endregion
+#if _ASYNC_SUPPORTED
+        #region RunTask(Func<Task<T>)  ==> async Task<T> DoWork(..)
+
+        Task RunTask(Action action, CancellationToken? cancellationToken = null,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        Task<TResult> RunTask<TResult>(Func<TResult> function, CancellationToken? cancellationToken = null,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        Task RunTask(Func<Task> function, CancellationToken? cancellationToken = null,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        Task<TResult> RunTask<TResult>(Func<Task<TResult>> function, CancellationToken? cancellationToken = null,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        #endregion
+#endif
+
+        #region QueueWorkItem(Func<Task, ...>)  ==> async Task DoWork(..)
+
+        IWorkItemResult QueueWorkItem(Func<Task> func, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        IWorkItemResult QueueWorkItem<T>(Func<T, Task> func, T arg,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        IWorkItemResult QueueWorkItem<T1, T2>(Func<T1, T2, Task> func, T1 arg1, T2 arg2,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        IWorkItemResult QueueWorkItem<T1, T2, T3>(Func<T1, T2, T3, Task> func, T1 arg1, T2 arg2, T3 arg3,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        IWorkItemResult QueueWorkItem<T1, T2, T3, T4>(Func<T1, T2, T3, T4, Task> func, T1 arg1, T2 arg2, T3 arg3, T4 arg4,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        #endregion
+
+        #region QueueWorkItem(Func<Task<T>, ...>)  ==> async Task<T> DoWork(..)
+
+        IWorkItemResult<TResult> QueueWorkItem<TResult>(Func<Task<TResult>> func,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        IWorkItemResult<TResult> QueueWorkItem<T, TResult>(Func<T, Task<TResult>> func, T arg,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        IWorkItemResult<TResult> QueueWorkItem<T1, T2, TResult>(Func<T1, T2, Task<TResult>> func, T1 arg1, T2 arg2,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        IWorkItemResult<TResult> QueueWorkItem<T1, T2, T3, TResult>(Func<T1, T2, T3, Task<TResult>> func, T1 arg1,
+            T2 arg2, T3 arg3, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        IWorkItemResult<TResult> QueueWorkItem<T1, T2, T3, T4, TResult>(Func<T1, T2, T3, T4, Task<TResult>> func,
+            T1 arg1, T2 arg2, T3 arg3, T4 arg4, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
+
+        #endregion
     }
 
-	#endregion
+    #endregion
 
-	#region CallToPostExecute enumerator
+    #region CallToPostExecute enumerator
 
-	[Flags]
+    [Flags]
 	public enum CallToPostExecute
 	{
         /// <summary>
@@ -409,12 +470,21 @@ namespace Amib.Threading
 		/// <returns>The result of the work item</returns>
         TResult GetResult();
 
-		/// <summary>
-		/// Get the result of the work item.
-		/// If the work item didn't run yet then the caller waits until timeout.
-		/// </summary>
-		/// <returns>The result of the work item</returns>
-		/// On timeout throws WorkItemTimeoutException
+#if _ASYNC_SUPPORTED
+        /// <summary>
+        /// Get the result of the work item.
+        /// If the work item didn't run yet then the caller waits.
+        /// </summary>
+        /// <returns>The result of the work item</returns>
+        Task<TResult> GetResultAsync();
+#endif
+
+        /// <summary>
+        /// Get the result of the work item.
+        /// If the work item didn't run yet then the caller waits until timeout.
+        /// </summary>
+        /// <returns>The result of the work item</returns>
+        /// On timeout throws WorkItemTimeoutException
         TResult GetResult(
 			int millisecondsTimeout,
 			bool exitContext);

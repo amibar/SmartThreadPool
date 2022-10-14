@@ -1,3 +1,5 @@
+using System;
+using System.Diagnostics;
 using System.Threading;
 using NUnit.Framework;
 using Amib.Threading;
@@ -14,6 +16,7 @@ namespace SmartThreadPoolTests
 		[Test]
 		public void TestSTA()
 		{
+			if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             CheckApartmentState(ApartmentState.STA);
 		}
 

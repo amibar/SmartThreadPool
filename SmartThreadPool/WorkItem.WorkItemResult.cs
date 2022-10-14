@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Amib.Threading.Internal
 {
@@ -9,7 +10,7 @@ namespace Amib.Threading.Internal
     {
         #region WorkItemResult class
 
-        private class WorkItemResult : IWorkItemResult, IInternalWorkItemResult, IInternalWaitableResult
+        private class WorkItemResult : IWorkItemResult, IInternalWaitableResult
         {
             /// <summary>
             /// A back reference to the work item
@@ -49,6 +50,12 @@ namespace Amib.Threading.Internal
                 return _workItem.GetResult(Timeout.Infinite, true, null);
             }
 
+#if _ASYNC_SUPPORTED
+            public Task<object> GetResultAsync()
+            {
+                return _workItem.GetResultAsync();
+            }
+#endif
             public object GetResult(int millisecondsTimeout, bool exitContext)
             {
                 return _workItem.GetResult(millisecondsTimeout, exitContext, null);
@@ -138,38 +145,9 @@ namespace Amib.Threading.Internal
                 get { return _workItem._exception; }
             }
 
-            #endregion
+#endregion
 
-            #region IInternalWorkItemResult Members
-
-            public event WorkItemStateCallback OnWorkItemStarted
-            {
-                add
-                {
-                    _workItem.OnWorkItemStarted += value;
-                }
-                remove
-                {
-                    _workItem.OnWorkItemStarted -= value;
-                }
-            }
-
-
-            public event WorkItemStateCallback OnWorkItemCompleted
-            {
-                add
-                {
-                    _workItem.OnWorkItemCompleted += value;
-                }
-                remove
-                {
-                    _workItem.OnWorkItemCompleted -= value;
-                }
-            }
-
-            #endregion
-
-            #region IInternalWorkItemResult Members
+#region IInternalWorkItemResult Members
 
             public IWorkItemResult GetWorkItemResult()
             {
@@ -181,10 +159,10 @@ namespace Amib.Threading.Internal
                 return new WorkItemResultTWrapper<TResult>(this);
             }
 
-            #endregion
+#endregion
         }
 
-        #endregion
+#endregion
 
     }
 }

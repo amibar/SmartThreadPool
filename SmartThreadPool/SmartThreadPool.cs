@@ -120,7 +120,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-
+using System.Threading.Tasks;
 using Amib.Threading.Internal;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
@@ -132,7 +132,7 @@ namespace Amib.Threading
 	/// </summary>
 	public partial class SmartThreadPool : WorkItemsGroupBase, IDisposable
 	{
-		#region Public Default Constants
+#region Public Default Constants
 
 		/// <summary>
 		/// Default minimum number of threads the thread pool contains. (0)
@@ -229,9 +229,9 @@ namespace Amib.Threading
         /// </summary>
         public const ApartmentState DefaultApartmentState = ApartmentState.Unknown;
 
-		#endregion
+#endregion
 
-        #region Member Variables
+#region Member Variables
 
 		/// <summary>
 		/// Dictionary of all the threads in the thread pool.
@@ -272,6 +272,13 @@ namespace Amib.Threading
 		/// </summary>
 		//private ManualResetEvent _isIdleWaitHandle = new ManualResetEvent(true);
 		private ManualResetEvent _isIdleWaitHandle = EventWaitHandleFactory.CreateManualResetEvent(true);
+
+#if _ASYNC_SUPPORTED
+        /// <summary>
+        /// A task completion source to indicate that the STP is idle, used in WaitForIdleAsync
+        /// </summary>
+        private TaskCompletionSource<bool> _isIdleTCS;
+#endif
 
 		/// <summary>
 		/// An event to signal all the threads to quit immediately.
@@ -338,9 +345,9 @@ namespace Amib.Threading
         /// </summary>
         private event ThreadTerminationHandler _onThreadTermination;
 
-        #endregion
+#endregion
 
-        #region Per thread properties
+#region Per thread properties
 
         /// <summary>
         /// A reference to the current work item a thread from the thread pool 
@@ -358,9 +365,9 @@ namespace Amib.Threading
             }
         }
 
-        #endregion
+#endregion
 
-        #region Construction and Finalization
+#region Construction and Finalization
 
         /// <summary>
 		/// Constructor
@@ -455,7 +462,7 @@ namespace Amib.Threading
             _isSuspended = _stpStartInfo.StartSuspended;
 
 #if !(NETFRAMEWORK)
-            if (null != _stpStartInfo.PerformanceCounterInstanceName)
+			if (null != _stpStartInfo.PerformanceCounterInstanceName)
 			{
                 throw new NotSupportedException("Performance counters are not implemented for Compact Framework/Silverlight/Mono, instead use StpStartInfo.EnableLocalPerformanceCounters");
             }
@@ -534,9 +541,9 @@ namespace Amib.Threading
 			}
 		}
 
-		#endregion
+#endregion
 
-		#region Thread Processing
+#region Thread Processing
 
 		/// <summary>
 		/// Waits on the queue for a work item, shutdown, or timeout.
@@ -559,18 +566,23 @@ namespace Amib.Threading
 		internal override void Enqueue(WorkItem workItem)
 		{
 			// Make sure the workItem is not null
-			Debug.Assert(null != workItem);
+            Debug.Assert(null != workItem);
 
-			IncrementWorkItemsCount();
+#if _ASYNC_SUPPORTED
+			if (!workItem.IsAsync)
+#endif
+            {
+                IncrementWorkItemsCount();
+            }
 
             workItem.CanceledSmartThreadPool = _canceledSmartThreadPool;
 			_workItemsQueue.EnqueueWorkItem(workItem);
 			workItem.WorkItemIsQueued();
 
 			// If all the threads are busy then try to create a new one
-			if (_currentWorkItemsCount > _workerThreads.Count) 
-			{
-				StartThreads(1);
+			if (_currentWorkItemsCount > _workerThreads.Count)
+            {
+                StartThreads(1);
 			}
 		}
 
@@ -596,7 +608,10 @@ namespace Amib.Threading
             {
                 IsIdle = true;
                 _isIdleWaitHandle.Set();
-            }
+#if _ASYNC_SUPPORTED
+                _isIdleTCS?.TrySetResult(true);
+#endif
+			}
 
             Interlocked.Increment(ref _workItemsProcessed);
 
@@ -606,10 +621,9 @@ namespace Amib.Threading
 			    _windowsPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
                 _localPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
             }
+        }
 
-		}
-
-		internal void RegisterWorkItemsGroup(IWorkItemsGroup workItemsGroup)
+        internal void RegisterWorkItemsGroup(IWorkItemsGroup workItemsGroup)
 		{
 			_workItemsGroups[workItemsGroup] = workItemsGroup;
 		}
@@ -670,8 +684,8 @@ namespace Amib.Threading
 
                     Thread workerThread =
                         _stpStartInfo.MaxStackSize.HasValue
-                        ? new Thread(ProcessQueuedItems, _stpStartInfo.MaxStackSize.Value)
-                        : new Thread(ProcessQueuedItems);
+                        ? new Thread(ProcessQueuedWorkItems, _stpStartInfo.MaxStackSize.Value)
+                        : new Thread(ProcessQueuedWorkItems);
 					// Configure the new thread and start it
 					workerThread.Name = "STP " + Name + " Thread #" + _threadCounter;
                     workerThread.IsBackground = _stpStartInfo.AreThreadsBackground;
@@ -697,7 +711,7 @@ namespace Amib.Threading
 		/// <summary>
 		/// A worker thread method that processes work items from the work items queue.
 		/// </summary>
-		private void ProcessQueuedItems()
+		private void ProcessQueuedWorkItems()
 		{
             // Keep the entry of the dictionary as thread's variable to avoid the synchronization locks
             // of the dictionary.
@@ -795,7 +809,7 @@ namespace Amib.Threading
 						// will return true, so the post execute can run.
 						if (!workItem.StartingWorkItem())
 						{
-							continue;
+                            continue;
 						}
 
 						// Execute the callback.  Make sure to accurately
@@ -807,10 +821,15 @@ namespace Amib.Threading
 						// Mark that the _inUseWorkerThreads incremented, so in the finally{}
 						// statement we will decrement it correctly.
 						bInUseWorkerThreadsWasIncremented = true;
-
-                        workItem.FireWorkItemStarted();
-
-						ExecuteWorkItem(workItem);
+#if _ASYNC_SUPPORTED
+						workItem.NotifyWorkItemExecutionStatusChanged(
+                            workItem.IsAsync 
+                                ? WorkItemExecutionStatus.Executing 
+                                : WorkItemExecutionStatus.Started);
+#else
+                        workItem.NotifyWorkItemExecutionStatusChanged(WorkItemExecutionStatus.Started);
+#endif
+                        ExecuteWorkItem(workItem);
 					}
 					catch(Exception ex)
 					{
@@ -819,9 +838,14 @@ namespace Amib.Threading
 					}
 					finally
 					{
-						workItem.DisposeOfState();
+                        var isCompleted = workItem.IsCompleted;
 
-						// Set the CurrentWorkItem to null, since we 
+                        if (isCompleted)
+                        {
+                            workItem.DisposeOfState();
+                        }
+
+                        // Set the CurrentWorkItem to null, since we 
 						// no longer run user's code.
                         CurrentThreadEntry.CurrentWorkItem = null;
 
@@ -835,20 +859,31 @@ namespace Amib.Threading
                             _localPCs.SampleThreads(_workerThreads.Count, inUseWorkerThreads);
 						}
 
-						// Notify that the work item has been completed.
-						// WorkItemsGroup may enqueue their next work item.
-						workItem.FireWorkItemCompleted();
+                        // Notify that the work item has released the execution thread and its 
+                        // WorkItemsGroup may enqueue the next work item to the STP.
 
-						// Decrement the number of work items here so the idle 
-						// ManualResetEvent won't fluctuate.
-						DecrementWorkItemsCount();
-					}
-				}
+#if _ASYNC_SUPPORTED
+                        workItem.NotifyWorkItemExecutionStatusChanged(
+                            isCompleted 
+                                ? WorkItemExecutionStatus.Completed 
+                                : WorkItemExecutionStatus.Awaiting);
+#else
+                        workItem.NotifyWorkItemExecutionStatusChanged(WorkItemExecutionStatus.Completed);
+#endif
+
+                        if (isCompleted)
+                        {
+                            // Decrement the number of work items here so the idle 
+                            // ManualResetEvent won't fluctuate.
+                            DecrementWorkItemsCount();
+                        }
+                    }
+                }
 			} 
 			catch(ThreadAbortException tae)
 			{
                 tae.GetHashCode();
-                // Handle the abort exception gracfully.
+                // Handle the abort exception gracefully.
 				Thread.ResetAbort();
             }
 			catch(Exception e)
@@ -877,10 +912,9 @@ namespace Amib.Threading
 			}
 		}
 
+#endregion
 
-		#endregion
-
-		#region Public Methods
+#region Public Methods
 
 		private void ValidateWaitForIdle()
 		{
@@ -1273,7 +1307,7 @@ namespace Amib.Threading
 			return workItemsGroup;
 		}
 
-        #region Fire Thread's Events
+#region Fire Thread's Events
 
         private void FireOnThreadInitialization()
         {
@@ -1315,7 +1349,7 @@ namespace Amib.Threading
             }
         }
 
-        #endregion
+#endregion
 
         /// <summary>
         /// This event is fired when a thread is created.
@@ -1373,9 +1407,9 @@ namespace Amib.Threading
 	        }
 	    }
 
-		#endregion
+#endregion
 
-		#region Properties
+#region Properties
 
 		/// <summary>
 		/// Get/Set the lower limit of threads in the pool.
@@ -1515,9 +1549,9 @@ namespace Amib.Threading
             get { return (ISTPPerformanceCountersReader)_localPCs; }
         }
 
-        #endregion
+#endregion
 
-        #region IDisposable Members
+#region IDisposable Members
 
         public void Dispose()
         {
@@ -1552,9 +1586,9 @@ namespace Amib.Threading
                 throw new ObjectDisposedException(GetType().ToString(), "The SmartThreadPool has been shutdown");
             }
         }
-        #endregion
+#endregion
 
-        #region WorkItemsGroupBase Overrides
+#region WorkItemsGroupBase Overrides
 
         /// <summary>
         /// Get/Set the maximum number of work items that execute cocurrency on the thread pool
@@ -1667,13 +1701,48 @@ namespace Amib.Threading
             return STPEventWaitHandle.WaitOne(_isIdleWaitHandle, millisecondsTimeout, false);
         }
 
-        /// <summary>
-        /// This event is fired when all work items are completed.
-        /// (When IsIdle changes to true)
-        /// This event only work on WorkItemsGroup. On SmartThreadPool
-        /// it throws the NotImplementedException.
-        /// </summary>
-        public override event WorkItemsGroupIdleHandler OnIdle
+#if _ASYNC_SUPPORTED
+        public override async Task WaitForIdleAsync()
+        {
+            ValidateWaitForIdle();
+
+			// If the STP is already idle then return a completed task
+            if (IsIdle)
+            {
+                return;
+            }
+
+			// Prepare a local tcs
+            TaskCompletionSource<bool> isIdleTCS = null;
+
+			lock (_workerThreads.SyncRoot)
+            {
+				// If the _isIdleTCS was not initialized or was already set then create a new one
+				if (_isIdleTCS == null || _isIdleTCS.Task.IsCompleted)
+                {
+                    _isIdleTCS = new TaskCompletionSource<bool>();
+				}
+
+				// Store the local tcs
+                isIdleTCS = _isIdleTCS;
+            }
+
+			// If in the meantime the STP become idle then set the tcs
+			if (IsIdle)
+            {
+                isIdleTCS.TrySetResult(true);
+            }
+
+            await isIdleTCS.Task;
+        }
+#endif
+		/// <summary>
+		/// This event is fired when all work items are completed.
+		/// (When IsIdle changes to true)
+		/// This event only work on WorkItemsGroup. On SmartThreadPool
+		/// it throws the NotImplementedException.
+		/// </summary>
+		public override event WorkItemsGroupIdleHandler OnIdle
         {
             add
             {
@@ -1687,7 +1756,7 @@ namespace Amib.Threading
             }
         }
 
-	    internal override void PreQueueWorkItem()
+        internal override void PreQueueWorkItem()
         {
             ValidateNotDisposed();
 
@@ -1695,9 +1764,9 @@ namespace Amib.Threading
 	        ValidateQueueIsWithinLimits();
         }
 
-        #endregion
+#endregion
 
-        #region Join, Choice, Pipe, etc.
+#region Join, Choice, Pipe, etc.
 
         /// <summary>
         /// Executes all actions in parallel.
@@ -1798,7 +1867,8 @@ namespace Amib.Threading
         {
             Pipe(pipeState, (IEnumerable<Action<T>>)actions);
         }
-        #endregion
+
+#endregion
 	}
-	#endregion
+#endregion
 }

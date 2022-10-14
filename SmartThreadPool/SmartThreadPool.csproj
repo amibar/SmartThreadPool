@@ -26,6 +26,10 @@
 		<Reference Include="System.Web" />
 	</ItemGroup>
 
+	<PropertyGroup Condition=" '$(TargetFramework)' != 'net40' ">
+		<DefineConstants>$(DefineConstants);_ASYNC_SUPPORTED</DefineConstants>
+	</PropertyGroup>
+
 	<ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
 			<_Parameter1>STPTests</_Parameter1>

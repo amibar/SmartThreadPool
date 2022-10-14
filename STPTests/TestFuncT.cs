@@ -26,7 +26,18 @@ namespace SmartThreadPoolTests
         }
 
         [Test]
-        public void FuncT0()
+        public void FuncInt1()
+        {
+            IWorkItemResult<int> wir =
+                _stp.QueueWorkItem(new Func<int, int>(Increment), 1);
+
+            int y = wir.GetResult();
+
+            Assert.AreEqual(y, 2);
+        }
+
+        [Test]
+        public void FuncInt2()
         {
             IWorkItemResult<int> wir = _stp.QueueWorkItem(new Func<int>(MaxInt));
 
@@ -36,7 +47,7 @@ namespace SmartThreadPoolTests
         }
 
         [Test]
-        public void FuncT1()
+        public void FuncBool()
         {
             IWorkItemResult<bool> wir = _stp.QueueWorkItem(new Func<bool, bool>(Not), true);
 
@@ -46,7 +57,7 @@ namespace SmartThreadPoolTests
         }
 
         [Test]
-        public void FuncT2()
+        public void FuncString1()
         {
             IWorkItemResult<string> wir = _stp.QueueWorkItem(new Func<string, string, string>(string.Concat), "ABC", "xyz");
 
@@ -56,7 +67,7 @@ namespace SmartThreadPoolTests
         }
 
         [Test]
-        public void FuncT3()
+        public void FuncString2()
         {
             IWorkItemResult<string> wir = _stp.QueueWorkItem(new Func<string, int, int, string>(Substring), "ABCDEF", 1, 2);
 
@@ -66,15 +77,20 @@ namespace SmartThreadPoolTests
         }
 
         [Test]
-        public void FuncT4()
+        public void FuncIntArray()
         {
             int[] numbers = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
-            IWorkItemResult<int[]> wir = _stp.QueueWorkItem(new Func<int[], int, int, int, int[]>(Subarray), numbers, 1, 2, 3);
+            IWorkItemResult<int[]> wir = _stp.QueueWorkItem(new Func<int[], int, int, int, int[]>(SubArray), numbers, 1, 2, 3);
 
             int[] result = wir.Result;
 
             Assert.AreEqual(result, new int[] { 2, 3, 2, 3, 2, 3, });
+        }
+
+        private int Increment(int x)
+        {
+            return x + 1;
         }
 
         private int MaxInt()
@@ -92,7 +108,7 @@ namespace SmartThreadPoolTests
             return s.Substring(startIndex, length);
         }
 
-        private int[] Subarray(int[] numbers, int startIndex, int length, int repeat)
+        private int[] SubArray(int[] numbers, int startIndex, int length, int repeat)
         {
             int[] result = new int[length * repeat];
             for (int i = 0; i < repeat; i++)

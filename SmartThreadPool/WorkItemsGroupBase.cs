@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Amib.Threading.Internal
 {
@@ -13,7 +14,7 @@ namespace Amib.Threading.Internal
         /// </summary>
         private string _name = "WorkItemsGroupBase";
 
-        public WorkItemsGroupBase()
+        protected WorkItemsGroupBase()
         {
             IsIdle = true;
         }
@@ -51,7 +52,11 @@ namespace Amib.Threading.Internal
         internal abstract void Enqueue(WorkItem workItem);
         internal virtual void PreQueueWorkItem() { }
 
-        #endregion
+#if _ASYNC_SUPPORTED
+        public abstract Task WaitForIdleAsync();
+#endif
+
+#endregion
 
         #region Common Base Methods
 
@@ -280,82 +285,317 @@ namespace Amib.Threading.Internal
 
         public IWorkItemResult QueueWorkItem(Action action, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
         {
-            PreQueueWorkItem ();
-            WorkItem workItem = WorkItemFactory.CreateWorkItem (
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
                 this,
                 WIGStartInfo,
                 delegate
                 {
-                    action.Invoke ();
+                    action.Invoke();
                     return null;
-                }, priority);
-            Enqueue (workItem);
-            return workItem.GetWorkItemResult ();
+                }, 
+                priority);
+            Enqueue(workItem);
+            return workItem.GetWorkItemResult();
         }
 
         public IWorkItemResult QueueWorkItem<T>(Action<T> action, T arg, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
         {
-            PreQueueWorkItem ();
-            WorkItem workItem = WorkItemFactory.CreateWorkItem (
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
                 this,
                 WIGStartInfo,
                 state =>
                 {
-                    action.Invoke (arg);
+                    action.Invoke(arg);
                     return null;
                 },
-                WIGStartInfo.FillStateWithArgs ? new object[] { arg } : null, priority);
-            Enqueue (workItem);
-            return workItem.GetWorkItemResult ();
+                WIGStartInfo.FillStateWithArgs ? new object[] { arg } : null, 
+                priority);
+            Enqueue(workItem);
+            return workItem.GetWorkItemResult();
         }
 
         public IWorkItemResult QueueWorkItem<T1, T2>(Action<T1, T2> action, T1 arg1, T2 arg2, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
         {
-            PreQueueWorkItem ();
-            WorkItem workItem = WorkItemFactory.CreateWorkItem (
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
                 this,
                 WIGStartInfo,
                 state =>
                 {
-                    action.Invoke (arg1, arg2);
+                    action.Invoke(arg1, arg2);
                     return null;
                 },
                 WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2 } : null, priority);
-            Enqueue (workItem);
-            return workItem.GetWorkItemResult ();
+            Enqueue(workItem);
+            return workItem.GetWorkItemResult();
         }
 
         public IWorkItemResult QueueWorkItem<T1, T2, T3>(Action<T1, T2, T3> action, T1 arg1, T2 arg2, T3 arg3, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
         {
-            PreQueueWorkItem ();
-            WorkItem workItem = WorkItemFactory.CreateWorkItem (
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
                 this,
                 WIGStartInfo,
                 state =>
                 {
-                    action.Invoke (arg1, arg2, arg3);
+                    action.Invoke(arg1, arg2, arg3);
                     return null;
                 },
-                WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2, arg3 } : null, priority);
-            Enqueue (workItem);
-            return workItem.GetWorkItemResult ();
+                WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2, arg3 } : null, 
+                priority);
+            Enqueue(workItem);
+            return workItem.GetWorkItemResult();
         }
 
-        public IWorkItemResult QueueWorkItem<T1, T2, T3, T4> (
+        public IWorkItemResult QueueWorkItem<T1, T2, T3, T4>(
             Action<T1, T2, T3, T4> action, T1 arg1, T2 arg2, T3 arg3, T4 arg4, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
         {
-            PreQueueWorkItem ();
-            WorkItem workItem = WorkItemFactory.CreateWorkItem (
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
                            this,
                            WIGStartInfo,
                            state =>
                            {
-                               action.Invoke (arg1, arg2, arg3, arg4);
+                               action.Invoke(arg1, arg2, arg3, arg4);
                                return null;
                            },
-                           WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2, arg3, arg4 } : null, priority);
-            Enqueue (workItem);
-            return workItem.GetWorkItemResult ();
+                           WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2, arg3, arg4 } : null, 
+                           priority);
+            Enqueue(workItem);
+            return workItem.GetWorkItemResult();
+        }
+
+        #endregion
+
+#if _ASYNC_SUPPORTED
+        #region RunTask(Func<Task<T>)  ==> async Task<T> DoWork(..)
+
+        public Task RunTask(
+            Action action, 
+            CancellationToken? cancellationToken = null,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            if (cancellationToken?.IsCancellationRequested ?? false)
+                return Task.FromCanceled(cancellationToken.Value);
+
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                _ =>
+                {
+                     action();
+                     return null;
+                },
+                priority);
+            Enqueue(workItem);
+
+            var wir = workItem.GetWorkItemResult();
+            cancellationToken?.Register(() => wir.Cancel());
+
+            return wir.GetResultAsync();
+        }
+
+        public Task<TResult> RunTask<TResult>(
+            Func<TResult> func, 
+            CancellationToken? cancellationToken = null,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            if (cancellationToken?.IsCancellationRequested ?? false)
+                return Task.FromCanceled<TResult>(cancellationToken.Value);
+
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                _ => func(),
+                priority);
+            Enqueue(workItem);
+
+            var wir = workItem.GetWorkItemResult().GetWorkItemResultT<TResult>();
+            cancellationToken?.Register(() => wir.Cancel());
+
+            return wir.GetResultAsync();
+        }
+
+        public Task RunTask(
+            Func<Task> func, 
+            CancellationToken? cancellationToken = null,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            if (cancellationToken?.IsCancellationRequested ?? false)
+                return Task.FromCanceled(cancellationToken.Value);
+
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                _ => func(),
+                priority);
+            Enqueue(workItem);
+
+            var wir = workItem.GetWorkItemResult();
+            cancellationToken?.Register(() => wir.Cancel());
+
+            return wir.GetResultAsync();
+        }
+
+        public Task<TResult> RunTask<TResult>(
+            Func<Task<TResult>> func,
+            CancellationToken? cancellationToken = null,
+            WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            if (cancellationToken?.IsCancellationRequested ?? false)
+                return Task.FromCanceled<TResult>(cancellationToken.Value);
+
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                _ => func(),
+                priority);
+            Enqueue(workItem);
+
+            var wir = workItem.GetWorkItemResult().GetWorkItemResultT<TResult>();
+            cancellationToken?.Register(() => wir.Cancel());
+
+            return wir.GetResultAsync();
+        }
+
+        #endregion
+
+#endif
+
+        #region QueueWorkItem(Func<Task, ...>)  ==> async Task DoWork(..)
+
+        public IWorkItemResult QueueWorkItem(Func<Task> func, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                state => func(),
+                priority);
+            Enqueue(workItem);
+            return workItem.GetWorkItemResult();
+        }
+
+        public IWorkItemResult QueueWorkItem<T>(Func<T, Task> func, T arg, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                state => func(arg),
+                WIGStartInfo.FillStateWithArgs ? new object[] { arg } : null,
+                priority);
+            Enqueue(workItem);
+            return workItem.GetWorkItemResult();
+        }
+
+        public IWorkItemResult QueueWorkItem<T1, T2>(Func<T1, T2, Task> func, T1 arg1, T2 arg2, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                state => func(arg1, arg2),
+                WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2 } : null,
+                priority);
+            Enqueue(workItem);
+            return workItem.GetWorkItemResult();
+        }
+
+        public IWorkItemResult QueueWorkItem<T1, T2, T3>(Func<T1, T2, T3, Task> func, T1 arg1, T2 arg2, T3 arg3, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                state => func(arg1, arg2, arg3),
+                WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2, arg3 } : null,
+                priority);
+            Enqueue(workItem);
+            return workItem.GetWorkItemResult();
+        }
+
+        public IWorkItemResult QueueWorkItem<T1, T2, T3, T4>(Func<T1, T2, T3, T4, Task> func, T1 arg1, T2 arg2, T3 arg3, T4 arg4, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                state => func(arg1, arg2, arg3, arg4),
+                WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2, arg3, arg4 } : null,
+                priority);
+            Enqueue(workItem);
+            return workItem.GetWorkItemResult();
+        }
+
+        #endregion
+
+        #region QueueWorkItem(Func<Task<T>, ...>)  ==> async Task<T> DoWork(..)
+
+        public IWorkItemResult<TResult> QueueWorkItem<TResult>(Func<Task<TResult>> func, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                state => func(),
+                priority);
+            Enqueue(workItem);
+            return new WorkItemResultTWrapper<TResult>(workItem.GetWorkItemResult());
+        }
+
+        public IWorkItemResult<TResult> QueueWorkItem<T, TResult>(Func<T, Task<TResult>> func, T arg, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                state => func(arg),
+                priority);
+            Enqueue(workItem);
+            return new WorkItemResultTWrapper<TResult>(workItem.GetWorkItemResult());
+        }
+
+        public IWorkItemResult<TResult> QueueWorkItem<T1, T2, TResult>(Func<T1, T2, Task<TResult>> func, T1 arg1, T2 arg2, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                state => func(arg1, arg2),
+                priority);
+            Enqueue(workItem);
+            return new WorkItemResultTWrapper<TResult>(workItem.GetWorkItemResult());
+        }
+
+        public IWorkItemResult<TResult> QueueWorkItem<T1, T2, T3, TResult>(Func<T1, T2, T3, Task<TResult>> func, T1 arg1, T2 arg2, T3 arg3, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                state => func(arg1, arg2, arg3),
+                priority);
+            Enqueue(workItem);
+            return new WorkItemResultTWrapper<TResult>(workItem.GetWorkItemResult());
+        }
+
+        public IWorkItemResult<TResult> QueueWorkItem<T1, T2, T3, T4, TResult>(Func<T1, T2, T3, T4, Task<TResult>> func, T1 arg1, T2 arg2, T3 arg3, T4 arg4, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)
+        {
+            PreQueueWorkItem();
+            WorkItem workItem = WorkItemFactory.CreateWorkItem(
+                this,
+                WIGStartInfo,
+                state => func(arg1, arg2, arg3, arg4),
+                priority);
+            Enqueue(workItem);
+            return new WorkItemResultTWrapper<TResult>(workItem.GetWorkItemResult());
         }
 
         #endregion
@@ -400,7 +640,7 @@ namespace Amib.Threading.Internal
                             WIGStartInfo,
                             state =>
                             {
-                                return func.Invoke(arg1, arg2);
+                                return func(arg1, arg2);
                             },
                            WIGStartInfo.FillStateWithArgs ? new object[] { arg1, arg2 } : null,
                            priority);
