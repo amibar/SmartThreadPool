@@ -586,7 +586,10 @@ namespace Amib.Threading
 			}
 		}
 
-		private void IncrementWorkItemsCount()
+        internal override void Requeue(WorkItem workItem) 
+            => Enqueue(workItem);
+
+        private void IncrementWorkItemsCount()
 		{
 			_windowsPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
             _localPCs.SampleWorkItems(_workItemsQueue.Count, _workItemsProcessed);
@@ -1702,17 +1705,22 @@ namespace Amib.Threading
         }
 
 #if _ASYNC_SUPPORTED
-        public override async Task WaitForIdleAsync()
+        public override async Task WaitForIdleAsync(CancellationToken? cancellationToken = null)
         {
-            ValidateWaitForIdle();
-
-			// If the STP is already idle then return a completed task
+            // If the STP is already idle then return a completed task
             if (IsIdle)
             {
                 return;
             }
 
-			// Prepare a local tcs
+            if (cancellationToken?.IsCancellationRequested ?? false)
+            {
+                // Throw task cancel exception
+                await Task.FromCanceled(cancellationToken.Value);
+				return;
+            }
+
+            // Prepare a local tcs
             TaskCompletionSource<bool> isIdleTCS = null;
 
 			lock (_workerThreads.SyncRoot)
@@ -1733,7 +1741,21 @@ namespace Amib.Threading
                 isIdleTCS.TrySetResult(true);
             }
 
-            await isIdleTCS.Task;
+            if (!cancellationToken.HasValue)
+            {
+                await isIdleTCS.Task;
+                return;
+            }
+
+            TaskCompletionSource<bool> cancelled = new TaskCompletionSource<bool>();
+            cancellationToken.Value.Register(() => cancelled.TrySetCanceled());
+
+            await Task.WhenAny(isIdleTCS.Task, cancelled.Task);
+
+            if (isIdleTCS.Task.IsCompleted)
+                return;
+
+            await Task.FromCanceled(cancellationToken.Value);
         }
 #endif
 		/// <summary>

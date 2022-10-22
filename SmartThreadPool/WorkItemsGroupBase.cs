@@ -50,13 +50,20 @@ namespace Amib.Threading.Internal
         public abstract event WorkItemsGroupIdleHandler OnIdle;
 
         internal abstract void Enqueue(WorkItem workItem);
+        internal abstract void Requeue(WorkItem workItem);
         internal virtual void PreQueueWorkItem() { }
 
 #if _ASYNC_SUPPORTED
-        public abstract Task WaitForIdleAsync();
+        public abstract Task WaitForIdleAsync(CancellationToken? cancellationToken = null);
+
+        public Task WaitForIdleAsync(TimeSpan timeout) =>
+            WaitForIdleAsync(new CancellationTokenSource(timeout).Token);
+
+        public Task WaitForIdleAsync(int millisecondsTimeout) =>
+            WaitForIdleAsync(new CancellationTokenSource(millisecondsTimeout).Token);
 #endif
 
-#endregion
+        #endregion
 
         #region Common Base Methods
 
@@ -465,9 +472,7 @@ namespace Amib.Threading.Internal
         }
 
         #endregion
-
 #endif
-
         #region QueueWorkItem(Func<Task, ...>)  ==> async Task DoWork(..)
 
         public IWorkItemResult QueueWorkItem(Func<Task> func, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority)

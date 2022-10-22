@@ -127,7 +127,17 @@ namespace Amib.Threading
         /// <summary>
         /// Wait asynchronously for all work item to complete.
         /// </summary>
-		Task WaitForIdleAsync();
+		Task WaitForIdleAsync(CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        /// Wait asynchronously for all work item to complete.
+        /// </summary>
+		Task WaitForIdleAsync(TimeSpan timeout);
+
+        /// <summary>
+        /// Wait asynchronously for all work item to complete.
+        /// </summary>
+		Task WaitForIdleAsync(int millisecondsTimeout);
 #endif
         /// <summary>
         /// Wait for all work item to complete, until timeout expired

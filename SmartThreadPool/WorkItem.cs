@@ -248,7 +248,9 @@ namespace Amib.Threading.Internal
                     {
                         // We got the call back so re-queue the work item
                         _callback = callback;
-                        ((WorkItemsGroupBase)_workItemsGroup).Enqueue(this);
+
+                        // The Requeue queue the work item directly to the STP
+                        ((WorkItemsGroupBase)_workItemsGroup).Requeue(this);
                     }
                 }
             }

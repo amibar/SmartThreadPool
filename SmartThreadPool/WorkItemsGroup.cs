@@ -216,7 +216,7 @@ namespace Amib.Threading.Internal
         }
 
 #if _ASYNC_SUPPORTED
-        public override async Task WaitForIdleAsync()
+        public override async Task WaitForIdleAsync(CancellationToken? cancellationToken = null)
         {
             SmartThreadPool.ValidateWorkItemsGroupWaitForIdle(this);
 
@@ -226,7 +226,14 @@ namespace Amib.Threading.Internal
                 return;
             }
 
-			// Prepare a local tcs
+            if (cancellationToken?.IsCancellationRequested ?? false)
+            {
+                // Throw task cancel exception
+                await Task.FromCanceled(cancellationToken.Value);
+                return;
+            }
+
+            // Prepare a local tcs
             TaskCompletionSource<bool> isIdleTCS = null;
 
             lock (_lock)
@@ -247,10 +254,24 @@ namespace Amib.Threading.Internal
                 isIdleTCS.TrySetResult(true);
             }
 
-            await isIdleTCS.Task;
+            if (!cancellationToken.HasValue)
+            {
+                await isIdleTCS.Task;
+                return;
+            }
+
+            TaskCompletionSource<bool> cancelled = new TaskCompletionSource<bool>();
+            cancellationToken.Value.Register(() => cancelled.TrySetCanceled());
+
+            await Task.WhenAny(isIdleTCS.Task, cancelled.Task);
+
+            if (isIdleTCS.Task.IsCompleted)
+                return;
+
+            await Task.FromCanceled(cancellationToken.Value);
         }
 #endif
-		public override event WorkItemsGroupIdleHandler OnIdle
+        public override event WorkItemsGroupIdleHandler OnIdle
 		{
 			add { _onIdle += value; }
 			remove { _onIdle -= value; }
@@ -262,22 +283,17 @@ namespace Amib.Threading.Internal
 
         private void OnWorkItemExecutionStatusChanged(WorkItem workItem, WorkItemExecutionStatus status)
         {
-            if (status.HasFlag(WorkItemExecutionStatus.Executing))
+            if (status == WorkItemExecutionStatus.Started)
             {
                 lock (_lock)
                 {
                     ++_workItemsExecutingInStp;
                 }
 			}
-			else
+			else if (status == WorkItemExecutionStatus.Completed)
             {
-                var workItemCompleted = status == WorkItemExecutionStatus.Completed;
-                if (workItemCompleted)
-                {
-                    workItem.OnWorkItemExecutionStatusChanged = null;
-                }
-
-				EnqueueToSTPNextWorkItem(null, true, workItemCompleted);
+                workItem.OnWorkItemExecutionStatusChanged = null;
+                EnqueueToSTPNextWorkItem(null, true, true);
             }
         }
 
@@ -329,7 +345,12 @@ namespace Amib.Threading.Internal
             EnqueueToSTPNextWorkItem(workItem, false, false);
         }
 
-		private void EnqueueToSTPNextWorkItem(WorkItem workItem, bool decrementWorkItemsInStpQueue, bool workItemCompleted)
+        internal override void Requeue(WorkItem workItem)
+        {
+            _stp.Enqueue(workItem);
+        }
+
+        private void EnqueueToSTPNextWorkItem(WorkItem workItem, bool decrementWorkItemsInStpQueue, bool workItemCompleted)
 		{
 			lock(_lock)
 			{

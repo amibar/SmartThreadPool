@@ -116,7 +116,7 @@ namespace AsyncAwait
                 wirCheckers[i] = wig.QueueWorkItem(DoCheck, i, wirAdders[i].GetResultAsync());
             }
 
-            await wig.WaitForIdleAsync();
+            await wig.WaitForIdleAsync(5_000);
 
             for (int i = 0; i < wirCheckers.Length; i++)
             {
