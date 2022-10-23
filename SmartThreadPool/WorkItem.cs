@@ -508,6 +508,11 @@ namespace Amib.Threading.Internal
                     _nextCallback = null;
 #endif
                     result = _callback(_state);
+
+                    if (result is Task t && t.IsFaulted)
+                    {
+                        exception = t.Exception;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -568,7 +573,7 @@ namespace Amib.Threading.Internal
                     // If the task is completed then signal it
                     if (_task.IsCompleted)
                     {
-                        var taskResult = ExtractTaskResult(_task);
+                        var taskResult = !_task.IsFaulted ? ExtractTaskResult(_task) : null;
                         SetResult(taskResult, _task.Exception?.Flatten());
                     }
                     // Otherwise we are in await
@@ -1105,7 +1110,7 @@ namespace Amib.Threading.Internal
                 }
                 else
                 {
-                    _tcsResult.SetResult(_result);
+                    _tcsResult.TrySetResult(_result);
                 }
             }
 

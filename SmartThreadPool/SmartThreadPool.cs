@@ -1705,19 +1705,18 @@ namespace Amib.Threading
         }
 
 #if _ASYNC_SUPPORTED
-        public override async Task WaitForIdleAsync(CancellationToken? cancellationToken = null)
+        public override Task WaitForIdleAsync(CancellationToken? cancellationToken = null)
         {
             // If the STP is already idle then return a completed task
             if (IsIdle)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (cancellationToken?.IsCancellationRequested ?? false)
             {
                 // Throw task cancel exception
-                await Task.FromCanceled(cancellationToken.Value);
-				return;
+                return Task.FromCanceled(cancellationToken.Value);
             }
 
             // Prepare a local tcs
@@ -1743,19 +1742,13 @@ namespace Amib.Threading
 
             if (!cancellationToken.HasValue)
             {
-                await isIdleTCS.Task;
-                return;
+                return isIdleTCS.Task;
             }
 
             TaskCompletionSource<bool> cancelled = new TaskCompletionSource<bool>();
             cancellationToken.Value.Register(() => cancelled.TrySetCanceled());
 
-            await Task.WhenAny(isIdleTCS.Task, cancelled.Task);
-
-            if (isIdleTCS.Task.IsCompleted)
-                return;
-
-            await Task.FromCanceled(cancellationToken.Value);
+            return Task.WhenAny(isIdleTCS.Task, cancelled.Task);
         }
 #endif
 		/// <summary>
