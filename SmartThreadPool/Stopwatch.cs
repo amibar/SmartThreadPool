@@ -4,7 +4,7 @@ namespace Amib.Threading.Internal
 {
     /// <summary>
     /// Stopwatch class
-    /// Used with WindowsCE and Silverlight which don't have Stopwatch
+    /// Used with WindowsCE and Silverlight which don't have Stopwatch.
     /// </summary>
     internal class Stopwatch
     {

@@ -6,7 +6,7 @@ namespace Amib.Threading
     #region Exceptions
 
     /// <summary>
-    /// Represents an exception in case IWorkItemResult.GetResult has been canceled
+    /// Represents an exception in case IWorkItemResult.GetResult has been canceled.
     /// </summary>
     public sealed partial class WorkItemCancelException : Exception
     {
@@ -26,7 +26,7 @@ namespace Amib.Threading
     }
 
     /// <summary>
-    /// Represents an exception in case IWorkItemResult.GetResult has been timed out
+    /// Represents an exception in case IWorkItemResult.GetResult has been timed out.
     /// </summary>
     public sealed partial class WorkItemTimeoutException : Exception
     {
@@ -46,7 +46,7 @@ namespace Amib.Threading
     }
 
     /// <summary>
-    /// Represents an exception in case IWorkItemResult.GetResult has been timed out
+    /// Represents an exception in case IWorkItemResult.GetResult has been timed out.
     /// </summary>
     public sealed partial class WorkItemResultException : Exception
     {
@@ -68,7 +68,7 @@ namespace Amib.Threading
     
     /// <summary>
     /// Represents an exception in case the STP queue is full and work item cannot be queued.
-    /// Relevant when the STP has a queue size limit
+    /// Relevant when the STP has a queue size limit.
     /// </summary>
     public sealed partial class QueueRejectedException : Exception
     {
@@ -88,7 +88,7 @@ namespace Amib.Threading
     }
 
     /// <summary>
-    /// Represents an exception in case IWorkItemResult.GetResult has been canceled
+    /// Represents an exception in case IWorkItemResult.GetResult has been canceled.
     /// </summary>
     [Serializable]
     public sealed partial class WorkItemCancelException
@@ -100,7 +100,7 @@ namespace Amib.Threading
     }
 
     /// <summary>
-    /// Represents an exception in case IWorkItemResult.GetResult has been timed out
+    /// Represents an exception in case IWorkItemResult.GetResult has been timed out.
     /// </summary>
     [Serializable]
     public sealed partial class WorkItemTimeoutException
@@ -112,7 +112,7 @@ namespace Amib.Threading
     }
 
     /// <summary>
-    /// Represents an exception in case IWorkItemResult.GetResult has been timed out
+    /// Represents an exception in case IWorkItemResult.GetResult has been timed out.
     /// </summary>
     [Serializable]
     public sealed partial class WorkItemResultException
@@ -124,7 +124,7 @@ namespace Amib.Threading
     }
 
     /// <summary>
-    /// Represents an exception in case IWorkItemResult.GetResult has been timed out
+    /// Represents an exception in case IWorkItemResult.GetResult has been timed out.
     /// </summary>
     [Serializable]
     public sealed partial class QueueRejectedException

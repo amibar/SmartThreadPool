@@ -19,17 +19,17 @@ namespace Amib.Threading.Internal
 		private readonly WaiterEntry _headWaiterEntry = new WaiterEntry();
 
 		/// <summary>
-		/// Waiters count
+		/// Waiters count.
 		/// </summary>
 		private int _waitersCount = 0;
 
 		/// <summary>
-		/// Work items queue
+		/// Work items queue.
 		/// </summary>
 		private readonly PriorityQueue _workItems = new PriorityQueue();
 
         /// <summary>
-        /// Indicate that work items are allowed to be queued
+        /// Indicate that work items are allowed to be queued.
         /// </summary>
         private bool _isWorkItemsQueueActive = true;
 
@@ -61,7 +61,7 @@ namespace Amib.Threading.Internal
 		#region Public properties
 
         /// <summary>
-        /// Returns the current number of work items in the queue
+        /// Returns the current number of work items in the queue.
         /// </summary>
 		public int Count
 		{
@@ -72,7 +72,7 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Returns the current number of waiters
+		/// Returns the current number of waiters.
 		/// </summary>
 		public int WaitersCount
 		{
@@ -299,7 +299,7 @@ namespace Amib.Threading.Internal
 		#region Private methods
 
 		/// <summary>
-		/// Returns the WaiterEntry of the current thread
+		/// Returns the WaiterEntry of the current thread.
 		/// </summary>
 		/// <returns></returns>
 		/// In order to avoid creation and destruction of WaiterEntry
@@ -317,9 +317,9 @@ namespace Amib.Threading.Internal
 		#region Waiters stack methods
 
 		/// <summary>
-		/// Push a new waiter into the waiter's stack
+		/// Push a new waiter into the waiter's stack.
 		/// </summary>
-		/// <param name="newWaiterEntry">A waiter to put in the stack</param>
+		/// <param name="newWaiterEntry">A waiter to put in the stack.</param>
 		public void PushWaiter(WaiterEntry newWaiterEntry)
 		{
 			// Remove the waiter if it is already in the stack and 
@@ -352,9 +352,9 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Pop a waiter from the waiter's stack
+		/// Pop a waiter from the waiter's stack.
 		/// </summary>
-		/// <returns>Returns the first waiter in the stack</returns>
+		/// <returns>Returns the first waiter in the stack.</returns>
 		private WaiterEntry PopWaiter()
 		{
 			// Store the current stack head
@@ -379,10 +379,10 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Remove a waiter from the stack
+		/// Remove a waiter from the stack.
 		/// </summary>
-		/// <param name="waiterEntry">A waiter entry to remove</param>
-		/// <param name="popDecrement">If true the waiter count is always decremented</param>
+		/// <param name="waiterEntry">A waiter entry to remove.</param>
+		/// <param name="popDecrement">If true the waiter count is always decremented.</param>
 		private void RemoveWaiter(WaiterEntry waiterEntry, bool popDecrement)
 		{
 			// Store the prev entry in the list

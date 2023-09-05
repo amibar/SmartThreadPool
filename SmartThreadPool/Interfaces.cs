@@ -65,12 +65,12 @@ namespace Amib.Threading
 
 	/// <summary>
 	/// IWorkItemsGroup interface
-    /// Created by SmartThreadPool.CreateWorkItemsGroup()
+    /// Created by SmartThreadPool.CreateWorkItemsGroup().
 	/// </summary>
 	public interface IWorkItemsGroup
 	{
 		/// <summary>
-		/// Get/Set the name of the WorkItemsGroup
+		/// Get/Set the name of the WorkItemsGroup.
 		/// </summary>
 		string Name { get; set; }
 
@@ -85,7 +85,7 @@ namespace Amib.Threading
         int WaitingCallbacks { get; }
 
         /// <summary>
-        /// Get the number of currently executing work items
+        /// Get the number of currently executing work items.
         /// </summary>
         int InUseThreads { get; }
 
@@ -96,25 +96,25 @@ namespace Amib.Threading
         object[] GetStates();
 
         /// <summary>
-        /// Get the WorkItemsGroup start information
+        /// Get the WorkItemsGroup start information.
         /// </summary>
         WIGStartInfo WIGStartInfo { get; }
 
         /// <summary>
-        /// Starts to execute work items
+        /// Starts to execute work items.
         /// </summary>
         void Start();
 
         /// <summary>
         /// Cancel all the work items.
-        /// Same as Cancel(false)
+        /// Same as Cancel(false).
         /// </summary>
         void Cancel();
 
         /// <summary>
-        /// Cancel all work items using thread abortion
+        /// Cancel all work items using thread abortion.
         /// </summary>
-        /// <param name="abortExecution">True to stop work items by raising ThreadAbortException</param>
+        /// <param name="abortExecution">True to stop work items by raising ThreadAbortException.</param>
         void Cancel(bool abortExecution);
 
         /// <summary>
@@ -123,16 +123,16 @@ namespace Amib.Threading
 		void WaitForIdle();
 
         /// <summary>
-        /// Wait for all work item to complete, until timeout expired
+        /// Wait for all work item to complete, until timeout expired.
         /// </summary>
-        /// <param name="timeout">How long to wait for the work items to complete</param>
+        /// <param name="timeout">How long to wait for the work items to complete.</param>
         /// <returns>Returns true if work items completed within the timeout, otherwise false.</returns>
 		bool WaitForIdle(TimeSpan timeout);
 
         /// <summary>
-        /// Wait for all work item to complete, until timeout expired
+        /// Wait for all work item to complete, until timeout expired.
         /// </summary>
-        /// <param name="millisecondsTimeout">How long to wait for the work items to complete in milliseconds</param>
+        /// <param name="millisecondsTimeout">How long to wait for the work items to complete in milliseconds.</param>
         /// <returns>Returns true if work items completed within the timeout, otherwise false.</returns>
         bool WaitForIdle(int millisecondsTimeout);
 
@@ -152,110 +152,110 @@ namespace Amib.Threading
         #region QueueWorkItem
 
         /// <summary>
-        /// Queue a work item
+        /// Queue a work item.
         /// </summary>
-        /// <param name="callback">A callback to execute</param>
-        /// <returns>Returns a work item result</returns>        
+        /// <param name="callback">A callback to execute.</param>
+        /// <returns>Returns a work item result.</returns>
         IWorkItemResult QueueWorkItem(WorkItemCallback callback);
 
         /// <summary>
-        /// Queue a work item
+        /// Queue a work item.
         /// </summary>
-        /// <param name="callback">A callback to execute</param>
-        /// <param name="workItemPriority">The priority of the work item</param>
-        /// <returns>Returns a work item result</returns>
+        /// <param name="callback">A callback to execute.</param>
+        /// <param name="workItemPriority">The priority of the work item.</param>
+        /// <returns>Returns a work item result.</returns>
         IWorkItemResult QueueWorkItem(WorkItemCallback callback, WorkItemPriority workItemPriority);
 
         /// <summary>
-        /// Queue a work item
+        /// Queue a work item.
         /// </summary>
-        /// <param name="callback">A callback to execute</param>
+        /// <param name="callback">A callback to execute.</param>
         /// <param name="state">
         /// The context object of the work item. Used for passing arguments to the work item. 
         /// </param>
-        /// <returns>Returns a work item result</returns>
+        /// <returns>Returns a work item result.</returns>
         IWorkItemResult QueueWorkItem(WorkItemCallback callback, object state);
 
         /// <summary>
-        /// Queue a work item
+        /// Queue a work item.
         /// </summary>
-        /// <param name="callback">A callback to execute</param>
+        /// <param name="callback">A callback to execute.</param>
         /// <param name="state">
         /// The context object of the work item. Used for passing arguments to the work item. 
         /// </param>
-        /// <param name="workItemPriority">The work item priority</param>
-        /// <returns>Returns a work item result</returns>
+        /// <param name="workItemPriority">The work item priority.</param>
+        /// <returns>Returns a work item result.</returns>
         IWorkItemResult QueueWorkItem(WorkItemCallback callback, object state, WorkItemPriority workItemPriority);
 
         /// <summary>
-        /// Queue a work item
+        /// Queue a work item.
         /// </summary>
-        /// <param name="callback">A callback to execute</param>
+        /// <param name="callback">A callback to execute.</param>
         /// <param name="state">
         /// The context object of the work item. Used for passing arguments to the work item. 
         /// </param>
         /// <param name="postExecuteWorkItemCallback">
-        /// A delegate to call after the callback completion
+        /// A delegate to call after the callback completion.
         /// </param>
-        /// <returns>Returns a work item result</returns>
+        /// <returns>Returns a work item result.</returns>
         IWorkItemResult QueueWorkItem(WorkItemCallback callback, object state, PostExecuteWorkItemCallback postExecuteWorkItemCallback);
 
         /// <summary>
-        /// Queue a work item
+        /// Queue a work item.
         /// </summary>
-        /// <param name="callback">A callback to execute</param>
+        /// <param name="callback">A callback to execute.</param>
         /// <param name="state">
         /// The context object of the work item. Used for passing arguments to the work item. 
         /// </param>
         /// <param name="postExecuteWorkItemCallback">
-        /// A delegate to call after the callback completion
+        /// A delegate to call after the callback completion.
         /// </param>
-        /// <param name="workItemPriority">The work item priority</param>
-        /// <returns>Returns a work item result</returns>
+        /// <param name="workItemPriority">The work item priority.</param>
+        /// <returns>Returns a work item result.</returns>
         IWorkItemResult QueueWorkItem(WorkItemCallback callback, object state, PostExecuteWorkItemCallback postExecuteWorkItemCallback, WorkItemPriority workItemPriority);
 
         /// <summary>
-        /// Queue a work item
+        /// Queue a work item.
         /// </summary>
-        /// <param name="callback">A callback to execute</param>
+        /// <param name="callback">A callback to execute.</param>
         /// <param name="state">
         /// The context object of the work item. Used for passing arguments to the work item. 
         /// </param>
         /// <param name="postExecuteWorkItemCallback">
-        /// A delegate to call after the callback completion
+        /// A delegate to call after the callback completion.
         /// </param>
-        /// <param name="callToPostExecute">Indicates on which cases to call to the post execute callback</param>
-        /// <returns>Returns a work item result</returns>
+        /// <param name="callToPostExecute">Indicates on which cases to call to the post execute callback.</param>
+        /// <returns>Returns a work item result.</returns>
         IWorkItemResult QueueWorkItem(WorkItemCallback callback, object state, PostExecuteWorkItemCallback postExecuteWorkItemCallback, CallToPostExecute callToPostExecute);
 
         /// <summary>
-        /// Queue a work item
+        /// Queue a work item.
         /// </summary>
-        /// <param name="callback">A callback to execute</param>
+        /// <param name="callback">A callback to execute.</param>
         /// <param name="state">
         /// The context object of the work item. Used for passing arguments to the work item. 
         /// </param>
         /// <param name="postExecuteWorkItemCallback">
-        /// A delegate to call after the callback completion
+        /// A delegate to call after the callback completion.
         /// </param>
-        /// <param name="callToPostExecute">Indicates on which cases to call to the post execute callback</param>
-        /// <param name="workItemPriority">The work item priority</param>
-        /// <returns>Returns a work item result</returns>
+        /// <param name="callToPostExecute">Indicates on which cases to call to the post execute callback.</param>
+        /// <param name="workItemPriority">The work item priority.</param>
+        /// <returns>Returns a work item result.</returns>
         IWorkItemResult QueueWorkItem(WorkItemCallback callback, object state, PostExecuteWorkItemCallback postExecuteWorkItemCallback, CallToPostExecute callToPostExecute, WorkItemPriority workItemPriority);
 
         /// <summary>
-        /// Queue a work item
+        /// Queue a work item.
         /// </summary>
-        /// <param name="workItemInfo">Work item info</param>
-        /// <param name="callback">A callback to execute</param>
-        /// <returns>Returns a work item result</returns>
+        /// <param name="workItemInfo">Work item info.</param>
+        /// <param name="callback">A callback to execute.</param>
+        /// <returns>Returns a work item result.</returns>
         IWorkItemResult QueueWorkItem(WorkItemInfo workItemInfo, WorkItemCallback callback);
 
         /// <summary>
-        /// Queue a work item
+        /// Queue a work item.
         /// </summary>
-        /// <param name="workItemInfo">Work item information</param>
-        /// <param name="callback">A callback to execute</param>
+        /// <param name="workItemInfo">Work item information.</param>
+        /// <param name="callback">A callback to execute.</param>
         /// <param name="state">
         /// The context object of the work item. Used for passing arguments to the work item. 
         /// </param>
@@ -269,19 +269,19 @@ namespace Amib.Threading
         /// <summary>
         /// Queue a work item.
         /// </summary>
-        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
+        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null.</returns>
         IWorkItemResult QueueWorkItem(Action action, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
 
         /// <summary>
         /// Queue a work item.
         /// </summary>
-        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
+        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null.</returns>
         IWorkItemResult QueueWorkItem<T>(Action<T> action, T arg, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
 
         /// <summary>
         /// Queue a work item.
         /// </summary>
-        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
+        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null.</returns>
         IWorkItemResult QueueWorkItem<T1, T2>(Action<T1, T2> action, T1 arg1, T2 arg2, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
 
         /// <summary>
@@ -293,7 +293,7 @@ namespace Amib.Threading
         /// <summary>
         /// Queue a work item.
         /// </summary>
-        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null</returns>
+        /// <returns>Returns a IWorkItemResult object, but its GetResult() will always return null.</returns>
         IWorkItemResult QueueWorkItem<T1, T2, T3, T4>(Action<T1, T2, T3, T4> action, T1 arg1, T2 arg2, T3 arg3, T4 arg4, WorkItemPriority priority = SmartThreadPool.DefaultWorkItemPriority);
 
         #endregion
@@ -346,22 +346,22 @@ namespace Amib.Threading
 	public enum CallToPostExecute
 	{
         /// <summary>
-        /// Never call to the PostExecute call back
+        /// Never call to the PostExecute call back.
         /// </summary>
 		Never                    = 0x00,
 
         /// <summary>
-        /// Call to the PostExecute only when the work item is cancelled
+        /// Call to the PostExecute only when the work item is cancelled.
         /// </summary>
 		WhenWorkItemCanceled     = 0x01,
 
         /// <summary>
-        /// Call to the PostExecute only when the work item is not cancelled
+        /// Call to the PostExecute only when the work item is not cancelled.
         /// </summary>
 		WhenWorkItemNotCanceled  = 0x02,
 
         /// <summary>
-        /// Always call to the PostExecute
+        /// Always call to the PostExecute.
         /// </summary>
 		Always                   = WhenWorkItemCanceled | WhenWorkItemNotCanceled,
 	}
@@ -406,15 +406,15 @@ namespace Amib.Threading
 		/// Get the result of the work item.
 		/// If the work item didn't run yet then the caller waits.
 		/// </summary>
-		/// <returns>The result of the work item</returns>
+		/// <returns>The result of the work item.</returns>
         TResult GetResult();
 
 		/// <summary>
 		/// Get the result of the work item.
 		/// If the work item didn't run yet then the caller waits until timeout.
 		/// </summary>
-		/// <returns>The result of the work item</returns>
-		/// On timeout throws WorkItemTimeoutException
+		/// <returns>The result of the work item.</returns>
+		/// On timeout throws WorkItemTimeoutException.
         TResult GetResult(
 			int millisecondsTimeout,
 			bool exitContext);
@@ -423,8 +423,8 @@ namespace Amib.Threading
 		/// Get the result of the work item.
 		/// If the work item didn't run yet then the caller waits until timeout.
 		/// </summary>
-		/// <returns>The result of the work item</returns>
-		/// On timeout throws WorkItemTimeoutException
+		/// <returns>The result of the work item.</returns>
+		/// On timeout throws WorkItemTimeoutException.
         TResult GetResult(			
 			TimeSpan timeout,
 			bool exitContext);
@@ -433,14 +433,14 @@ namespace Amib.Threading
 		/// Get the result of the work item.
 		/// If the work item didn't run yet then the caller waits until timeout or until the cancelWaitHandle is signaled.
 		/// </summary>
-		/// <param name="millisecondsTimeout">Timeout in milliseconds, or -1 for infinite</param>
+		/// <param name="millisecondsTimeout">Timeout in milliseconds, or -1 for infinite.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
 		/// </param>
-		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the blocking if needed</param>
-		/// <returns>The result of the work item</returns>
-		/// On timeout throws WorkItemTimeoutException
-		/// On cancel throws WorkItemCancelException
+		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the blocking if needed.</param>
+		/// <returns>The result of the work item.</returns>
+		/// On timeout throws WorkItemTimeoutException.
+		/// On cancel throws WorkItemCancelException.
         TResult GetResult(			
 			int millisecondsTimeout,
 			bool exitContext,
@@ -450,9 +450,9 @@ namespace Amib.Threading
 		/// Get the result of the work item.
 		/// If the work item didn't run yet then the caller waits until timeout or until the cancelWaitHandle is signaled.
 		/// </summary>
-		/// <returns>The result of the work item</returns>
-		/// On timeout throws WorkItemTimeoutException
-		/// On cancel throws WorkItemCancelException
+		/// <returns>The result of the work item.</returns>
+		/// On timeout throws WorkItemTimeoutException.
+		/// On cancel throws WorkItemCancelException.
         TResult GetResult(			
 			TimeSpan timeout,
 			bool exitContext,
@@ -462,8 +462,8 @@ namespace Amib.Threading
 		/// Get the result of the work item.
 		/// If the work item didn't run yet then the caller waits.
 		/// </summary>
-		/// <param name="e">Filled with the exception if one was thrown</param>
-		/// <returns>The result of the work item</returns>
+		/// <param name="e">Filled with the exception if one was thrown.</param>
+		/// <returns>The result of the work item.</returns>
         TResult GetResult(out Exception e);
 
 		/// <summary>
@@ -472,9 +472,9 @@ namespace Amib.Threading
 		/// </summary>
 		/// <param name="millisecondsTimeout"></param>
 		/// <param name="exitContext"></param>
-		/// <param name="e">Filled with the exception if one was thrown</param>
-		/// <returns>The result of the work item</returns>
-		/// On timeout throws WorkItemTimeoutException
+		/// <param name="e">Filled with the exception if one was thrown.</param>
+		/// <returns>The result of the work item.</returns>
+		/// On timeout throws WorkItemTimeoutException.
         TResult GetResult(
 			int millisecondsTimeout,
 			bool exitContext,
@@ -485,10 +485,10 @@ namespace Amib.Threading
 		/// If the work item didn't run yet then the caller waits until timeout.
 		/// </summary>
 		/// <param name="exitContext"></param>
-		/// <param name="e">Filled with the exception if one was thrown</param>
+		/// <param name="e">Filled with the exception if one was thrown.</param>
 		/// <param name="timeout"></param>
-		/// <returns>The result of the work item</returns>
-		/// On timeout throws WorkItemTimeoutException
+		/// <returns>The result of the work item.</returns>
+		/// On timeout throws WorkItemTimeoutException.
         TResult GetResult(			
 			TimeSpan timeout,
 			bool exitContext,
@@ -498,15 +498,15 @@ namespace Amib.Threading
 		/// Get the result of the work item.
 		/// If the work item didn't run yet then the caller waits until timeout or until the cancelWaitHandle is signaled.
 		/// </summary>
-		/// <param name="millisecondsTimeout">Timeout in milliseconds, or -1 for infinite</param>
+		/// <param name="millisecondsTimeout">Timeout in milliseconds, or -1 for infinite.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
 		/// </param>
-		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the blocking if needed</param>
-		/// <param name="e">Filled with the exception if one was thrown</param>
-		/// <returns>The result of the work item</returns>
-		/// On timeout throws WorkItemTimeoutException
-		/// On cancel throws WorkItemCancelException
+		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the blocking if needed.</param>
+		/// <param name="e">Filled with the exception if one was thrown.</param>
+		/// <returns>The result of the work item.</returns>
+		/// On timeout throws WorkItemTimeoutException.
+		/// On cancel throws WorkItemCancelException.
         TResult GetResult(			
 			int millisecondsTimeout,
 			bool exitContext,
@@ -517,13 +517,13 @@ namespace Amib.Threading
 		/// Get the result of the work item.
 		/// If the work item didn't run yet then the caller waits until timeout or until the cancelWaitHandle is signaled.
 		/// </summary>
-		/// <returns>The result of the work item</returns>
+		/// <returns>The result of the work item.</returns>
 		/// <param name="cancelWaitHandle"></param>
-		/// <param name="e">Filled with the exception if one was thrown</param>
+		/// <param name="e">Filled with the exception if one was thrown.</param>
 		/// <param name="timeout"></param>
 		/// <param name="exitContext"></param>
-		/// On timeout throws WorkItemTimeoutException
-		/// On cancel throws WorkItemCancelException
+		/// On timeout throws WorkItemTimeoutException.
+		/// On cancel throws WorkItemCancelException.
         TResult GetResult(			
 			TimeSpan timeout,
 			bool exitContext,
@@ -541,7 +541,7 @@ namespace Amib.Threading
 		bool IsCanceled { get; }
 
 		/// <summary>
-		/// Gets the user-defined object that contains context data 
+		/// Gets the user-defined object that contains context data.
         /// for the work item method.
 		/// </summary>
 		object State { get; }
@@ -553,30 +553,30 @@ namespace Amib.Threading
 
         /// <summary>
         /// Cancel the work item execution.
-        /// If the work item is in the queue then it won't execute
-        /// If the work item is completed, it will remain completed
+        /// If the work item is in the queue then it won't execute.
+        /// If the work item is completed, it will remain completed.
         /// If the work item is in progress then the user can check the SmartThreadPool.IsWorkItemCanceled
         ///   property to check if the work item has been cancelled. If the abortExecution is set to true then
         ///   the Smart Thread Pool will send an AbortException to the running thread to stop the execution 
         ///   of the work item. When an in progress work item is canceled its GetResult will throw WorkItemCancelException.
-        /// If the work item is already cancelled it will remain cancelled
+        /// If the work item is already cancelled it will remain cancelled.
         /// </summary>
         /// <param name="abortExecution">When true send an AbortException to the executing thread.</param>
         /// <returns>Returns true if the work item was not completed, otherwise false.</returns>
         bool Cancel(bool abortExecution);
 
 		/// <summary>
-		/// Get the work item's priority
+		/// Get the work item's priority.
 		/// </summary>
 		WorkItemPriority WorkItemPriority { get; }
 
 		/// <summary>
-		/// Return the result, same as GetResult()
+		/// Return the result, same as GetResult().
 		/// </summary>
         TResult Result { get; }
 
 		/// <summary>
-		/// Returns the exception if occured otherwise returns null.
+		/// Returns the exception if occurred otherwise returns null.
 		/// </summary>
 		object Exception { get; }
 	}

@@ -7,7 +7,7 @@ namespace Amib.Threading.Internal
 	public class WorkItemFactory
 	{
 		/// <summary>
-		/// Create a new work item
+		/// Create a new work item.
 		/// </summary>
 		/// <param name="workItemsGroup">The WorkItemsGroup of this work item.</param>
 		/// <param name="wigStartInfo">Work item group start information.</param>
@@ -69,7 +69,7 @@ namespace Amib.Threading.Internal
 		/// <param name="state">
 		/// The context object of the work item. Used for passing arguments to the work item. 
 		/// </param>
-		/// <returns>Returns a work item</returns>
+		/// <returns>Returns a work item.</returns>
 		public static WorkItem CreateWorkItem(
 			IWorkItemsGroup workItemsGroup,
 			WIGStartInfo wigStartInfo,
@@ -95,16 +95,16 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Create a new work item
+		/// Create a new work item.
 		/// </summary>
-		/// <param name="workItemsGroup">The work items group</param>
-		/// <param name="wigStartInfo">Work item group start information</param>
-		/// <param name="callback">A callback to execute</param>
+		/// <param name="workItemsGroup">The work items group.</param>
+		/// <param name="wigStartInfo">Work item group start information.</param>
+		/// <param name="callback">A callback to execute.</param>
 		/// <param name="state">
 		/// The context object of the work item. Used for passing arguments to the work item. 
 		/// </param>
-		/// <param name="workItemPriority">The work item priority</param>
-		/// <returns>Returns a work item</returns>
+		/// <param name="workItemPriority">The work item priority.</param>
+		/// <returns>Returns a work item.</returns>
 		public static WorkItem CreateWorkItem(
 			IWorkItemsGroup workItemsGroup,
 			WIGStartInfo wigStartInfo,
@@ -132,16 +132,16 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Create a new work item
+		/// Create a new work item.
 		/// </summary>
-        /// <param name="workItemsGroup">The work items group</param>
-		/// <param name="wigStartInfo">Work item group start information</param>
-		/// <param name="workItemInfo">Work item information</param>
-		/// <param name="callback">A callback to execute</param>
+        /// <param name="workItemsGroup">The work items group.</param>
+		/// <param name="wigStartInfo">Work item group start information.</param>
+		/// <param name="workItemInfo">Work item information.</param>
+		/// <param name="callback">A callback to execute.</param>
 		/// <param name="state">
 		/// The context object of the work item. Used for passing arguments to the work item. 
 		/// </param>
-		/// <returns>Returns a work item</returns>
+		/// <returns>Returns a work item.</returns>
         public static WorkItem CreateWorkItem(
             IWorkItemsGroup workItemsGroup,
             WIGStartInfo wigStartInfo,
@@ -162,18 +162,18 @@ namespace Amib.Threading.Internal
         }
 
 		/// <summary>
-		/// Create a new work item
+		/// Create a new work item.
 		/// </summary>
-        /// <param name="workItemsGroup">The work items group</param>
-		/// <param name="wigStartInfo">Work item group start information</param>
-		/// <param name="callback">A callback to execute</param>
+        /// <param name="workItemsGroup">The work items group.</param>
+		/// <param name="wigStartInfo">Work item group start information.</param>
+		/// <param name="callback">A callback to execute.</param>
 		/// <param name="state">
 		/// The context object of the work item. Used for passing arguments to the work item. 
 		/// </param>
 		/// <param name="postExecuteWorkItemCallback">
-		/// A delegate to call after the callback completion
+		/// A delegate to call after the callback completion.
 		/// </param>
-		/// <returns>Returns a work item</returns>
+		/// <returns>Returns a work item.</returns>
 		public static WorkItem CreateWorkItem(
 			IWorkItemsGroup workItemsGroup,
 			WIGStartInfo wigStartInfo,
@@ -202,19 +202,19 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Create a new work item
+		/// Create a new work item.
 		/// </summary>
-        /// <param name="workItemsGroup">The work items group</param>
-		/// <param name="wigStartInfo">Work item group start information</param>
-		/// <param name="callback">A callback to execute</param>
+        /// <param name="workItemsGroup">The work items group.</param>
+		/// <param name="wigStartInfo">Work item group start information.</param>
+		/// <param name="callback">A callback to execute.</param>
 		/// <param name="state">
 		/// The context object of the work item. Used for passing arguments to the work item. 
 		/// </param>
 		/// <param name="postExecuteWorkItemCallback">
-		/// A delegate to call after the callback completion
+		/// A delegate to call after the callback completion.
 		/// </param>
-		/// <param name="workItemPriority">The work item priority</param>
-		/// <returns>Returns a work item</returns>
+		/// <param name="workItemPriority">The work item priority.</param>
+		/// <returns>Returns a work item.</returns>
 		public static WorkItem CreateWorkItem(
 			IWorkItemsGroup workItemsGroup,
 			WIGStartInfo wigStartInfo,
@@ -244,19 +244,19 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Create a new work item
+		/// Create a new work item.
 		/// </summary>
-        /// <param name="workItemsGroup">The work items group</param>
-		/// <param name="wigStartInfo">Work item group start information</param>
-		/// <param name="callback">A callback to execute</param>
+        /// <param name="workItemsGroup">The work items group.</param>
+		/// <param name="wigStartInfo">Work item group start information.</param>
+		/// <param name="callback">A callback to execute.</param>
 		/// <param name="state">
 		/// The context object of the work item. Used for passing arguments to the work item. 
 		/// </param>
 		/// <param name="postExecuteWorkItemCallback">
-		/// A delegate to call after the callback completion
+		/// A delegate to call after the callback completion.
 		/// </param>
-		/// <param name="callToPostExecute">Indicates on which cases to call to the post execute callback</param>
-		/// <returns>Returns a work item</returns>
+		/// <param name="callToPostExecute">Indicates on which cases to call to the post execute callback.</param>
+		/// <returns>Returns a work item.</returns>
 		public static WorkItem CreateWorkItem(
 			IWorkItemsGroup workItemsGroup,
 			WIGStartInfo wigStartInfo,
@@ -286,20 +286,20 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Create a new work item
+		/// Create a new work item.
 		/// </summary>
-        /// <param name="workItemsGroup">The work items group</param>
-		/// <param name="wigStartInfo">Work item group start information</param>
-		/// <param name="callback">A callback to execute</param>
+        /// <param name="workItemsGroup">The work items group.</param>
+		/// <param name="wigStartInfo">Work item group start information.</param>
+		/// <param name="callback">A callback to execute.</param>
 		/// <param name="state">
 		/// The context object of the work item. Used for passing arguments to the work item. 
 		/// </param>
 		/// <param name="postExecuteWorkItemCallback">
-		/// A delegate to call after the callback completion
+		/// A delegate to call after the callback completion.
 		/// </param>
-		/// <param name="callToPostExecute">Indicates on which cases to call to the post execute callback</param>
-		/// <param name="workItemPriority">The work item priority</param>
-		/// <returns>Returns a work item</returns>
+		/// <param name="callToPostExecute">Indicates on which cases to call to the post execute callback.</param>
+		/// <param name="workItemPriority">The work item priority.</param>
+		/// <returns>Returns a work item.</returns>
 		public static WorkItem CreateWorkItem(
 			IWorkItemsGroup workItemsGroup,
 			WIGStartInfo wigStartInfo,
