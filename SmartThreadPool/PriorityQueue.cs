@@ -8,30 +8,30 @@ namespace Amib.Threading.Internal
 	#region PriorityQueue class
 
 	/// <summary>
-	/// PriorityQueue class
-	/// This class is not thread safe because we use external lock
+	/// PriorityQueue class.
+	/// This class is not thread safe because we use external lock.
 	/// </summary>
 	public sealed class PriorityQueue : IEnumerable
 	{
 		#region Private members
 
 		/// <summary>
-		/// The number of queues, there is one for each type of priority
+		/// The number of queues, there is one for each type of priority.
 		/// </summary>
 		private const int _queuesCount = WorkItemPriority.Highest-WorkItemPriority.Lowest+1;
 
 		/// <summary>
-		/// Work items queues. There is one for each type of priority
+		/// Work items queues. There is one for each type of priority.
 		/// </summary>
         private readonly LinkedList<IHasWorkItemPriority>[] _queues = new LinkedList<IHasWorkItemPriority>[_queuesCount];
 
 		/// <summary>
-		/// The total number of work items within the queues 
+		/// The total number of work items within the queues.
 		/// </summary>
 		private int _workItemsCount;
 
 		/// <summary>
-		/// Use with IEnumerable interface
+		/// Use with IEnumerable interface.
 		/// </summary>
 		private int _version;
 
@@ -39,6 +39,10 @@ namespace Amib.Threading.Internal
 
 		#region Contructor
 
+		/// <summary>
+		/// Empty constructor.
+		/// Initializes each queue with an empty list.
+		/// </summary>
 		public PriorityQueue()
 		{
 			for(int i = 0; i < _queues.Length; ++i)
@@ -69,9 +73,9 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Dequeque a work item.
+		/// Dequeue a work item.
 		/// </summary>
-		/// <returns>Returns the next work item</returns>
+		/// <returns>Returns the next work item.</returns>
 		public IHasWorkItemPriority Dequeue()
 		{
 			IHasWorkItemPriority workItem = null;
@@ -91,11 +95,11 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Find the next non empty queue starting at queue queueIndex+1
+		/// Find the next non empty queue starting at queue queueIndex+1.
 		/// </summary>
-		/// <param name="queueIndex">The index-1 to start from</param>
+		/// <param name="queueIndex">The index-1 to start from.</param>
 		/// <returns>
-		/// The index of the next non empty queue or -1 if all the queues are empty
+		/// The index of the next non empty queue or -1 if all the queues are empty.
 		/// </returns>
 		private int GetNextNonEmptyQueue(int queueIndex)
 		{
@@ -110,7 +114,7 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// The number of work items 
+		/// The number of work items.
 		/// </summary>
 		public int Count
 		{
@@ -121,7 +125,7 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Clear all the work items 
+		/// Clear all the work items.
 		/// </summary>
 		public void Clear()
 		{
@@ -141,9 +145,9 @@ namespace Amib.Threading.Internal
 		#region IEnumerable Members
 
 		/// <summary>
-		/// Returns an enumerator to iterate over the work items
+		/// Returns an enumerator to iterate over the work items.
 		/// </summary>
-		/// <returns>Returns an enumerator</returns>
+		/// <returns>Returns an enumerator.</returns>
 		public IEnumerator GetEnumerator()
 		{
 			return new PriorityQueueEnumerator(this);
@@ -154,7 +158,7 @@ namespace Amib.Threading.Internal
 		#region PriorityQueueEnumerator
 
 		/// <summary>
-		/// The class the implements the enumerator
+		/// The class the implements the enumerator.
 		/// </summary>
 		private class PriorityQueueEnumerator : IEnumerator
 		{

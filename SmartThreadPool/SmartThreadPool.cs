@@ -256,19 +256,19 @@ namespace Amib.Threading
 
         /// <summary>
         /// Stores a copy of the original STPStartInfo.
-        /// It is used to change the MinThread and MaxThreads
+        /// It is used to change the MinThread and MaxThreads.
         /// </summary>
         private STPStartInfo _stpStartInfo;
 
 		/// <summary>
-		/// Total number of work items that are stored in the work items queue 
+		/// Total number of work items that are stored in the work items queue.
 		/// plus the work items that the threads in the pool are working on.
 		/// </summary>
 		private volatile int _currentWorkItemsCount;
 
 		/// <summary>
 		/// Signaled when the thread pool is idle, i.e. no thread is busy
-		/// and the work items queue is empty
+		/// and the work items queue is empty.
 		/// </summary>
 		//private ManualResetEvent _isIdleWaitHandle = new ManualResetEvent(true);
 		private ManualResetEvent _isIdleWaitHandle = EventWaitHandleFactory.CreateManualResetEvent(true);
@@ -296,30 +296,30 @@ namespace Amib.Threading
 		private int _threadCounter;
 
 		/// <summary>
-		/// Indicate that the SmartThreadPool has been disposed
+		/// Indicate that the SmartThreadPool has been disposed.
 		/// </summary>
 		private bool _isDisposed;
 
 		/// <summary>
-		/// Holds all the WorkItemsGroup instaces that have at least one 
-		/// work item int the SmartThreadPool
-		/// This variable is used in case of Shutdown
+		/// Holds all the WorkItemsGroup instances that have at least one 
+		/// work item int the SmartThreadPool.
+		/// This variable is used in case of Shutdown.
 		/// </summary>
         private readonly SynchronizedDictionary<IWorkItemsGroup, IWorkItemsGroup> _workItemsGroups = new SynchronizedDictionary<IWorkItemsGroup, IWorkItemsGroup>();
 
         /// <summary>
         /// A common object for all the work items int the STP
-        /// so we can mark them to cancel in O(1)
+        /// so we can mark them to cancel in O(1).
         /// </summary>
         private CanceledWorkItemsGroup _canceledSmartThreadPool = new CanceledWorkItemsGroup();
 
         /// <summary>
-        /// Windows STP performance counters
+        /// Windows STP performance counters.
         /// </summary>
         private ISTPInstancePerformanceCounters _windowsPCs = NullSTPInstancePerformanceCounters.Instance;
 
         /// <summary>
-        /// Local STP performance counters
+        /// Local STP performance counters.
         /// </summary>
         private ISTPInstancePerformanceCounters _localPCs = NullSTPInstancePerformanceCounters.Instance;
 
@@ -328,7 +328,7 @@ namespace Amib.Threading
 
         /// <summary>
         /// An event to call after a thread is created, but before 
-        /// it's first use.
+        /// its first use.
         /// </summary>
         private event ThreadInitializationHandler _onThreadInitialization;
 
@@ -374,7 +374,7 @@ namespace Amib.Threading
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="idleTimeout">Idle timeout in milliseconds</param>
+		/// <param name="idleTimeout">Idle timeout in milliseconds.</param>
 		public SmartThreadPool(int idleTimeout)
 		{
             _stpStartInfo = new STPStartInfo
@@ -400,8 +400,8 @@ namespace Amib.Threading
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="idleTimeout">Idle timeout in milliseconds</param>
-		/// <param name="maxWorkerThreads">Upper limit of threads in the pool</param>
+		/// <param name="idleTimeout">Idle timeout in milliseconds.</param>
+		/// <param name="maxWorkerThreads">Upper limit of threads in the pool.</param>
 		public SmartThreadPool(
 			int idleTimeout,
 			int maxWorkerThreads)
@@ -417,9 +417,9 @@ namespace Amib.Threading
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		/// <param name="idleTimeout">Idle timeout in milliseconds</param>
-		/// <param name="maxWorkerThreads">Upper limit of threads in the pool</param>
-		/// <param name="minWorkerThreads">Lower limit of threads in the pool</param>
+		/// <param name="idleTimeout">Idle timeout in milliseconds.</param>
+		/// <param name="maxWorkerThreads">Upper limit of threads in the pool.</param>
+		/// <param name="minWorkerThreads">Lower limit of threads in the pool.</param>
 		public SmartThreadPool(
 			int idleTimeout,
 			int maxWorkerThreads,
@@ -437,7 +437,7 @@ namespace Amib.Threading
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="stpStartInfo">A SmartThreadPool configuration that overrides the default behavior</param>
+        /// <param name="stpStartInfo">A SmartThreadPool configuration that overrides the default behavior.</param>
 		public SmartThreadPool(STPStartInfo stpStartInfo)
 		{
 			_stpStartInfo = new STPStartInfo(stpStartInfo);
@@ -553,9 +553,9 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Put a new work item in the queue
+		/// Put a new work item in the queue.
 		/// </summary>
-		/// <param name="workItem">A work item to queue</param>
+		/// <param name="workItem">A work item to queue.</param>
 		internal override void Enqueue(WorkItem workItem)
 		{
 			// Make sure the workItem is not null
@@ -623,7 +623,7 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Inform that the current thread is about to quit or quiting.
+		/// Inform that the current thread is about to quit or quitting.
 		/// The same thread may call this method more than once.
 		/// </summary>
 		private void InformCompleted()
@@ -640,9 +640,9 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Starts new threads
+		/// Starts new threads.
 		/// </summary>
-		/// <param name="threadsCount">The number of threads to start</param>
+		/// <param name="threadsCount">The number of threads to start.</param>
 		private void StartThreads(int threadsCount)
 		{
             if (_isSuspended)
@@ -920,8 +920,8 @@ namespace Amib.Threading
 		}
 
         /// <summary>
-        /// Force the SmartThreadPool to shutdown
-        /// Doesn't use Thread.Abort
+        /// Force the SmartThreadPool to shutdown.
+        /// Doesn't use Thread.Abort.
         /// </summary>
         public void Shutdown()
         {
@@ -931,8 +931,8 @@ namespace Amib.Threading
 		// Thread.Abort is not supported in .net core
 
 		/// <summary>
-		/// Force the SmartThreadPool to shutdown with timeout
-		/// Doesn't use Thread.Abort
+		/// Force the SmartThreadPool to shutdown with timeout.
+		/// Doesn't use Thread.Abort.
         /// </summary>
 		public void Shutdown(TimeSpan timeout)
 		{
@@ -941,7 +941,7 @@ namespace Amib.Threading
 
 		/// <summary>
 		/// Empties the queue of work items and abort the threads in the pool.
-		/// Doesn't use Thread.Abort
+		/// Doesn't use Thread.Abort.
         /// </summary>
 		public void Shutdown(int millisecondsTimeout)
         {
@@ -1064,9 +1064,9 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Wait for all work items to complete
+		/// Wait for all work items to complete.
 		/// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
 		/// <returns>
 		/// true when every work item in workItemResults has completed; otherwise false.
 		/// </returns>
@@ -1077,10 +1077,10 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Wait for all work items to complete
+		/// Wait for all work items to complete.
 		/// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
-		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely. </param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
+		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
 		/// </param>
@@ -1096,14 +1096,14 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Wait for all work items to complete
+		/// Wait for all work items to complete.
 		/// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
-		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely. </param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
+		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
 		/// </param>
-		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed</param>
+		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed.</param>
 		/// <returns>
 		/// true when every work item in workItemResults has completed; otherwise false.
 		/// </returns>
@@ -1117,9 +1117,9 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Wait for all work items to complete
+		/// Wait for all work items to complete.
 		/// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
 		/// <param name="millisecondsTimeout">The number of milliseconds to wait, or Timeout.Infinite (-1) to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
@@ -1136,14 +1136,14 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Wait for all work items to complete
+		/// Wait for all work items to complete.
 		/// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
 		/// <param name="millisecondsTimeout">The number of milliseconds to wait, or Timeout.Infinite (-1) to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
 		/// </param>
-		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed</param>
+		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed.</param>
 		/// <returns>
 		/// true when every work item in workItemResults has completed; otherwise false.
 		/// </returns>
@@ -1158,9 +1158,9 @@ namespace Amib.Threading
 
 
 		/// <summary>
-		/// Waits for any of the work items in the specified array to complete, cancel, or timeout
+		/// Waits for any of the work items in the specified array to complete, cancel, or timeout.
 		/// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
 		/// <returns>
 		/// The array index of the work item result that satisfied the wait, or WaitTimeout if any of the work items has been canceled.
 		/// </returns>
@@ -1171,10 +1171,10 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Waits for any of the work items in the specified array to complete, cancel, or timeout
+		/// Waits for any of the work items in the specified array to complete, cancel, or timeout.
 		/// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
-		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely. </param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
+		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
 		/// </param>
@@ -1190,14 +1190,14 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Waits for any of the work items in the specified array to complete, cancel, or timeout
+		/// Waits for any of the work items in the specified array to complete, cancel, or timeout.
 		/// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
-		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely. </param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
+		/// <param name="timeout">The number of milliseconds to wait, or a TimeSpan that represents -1 milliseconds to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
 		/// </param>
-		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed</param>
+		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed.</param>
 		/// <returns>
 		/// The array index of the work item result that satisfied the wait, or WaitTimeout if no work item result satisfied the wait and a time interval equivalent to millisecondsTimeout has passed or the work item has been canceled.
 		/// </returns>
@@ -1211,9 +1211,9 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Waits for any of the work items in the specified array to complete, cancel, or timeout
+		/// Waits for any of the work items in the specified array to complete, cancel, or timeout.
 		/// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
 		/// <param name="millisecondsTimeout">The number of milliseconds to wait, or Timeout.Infinite (-1) to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
@@ -1230,14 +1230,14 @@ namespace Amib.Threading
 		}
 
 		/// <summary>
-		/// Waits for any of the work items in the specified array to complete, cancel, or timeout
+		/// Waits for any of the work items in the specified array to complete, cancel, or timeout.
 		/// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
 		/// <param name="millisecondsTimeout">The number of milliseconds to wait, or Timeout.Infinite (-1) to wait indefinitely.</param>
 		/// <param name="exitContext">
 		/// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
 		/// </param>
-		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed</param>
+		/// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed.</param>
 		/// <returns>
 		/// The array index of the work item result that satisfied the wait, or WaitTimeout if no work item result satisfied the wait and a time interval equivalent to millisecondsTimeout has passed or the work item has been canceled.
 		/// </returns>
@@ -1253,7 +1253,7 @@ namespace Amib.Threading
         /// <summary>
         /// Creates a new WorkItemsGroup.
         /// </summary>
-        /// <param name="concurrency">The number of work items that can be run concurrently</param>
+        /// <param name="concurrency">The number of work items that can be run concurrently.</param>
         /// <returns>A reference to the WorkItemsGroup</returns>
 		public IWorkItemsGroup CreateWorkItemsGroup(int concurrency)
 		{
@@ -1264,8 +1264,8 @@ namespace Amib.Threading
         /// <summary>
         /// Creates a new WorkItemsGroup.
         /// </summary>
-        /// <param name="concurrency">The number of work items that can be run concurrently</param>
-        /// <param name="wigStartInfo">A WorkItemsGroup configuration that overrides the default behavior</param>
+        /// <param name="concurrency">The number of work items that can be run concurrently.</param>
+        /// <param name="wigStartInfo">A WorkItemsGroup configuration that overrides the default behavior.</param>
         /// <returns>A reference to the WorkItemsGroup</returns>
 		public IWorkItemsGroup CreateWorkItemsGroup(int concurrency, WIGStartInfo wigStartInfo)
 		{
@@ -1491,7 +1491,7 @@ namespace Amib.Threading
         }
 
         /// <summary>
-        /// Thread Pool start information (readonly)
+        /// Thread Pool start information. (readonly)
         /// </summary>
         public STPStartInfo STPStartInfo
         {
@@ -1507,7 +1507,7 @@ namespace Amib.Threading
 	    }
 
         /// <summary>
-        /// Return the local calculated performance counters
+        /// Return the local calculated performance counters.
         /// Available only if STPStartInfo.EnableLocalPerformanceCounters is true.
         /// </summary>
         public ISTPPerformanceCountersReader PerformanceCountersReader
@@ -1557,7 +1557,7 @@ namespace Amib.Threading
         #region WorkItemsGroupBase Overrides
 
         /// <summary>
-        /// Get/Set the maximum number of work items that execute cocurrency on the thread pool
+        /// Get/Set the maximum number of work items that execute concurrency on the thread pool.
         /// </summary>
         public override int Concurrency
 	    {
@@ -1659,7 +1659,7 @@ namespace Amib.Threading
         }
 
 	    /// <summary>
-        /// Wait for the thread pool to be idle
+        /// Wait for the thread pool to be idle.
         /// </summary>
         public override bool WaitForIdle(int millisecondsTimeout)
         {
@@ -1703,7 +1703,7 @@ namespace Amib.Threading
         /// Executes all actions in parallel.
         /// Returns when they all finish.
         /// </summary>
-        /// <param name="actions">Actions to execute</param>
+        /// <param name="actions">Actions to execute.</param>
         public void Join(IEnumerable<Action> actions)
         {
             WIGStartInfo wigStartInfo = new WIGStartInfo { StartSuspended = true };
@@ -1720,7 +1720,7 @@ namespace Amib.Threading
         /// Executes all actions in parallel.
         /// Returns when they all finish.
         /// </summary>
-        /// <param name="actions">Actions to execute</param>
+        /// <param name="actions">Actions to execute.</param>
         public void Join(params Action[] actions)
         {
             Join((IEnumerable<Action>)actions);
@@ -1732,10 +1732,10 @@ namespace Amib.Threading
         }
 
         /// <summary>
-        /// Executes all actions in parallel
-        /// Returns when the first one completes
+        /// Executes all actions in parallel.
+        /// Returns when the first one completes.
         /// </summary>
-        /// <param name="actions">Actions to execute</param>
+        /// <param name="actions">Actions to execute.</param>
         public int Choice(IEnumerable<Action> actions)
         {
             WIGStartInfo wigStartInfo = new WIGStartInfo { StartSuspended = true };
@@ -1760,10 +1760,10 @@ namespace Amib.Threading
         }
 
         /// <summary>
-        /// Executes all actions in parallel
-        /// Returns when the first one completes
+        /// Executes all actions in parallel.
+        /// Returns when the first one completes.
         /// </summary>
-        /// <param name="actions">Actions to execute</param>
+        /// <param name="actions">Actions to execute.</param>
         public int Choice(params Action[] actions)
 	    {
             return Choice((IEnumerable<Action>)actions);
@@ -1773,8 +1773,8 @@ namespace Amib.Threading
         /// Executes actions in sequence asynchronously.
         /// Returns immediately.
         /// </summary>
-        /// <param name="pipeState">A state context that passes </param>
-        /// <param name="actions">Actions to execute in the order they should run</param>
+        /// <param name="pipeState">A state context that passes.</param>
+        /// <param name="actions">Actions to execute in the order they should run.</param>
         public void Pipe<T>(T pipeState, IEnumerable<Action<T>> actions)
         {
             WIGStartInfo wigStartInfo = new WIGStartInfo { StartSuspended = true };
@@ -1793,7 +1793,7 @@ namespace Amib.Threading
         /// Returns immediately.
         /// </summary>
         /// <param name="pipeState"></param>
-        /// <param name="actions">Actions to execute in the order they should run</param>
+        /// <param name="actions">Actions to execute in the order they should run.</param>
         public void Pipe<T>(T pipeState, params Action<T>[] actions)
         {
             Pipe(pipeState, (IEnumerable<Action<T>>)actions);

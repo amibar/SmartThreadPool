@@ -70,60 +70,60 @@ namespace Amib.Threading.Internal
         private readonly CallerThreadContext _callerContext;
 #endif
         /// <summary>
-        /// Holds the result of the mehtod
+        /// Holds the result of the method.
         /// </summary>
         private object _result;
 
         /// <summary>
-        /// Hold the exception if the method threw it
+        /// Hold the exception if the method threw it.
         /// </summary>
         private Exception _exception;
 
         /// <summary>
-        /// Hold the state of the work item
+        /// Hold the state of the work item.
         /// </summary>
         private WorkItemState _workItemState;
 
         /// <summary>
-        /// A ManualResetEvent to indicate that the result is ready
+        /// A ManualResetEvent to indicate that the result is ready.
         /// </summary>
         private ManualResetEvent _workItemCompleted;
 
         /// <summary>
         /// A reference count to the _workItemCompleted. 
-        /// When it reaches to zero _workItemCompleted is Closed
+        /// When it reaches to zero _workItemCompleted is Closed.
         /// </summary>
         private int _workItemCompletedRefCount;
 
         /// <summary>
-        /// Represents the result state of the work item
+        /// Represents the result state of the work item.
         /// </summary>
         private readonly WorkItemResult _workItemResult;
 
         /// <summary>
-        /// Work item info
+        /// Work item info.
         /// </summary>
         private readonly WorkItemInfo _workItemInfo;
 
         /// <summary>
-        /// Called when the WorkItem starts
+        /// Called when the WorkItem starts.
         /// </summary>
         private event WorkItemStateCallback _workItemStartedEvent;
 
         /// <summary>
-        /// Called when the WorkItem completes
+        /// Called when the WorkItem completes.
         /// </summary>
         private event WorkItemStateCallback _workItemCompletedEvent;
 
         /// <summary>
         /// A reference to an object that indicates whatever the 
-        /// WorkItemsGroup has been canceled
+        /// WorkItemsGroup has been canceled.
         /// </summary>
         private CanceledWorkItemsGroup _canceledWorkItemsGroup = CanceledWorkItemsGroup.NotCanceledWorkItemsGroup;
 
         /// <summary>
         /// A reference to an object that indicates whatever the 
-        /// SmartThreadPool has been canceled
+        /// SmartThreadPool has been canceled.
         /// </summary>
         private CanceledWorkItemsGroup _canceledSmartThreadPool = CanceledWorkItemsGroup.NotCanceledWorkItemsGroup;
 
@@ -133,13 +133,13 @@ namespace Amib.Threading.Internal
         private readonly IWorkItemsGroup _workItemsGroup;
 
         /// <summary>
-        /// The thread that executes this workitem.
+        /// The thread that executes this work item.
         /// This field is available for the period when the work item is executed, before and after it is null.
         /// </summary>
         private Thread _executingThread;
 
         /// <summary>
-        /// The absulote time when the work item will be timeout
+        /// The absolute time when the work item will be timeout.
         /// </summary>
         private long _expirationTime;
 
@@ -149,12 +149,12 @@ namespace Amib.Threading.Internal
 
 
         /// <summary>
-        /// Stores how long the work item waited on the stp queue
+        /// Stores how long the work item waited on the stp queue.
         /// </summary>
         private Stopwatch _waitingOnQueueStopwatch;
 
         /// <summary>
-        /// Stores how much time it took the work item to execute after it went out of the queue
+        /// Stores how much time it took the work item to execute after it went out of the queue.
         /// </summary>
         private Stopwatch _processingStopwatch;
 
@@ -195,13 +195,13 @@ namespace Amib.Threading.Internal
         /// <summary>
         /// Initialize the callback holding object.
         /// </summary>
-        /// <param name="workItemsGroup">The workItemGroup of the workitem</param>
-        /// <param name="workItemInfo">The WorkItemInfo of te workitem</param>
+        /// <param name="workItemsGroup">The workItemGroup of the work item.</param>
+        /// <param name="workItemInfo">The WorkItemInfo of te work item.</param>
         /// <param name="callback">Callback delegate for the callback.</param>
         /// <param name="state">State with which to call the callback delegate.</param>
         /// 
         /// We assume that the WorkItem object is created within the thread
-        /// that meant to run the callback
+        /// that meant to run the callback.
         public WorkItem(
             IWorkItemsGroup workItemsGroup,
             WorkItemInfo workItemInfo,
@@ -227,7 +227,7 @@ namespace Amib.Threading.Internal
         internal void Initialize()
         {
             // The _workItemState is changed directly instead of using the SetWorkItemState
-            // method since we don't want to go throught IsValidStateTransition.
+            // method since we don't want to go through IsValidStateTransition.
             _workItemState = WorkItemState.InQueue;
 
             _workItemCompleted = null;
@@ -300,7 +300,7 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// Execute the work item and the post execute
+        /// Execute the work item and the post execute.
         /// </summary>
         public void Execute()
         {
@@ -357,7 +357,7 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// Execute the work item
+        /// Execute the work item.
         /// </summary>
         private void ExecuteWorkItem()
         {
@@ -426,7 +426,7 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// Runs the post execute callback
+        /// Runs the post execute callback.
         /// </summary>
         private void PostExecute()
         {
@@ -444,10 +444,10 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// Set the result of the work item to return
+        /// Set the result of the work item to return.
         /// </summary>
-        /// <param name="result">The result of the work item</param>
-        /// <param name="exception">The exception that was throw while the workitem executed, null
+        /// <param name="result">The result of the work item.</param>
+        /// <param name="exception">The exception that was throw while the work item executed, null
         /// if there was no exception.</param>
         internal void SetResult(object result, Exception exception)
         {
@@ -457,23 +457,23 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// Returns the work item result
+        /// Returns the work item result.
         /// </summary>
-        /// <returns>The work item result</returns>
+        /// <returns>The work item result.</returns>
         internal IWorkItemResult GetWorkItemResult()
         {
             return _workItemResult;
         }
 
         /// <summary>
-        /// Wait for all work items to complete
+        /// Wait for all work items to complete.
         /// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
         /// <param name="millisecondsTimeout">The number of milliseconds to wait, or Timeout.Infinite (-1) to wait indefinitely.</param>
         /// <param name="exitContext">
         /// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
         /// </param>
-        /// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed</param>
+        /// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed.</param>
         /// <returns>
         /// true when every work item in waitableResults has completed; otherwise false.
         /// </returns>
@@ -548,14 +548,14 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// Waits for any of the work items in the specified array to complete, cancel, or timeout
+        /// Waits for any of the work items in the specified array to complete, cancel, or timeout.
         /// </summary>
-        /// <param name="waitableResults">Array of work item result objects</param>
+        /// <param name="waitableResults">Array of work item result objects.</param>
         /// <param name="millisecondsTimeout">The number of milliseconds to wait, or Timeout.Infinite (-1) to wait indefinitely.</param>
         /// <param name="exitContext">
         /// true to exit the synchronization domain for the context before the wait (if in a synchronized context), and reacquire it; otherwise, false. 
         /// </param>
-        /// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed</param>
+        /// <param name="cancelWaitHandle">A cancel wait handle to interrupt the wait if needed.</param>
         /// <returns>
         /// The array index of the work item result that satisfied the wait, or WaitTimeout if no work item result satisfied the wait and a time interval equivalent to millisecondsTimeout has passed or the work item has been canceled.
         /// </returns>
@@ -598,8 +598,8 @@ namespace Amib.Threading.Internal
         /// <summary>
         /// Fill an array of wait handles with the work items wait handles.
         /// </summary>
-        /// <param name="waitableResults">An array of work item results</param>
-        /// <param name="waitHandles">An array of wait handles to fill</param>
+        /// <param name="waitableResults">An array of work item results.</param>
+        /// <param name="waitHandles">An array of wait handles to fill.</param>
         private static void GetWaitHandles(
             IWaitableResult[] waitableResults,
             WaitHandle[] waitHandles)
@@ -614,9 +614,9 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// Release the work items' wait handles
+        /// Release the work items' wait handles.
         /// </summary>
-        /// <param name="waitableResults">An array of work item results</param>
+        /// <param name="waitableResults">An array of work item results.</param>
         private static void ReleaseWaitHandles(IWaitableResult[] waitableResults)
         {
             for (int i = 0; i < waitableResults.Length; ++i)
@@ -663,9 +663,9 @@ namespace Amib.Threading.Internal
 
 
         /// <summary>
-        /// Sets the work item's state
+        /// Sets the work item's state.
         /// </summary>
-        /// <param name="workItemState">The state to set the work item to</param>
+        /// <param name="workItemState">The state to set the work item to.</param>
         private void SetWorkItemState(WorkItemState workItemState)
         {
             lock (this)
@@ -678,9 +678,9 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// Signals that work item has been completed or canceled
+        /// Signals that work item has been completed or canceled.
         /// </summary>
-        /// <param name="canceled">Indicates that the work item has been canceled</param>
+        /// <param name="canceled">Indicates that the work item has been canceled.</param>
         private void SignalComplete(bool canceled)
         {
             SetWorkItemState(canceled ? WorkItemState.Canceled : WorkItemState.Completed);
@@ -706,7 +706,7 @@ namespace Amib.Threading.Internal
         /// <summary>
         /// Cancel the work item if it didn't start running yet.
         /// </summary>
-        /// <returns>Returns true on success or false if the work item is in progress or already completed</returns>
+        /// <returns>Returns true on success or false if the work item is in progress or already completed.</returns>
         private bool Cancel(bool abortExecution)
         {
             bool success = false;
@@ -772,9 +772,9 @@ namespace Amib.Threading.Internal
         /// <summary>
         /// Get the result of the work item.
         /// If the work item didn't run yet then the caller waits for the result, timeout, or cancel.
-        /// In case of error the method throws and exception
+        /// In case of error the method throws and exception.
         /// </summary>
-        /// <returns>The result of the work item</returns>
+        /// <returns>The result of the work item.</returns>
         private object GetResult(
             int millisecondsTimeout,
             bool exitContext,
@@ -792,9 +792,9 @@ namespace Amib.Threading.Internal
         /// <summary>
         /// Get the result of the work item.
         /// If the work item didn't run yet then the caller waits for the result, timeout, or cancel.
-        /// In case of error the e argument is filled with the exception
+        /// In case of error the e argument is filled with the exception.
         /// </summary>
-        /// <returns>The result of the work item</returns>
+        /// <returns>The result of the work item.</returns>
         private object GetResult(
             int millisecondsTimeout,
             bool exitContext,
@@ -868,7 +868,7 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// A wait handle to wait for completion, cancel, or timeout 
+        /// A wait handle to wait for completion, cancel, or timeout.
         /// </summary>
         private WaitHandle GetWaitHandle()
         {
@@ -900,7 +900,7 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// Returns true when the work item has completed or canceled
+        /// Returns true when the work item has completed or canceled.
         /// </summary>
         private bool IsCompleted
         {
@@ -916,7 +916,7 @@ namespace Amib.Threading.Internal
         }
 
         /// <summary>
-        /// Returns true when the work item has canceled
+        /// Returns true when the work item has canceled.
         /// </summary>
         public bool IsCanceled
         {
@@ -934,7 +934,7 @@ namespace Amib.Threading.Internal
         #region IHasWorkItemPriority Members
 
         /// <summary>
-        /// Returns the priority of the work item
+        /// Returns the priority of the work item.
         /// </summary>
         public WorkItemPriority WorkItemPriority
         {

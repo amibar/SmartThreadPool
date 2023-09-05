@@ -51,7 +51,7 @@ namespace Amib.Threading
         }
 
 	    /// <summary>
-	    /// Get/Set if to use the caller's security context
+	    /// Get/Set if to use the caller's security context.
 	    /// </summary>
 	    public virtual bool UseCallerCallContext
 	    {
@@ -65,7 +65,7 @@ namespace Amib.Threading
 
 
 	    /// <summary>
-	    /// Get/Set if to use the caller's HTTP context
+	    /// Get/Set if to use the caller's HTTP context.
 	    /// </summary>
 	    public virtual bool UseCallerHttpContext
 	    {
@@ -79,7 +79,7 @@ namespace Amib.Threading
 
 
 	    /// <summary>
-	    /// Get/Set if to dispose of the state object of a work item
+	    /// Get/Set if to dispose of the state object of a work item.
 	    /// </summary>
 	    public virtual bool DisposeOfStateObjects
 	    {
@@ -93,7 +93,7 @@ namespace Amib.Threading
 
 
 	    /// <summary>
-	    /// Get/Set the run the post execute options
+	    /// Get/Set the run the post execute options.
 	    /// </summary>
 	    public virtual CallToPostExecute CallToPostExecute
 	    {
@@ -107,7 +107,7 @@ namespace Amib.Threading
 
 
 	    /// <summary>
-	    /// Get/Set the default post execute callback
+	    /// Get/Set the default post execute callback.
 	    /// </summary>
 	    public virtual PostExecuteWorkItemCallback PostExecuteWorkItemCallback
 	    {
@@ -136,7 +136,7 @@ namespace Amib.Threading
 
 
 	    /// <summary>
-	    /// Get/Set the default priority that a work item gets when it is enqueued
+	    /// Get/Set the default priority that a work item gets when it is enqueued.
 	    /// </summary>
 	    public virtual WorkItemPriority WorkItemPriority
 	    {
@@ -160,9 +160,9 @@ namespace Amib.Threading
 	    }
 
 	    /// <summary>
-        /// Get a readonly version of this WIGStartInfo
+        /// Get a readonly version of this WIGStartInfo.
         /// </summary>
-        /// <returns>Returns a readonly reference to this WIGStartInfoRO</returns>
+        /// <returns>Returns a readonly reference to this WIGStartInfoRO.</returns>
         public WIGStartInfo AsReadOnly()
 	    {
             return new WIGStartInfo(this) { _readOnly = true };
