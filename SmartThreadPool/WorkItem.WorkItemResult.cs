@@ -12,7 +12,7 @@ namespace Amib.Threading.Internal
         private class WorkItemResult : IWorkItemResult, IInternalWorkItemResult, IInternalWaitableResult
         {
             /// <summary>
-            /// A back reference to the work item
+            /// A back reference to the work item.
             /// </summary>
             private readonly WorkItem _workItem;
 
@@ -121,7 +121,7 @@ namespace Amib.Threading.Internal
             }
 
             /// <summary>
-            /// Return the result, same as GetResult()
+            /// Return the result, same as GetResult().
             /// </summary>
             public object Result
             {
@@ -129,7 +129,7 @@ namespace Amib.Threading.Internal
             }
 
             /// <summary>
-            /// Returns the exception if occured otherwise returns null.
+            /// Returns the exception if occurred otherwise returns null.
             /// This value is valid only after the work item completed,
             /// before that it is always null.
             /// </summary>

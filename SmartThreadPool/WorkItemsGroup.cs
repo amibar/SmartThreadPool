@@ -153,7 +153,7 @@ namespace Amib.Threading.Internal
         }
 
 	    /// <summary>
-        /// WorkItemsGroup start information
+        /// WorkItemsGroup start information.
         /// </summary>
         public override WIGStartInfo WIGStartInfo
         {
@@ -161,7 +161,7 @@ namespace Amib.Threading.Internal
         }
 
 	    /// <summary>
-	    /// Start the Work Items Group if it was started suspended
+	    /// Start the Work Items Group if it was started suspended.
 	    /// </summary>
 	    public override void Start()
 	    {
@@ -192,7 +192,7 @@ namespace Amib.Threading.Internal
 	    }
 
 	    /// <summary>
-        /// Wait for the thread pool to be idle
+        /// Wait for the thread pool to be idle.
         /// </summary>
         public override bool WaitForIdle(int millisecondsTimeout)
         {
