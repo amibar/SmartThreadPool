@@ -39,6 +39,10 @@ namespace Amib.Threading.Internal
 
 		#region Contructor
 
+		/// <summary>
+		/// Empty constructor.
+		/// Initializes each queue with an empty list.
+		/// </summary>
 		public PriorityQueue()
 		{
 			for(int i = 0; i < _queues.Length; ++i)
@@ -69,7 +73,7 @@ namespace Amib.Threading.Internal
 		}
 
 		/// <summary>
-		/// Dequeque a work item.
+		/// Dequeue a work item.
 		/// </summary>
 		/// <returns>Returns the next work item</returns>
 		public IHasWorkItemPriority Dequeue()

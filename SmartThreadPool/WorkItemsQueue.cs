@@ -148,7 +148,7 @@ namespace Amib.Threading.Internal
 		{
 			// This method cause the caller to wait for a work item.
 			// If there is at least one waiting work item then the 
-			// method returns immidiately with it.
+			// method returns immediately with it.
 			// 
 			// If there are no waiting work items then the caller 
 			// is queued between other waiters for a work item to arrive.
@@ -190,7 +190,7 @@ namespace Amib.Threading.Internal
 			// During the wait we are supposes to exit the synchronization 
 			// domain. (Placing true as the third argument of the WaitAny())
 			// It just doesn't work, I don't know why, so I have two lock(this) 
-			// statments instead of one.
+			// statements instead of one.
 
             int index = STPEventWaitHandle.WaitAny(
 				waitHandles,
@@ -240,7 +240,7 @@ namespace Amib.Threading.Internal
 
         /// <summary>
         /// Cleanup the work items queue, hence no more work 
-        /// items are allowed to be queue
+        /// items are allowed to be queued.
         /// </summary>
         private void Cleanup()
         {
@@ -302,7 +302,7 @@ namespace Amib.Threading.Internal
 		/// Returns the WaiterEntry of the current thread
 		/// </summary>
 		/// <returns></returns>
-		/// In order to avoid creation and destuction of WaiterEntry
+		/// In order to avoid creation and destruction of WaiterEntry
 		/// objects each thread has its own WaiterEntry object.
 		private static WaiterEntry GetThreadWaiterEntry()
 		{

@@ -301,9 +301,9 @@ namespace Amib.Threading
 		private bool _isDisposed;
 
 		/// <summary>
-		/// Holds all the WorkItemsGroup instaces that have at least one 
 		/// work item int the SmartThreadPool
 		/// This variable is used in case of Shutdown
+		/// Holds all the WorkItemsGroup instances that have at least one 
 		/// </summary>
         private readonly SynchronizedDictionary<IWorkItemsGroup, IWorkItemsGroup> _workItemsGroups = new SynchronizedDictionary<IWorkItemsGroup, IWorkItemsGroup>();
 
@@ -328,7 +328,7 @@ namespace Amib.Threading
 
         /// <summary>
         /// An event to call after a thread is created, but before 
-        /// it's first use.
+        /// its first use.
         /// </summary>
         private event ThreadInitializationHandler _onThreadInitialization;
 
@@ -1557,7 +1557,7 @@ namespace Amib.Threading
         #region WorkItemsGroupBase Overrides
 
         /// <summary>
-        /// Get/Set the maximum number of work items that execute cocurrency on the thread pool
+        /// Get/Set the maximum number of work items that execute concurrency on the thread pool.
         /// </summary>
         public override int Concurrency
 	    {

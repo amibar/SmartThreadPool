@@ -59,8 +59,8 @@ namespace Amib.Threading
 	    public WorkItemPriority WorkItemPriority { get; set; }
 
 	    /// <summary>
-	    /// Get/Set the work item's timout in milliseconds.
-        /// This is a passive timout. When the timout expires the work item won't be actively aborted!
+	    /// Get/Set the work item's timeout in milliseconds.
+        /// This is a passive timeout. When the timeout expires the work item won't be actively aborted!
 	    /// </summary>
 	    public long Timeout { get; set; }
 	}

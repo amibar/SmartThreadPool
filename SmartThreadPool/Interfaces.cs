@@ -75,7 +75,7 @@ namespace Amib.Threading
 		string Name { get; set; }
 
         /// <summary>
-        /// Get/Set the maximum number of workitem that execute cocurrency on the thread pool
+        /// Get/Set the maximum number of work items that execute concurrency on the thread pool.
         /// </summary>
         int Concurrency { get; set; }
 

@@ -70,7 +70,7 @@ namespace Amib.Threading.Internal
         private readonly CallerThreadContext _callerContext;
 #endif
         /// <summary>
-        /// Holds the result of the mehtod
+        /// Holds the result of the method.
         /// </summary>
         private object _result;
 
@@ -139,7 +139,7 @@ namespace Amib.Threading.Internal
         private Thread _executingThread;
 
         /// <summary>
-        /// The absulote time when the work item will be timeout
+        /// The absolute time when the work item will be timeout.
         /// </summary>
         private long _expirationTime;
 
@@ -195,8 +195,8 @@ namespace Amib.Threading.Internal
         /// <summary>
         /// Initialize the callback holding object.
         /// </summary>
-        /// <param name="workItemsGroup">The workItemGroup of the workitem</param>
-        /// <param name="workItemInfo">The WorkItemInfo of te workitem</param>
+        /// <param name="workItemsGroup">The workItemGroup of the work item.</param>
+        /// <param name="workItemInfo">The WorkItemInfo of te work item.</param>
         /// <param name="callback">Callback delegate for the callback.</param>
         /// <param name="state">State with which to call the callback delegate.</param>
         /// 
@@ -227,7 +227,7 @@ namespace Amib.Threading.Internal
         internal void Initialize()
         {
             // The _workItemState is changed directly instead of using the SetWorkItemState
-            // method since we don't want to go throught IsValidStateTransition.
+            // method since we don't want to go through IsValidStateTransition.
             _workItemState = WorkItemState.InQueue;
 
             _workItemCompleted = null;
@@ -446,8 +446,8 @@ namespace Amib.Threading.Internal
         /// <summary>
         /// Set the result of the work item to return
         /// </summary>
-        /// <param name="result">The result of the work item</param>
-        /// <param name="exception">The exception that was throw while the workitem executed, null
+        /// <param name="result">The result of the work item.</param>
+        /// <param name="exception">The exception that was throw while the work item executed, null
         /// if there was no exception.</param>
         internal void SetResult(object result, Exception exception)
         {
