@@ -118,13 +118,6 @@ namespace Amib.Threading
         void Cancel(bool abortExecution);
 
         /// <summary>
-        /// Cancel all work items using thread abortion
-        /// </summary>
-        /// <param name="abortExecution">True to stop work items by raising ThreadAbortException</param>
-        /// <param name="timeToWaitForThreadAbort">The amount of time to wait for a thread to abort</param>
-        void Cancel(bool abortExecution, TimeSpan timeToWaitForThreadAbort);
-
-        /// <summary>
         /// Wait for all work item to complete.
         /// </summary>
 		void WaitForIdle();
