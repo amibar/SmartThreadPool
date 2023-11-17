@@ -104,6 +104,11 @@ namespace Amib.Threading.Internal
                 return _workItem.Cancel(abortExecution);
             }
 
+            public bool Cancel(bool abortExecution, TimeSpan timeToWaitForThreadAbort)
+            {
+                return _workItem.Cancel(abortExecution, timeToWaitForThreadAbort);
+            }
+
             public object State
             {
                 get

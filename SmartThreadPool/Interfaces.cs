@@ -118,6 +118,13 @@ namespace Amib.Threading
         void Cancel(bool abortExecution);
 
         /// <summary>
+        /// Cancel all work items using thread abortion
+        /// </summary>
+        /// <param name="abortExecution">True to stop work items by raising ThreadAbortException</param>
+        /// <param name="timeToWaitForThreadAbort">The amount of time to wait for a thread to abort</param>
+        void Cancel(bool abortExecution, TimeSpan timeToWaitForThreadAbort);
+
+        /// <summary>
         /// Wait for all work item to complete.
         /// </summary>
 		void WaitForIdle();
@@ -564,6 +571,21 @@ namespace Amib.Threading
         /// <param name="abortExecution">When true send an AbortException to the executing thread.</param>
         /// <returns>Returns true if the work item was not completed, otherwise false.</returns>
         bool Cancel(bool abortExecution);
+
+        /// <summary>
+        /// Cancel the work item execution.
+        /// If the work item is in the queue then it won't execute
+        /// If the work item is completed, it will remain completed
+        /// If the work item is in progress then the user can check the SmartThreadPool.IsWorkItemCanceled
+        ///   property to check if the work item has been cancelled. If the abortExecution is set to true then
+        ///   the Smart Thread Pool will send an AbortException to the running thread to stop the execution 
+        ///   of the work item. When an in progress work item is canceled its GetResult will throw WorkItemCancelException.
+        /// If the work item is already cancelled it will remain cancelled
+        /// </summary>
+        /// <param name="abortExecution">When true send an AbortException to the executing thread.</param>
+        /// <param name="timeToWaitForThreadAbort">Amount of time to wait for the thread to abort.</param>
+        /// <returns>Returns true if the work item was not completed, otherwise false.</returns>
+        bool Cancel(bool abortExecution, TimeSpan timeToWaitForThreadAbort);
 
 		/// <summary>
 		/// Get the work item's priority
