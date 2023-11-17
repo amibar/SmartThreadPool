@@ -709,6 +709,15 @@ namespace Amib.Threading.Internal
         /// <returns>Returns true on success or false if the work item is in progress or already completed</returns>
         private bool Cancel(bool abortExecution)
         {
+            return Cancel(abortExecution, TimeSpan.Zero);
+        }
+
+        /// <summary>
+        /// Cancel the work item if it didn't start running yet.
+        /// </summary>
+        /// <returns>Returns true on success or false if the work item is in progress or already completed</returns>
+        private bool Cancel(bool abortExecution, TimeSpan timeToWaitForThreadAbort)
+        {
             bool success = false;
             bool signalComplete = false;
 
@@ -727,6 +736,9 @@ namespace Amib.Threading.Internal
                                 // No need to signalComplete, because we already cancelled this work item
                                 // so it already signaled its completion.
                                 //signalComplete = true;
+                                if (timeToWaitForThreadAbort > TimeSpan.Zero){
+                                    executionThread.Join(timeToWaitForThreadAbort);
+                                }
                             }
                         } 
                         success = true;
@@ -741,6 +753,9 @@ namespace Amib.Threading.Internal
                             if (null != executionThread)
                             {
                                 executionThread.Abort(); // "Cancel"
+                                if (timeToWaitForThreadAbort > TimeSpan.Zero){
+                                    executionThread.Join(timeToWaitForThreadAbort);
+                                }
                                 success = true;
                                 signalComplete = true;
                             }

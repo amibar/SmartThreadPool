@@ -91,6 +91,11 @@ namespace Amib.Threading.Internal
             return _workItemResult.Cancel(abortExecution);
         }
 
+        public bool Cancel(bool abortExecution, TimeSpan timeToWaitForThreadAbort)
+        {
+            return _workItemResult.Cancel(abortExecution, timeToWaitForThreadAbort);
+        }
+
         public WorkItemPriority WorkItemPriority
         {
             get { return _workItemResult.WorkItemPriority; }
